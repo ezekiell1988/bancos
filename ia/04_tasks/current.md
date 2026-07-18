@@ -1,6 +1,6 @@
 # 04 — Tareas activas
 
-> **Última actualización:** 2026-07-18 CR (TASK-EBC-INF-02 completada)
+> **Última actualización:** 2026-07-18 CR (TASK-EBC-INF-03 creada)
 
 
 
@@ -24,6 +24,12 @@ Sin tareas.
 
 | ID | Título | Riesgo | Aprobación |
 |---|---|---|---|
+| `TASK-EBC-INF-03` | Diseño de autenticación y estrategia de contenedor para despliegue | alto | pendiente |
+| `TASK-EBC-FE-01` | Dashboard Angular inicial para importaciones y revisión | medio | pendiente |
+| `TASK-EBC-BE-06` | Clasificación determinística de movimientos | medio | pendiente |
+| `TASK-EBC-BE-05` | Lector de préstamos Coopealianza en PDF | medio | pendiente |
+| `TASK-EBC-BE-04` | Lector de financiamientos BAC en XLS binario | medio | pendiente |
+| `TASK-EBC-BE-03` | Catálogo de cuentas auxiliares y flujo integral de importación BCR | medio | pendiente |
 
 ## Bloqueadas
 
