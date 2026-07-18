@@ -15,7 +15,11 @@ internal static class ZipImportReader
     {
         if (!fileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) return [new(Path.GetFileName(fileName), content)];
         using var archive = new ZipArchive(new MemoryStream(content), ZipArchiveMode.Read, leaveOpen: false);
-        var files = archive.Entries.Where(entry => !string.IsNullOrEmpty(entry.Name) && AllowedExtensions.Contains(Path.GetExtension(entry.Name), StringComparer.OrdinalIgnoreCase)).ToArray();
+        var files = archive.Entries.Where(entry =>
+            !string.IsNullOrEmpty(entry.Name)
+            && !entry.Name.StartsWith("._", StringComparison.Ordinal)
+            && !entry.FullName.StartsWith("__MACOSX/", StringComparison.OrdinalIgnoreCase)
+            && AllowedExtensions.Contains(Path.GetExtension(entry.Name), StringComparer.OrdinalIgnoreCase)).ToArray();
         if (files.Length > MaxEntries) throw new InvalidDataException("El ZIP excede el máximo de 100 archivos.");
 
         long total = 0;

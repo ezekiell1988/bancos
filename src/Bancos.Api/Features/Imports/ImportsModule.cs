@@ -16,7 +16,7 @@ public static class ImportsModule
 {
     public static IServiceCollection AddImportsModule(this IServiceCollection services)
     {
-        services.AddScoped<ImportJobs>(); services.AddScoped<BacCreditFinancingXlsParser>(); services.AddScoped<CoopealianzaLoanPdfParser>();
+        services.AddScoped<ImportJobs>(); services.AddScoped<BacCreditFinancingXlsParser>(); services.AddScoped<AccountMovementSpreadsheetParser>(); services.AddScoped<CoopealianzaLoanPdfParser>();
         services.AddScoped<IImportJobScheduler, HangfireImportJobScheduler>(); services.AddScoped<ImportTemplatePatternService>();
         services.AddSingleton<ImportTemplateDetector>();
         services.AddSingleton<BcrDebitCsvParser>();
@@ -141,7 +141,7 @@ internal static class ImportReviewTemplates
         [ImportTemplates.BacCreditFinancingXlsV1] = new(ImportTemplates.BacCreditFinancingXlsV1, "Financiamientos", AccountKind.Liability, true),
         [ImportTemplates.CoopealianzaLoanPdfV1] = new(ImportTemplates.CoopealianzaLoanPdfV1, "Estado de préstamo", AccountKind.Liability, true),
         [ImportTemplates.BacCreditCsvV1] = new(ImportTemplates.BacCreditCsvV1, "Estado de tarjeta", AccountKind.Liability, false),
-        [ImportTemplates.BcrDebitHtmlXlsV1] = new(ImportTemplates.BcrDebitHtmlXlsV1, "Movimientos de cuenta", AccountKind.Asset, false),
+        [ImportTemplates.BcrDebitHtmlXlsV1] = new(ImportTemplates.BcrDebitHtmlXlsV1, "Movimientos de cuenta", AccountKind.Asset, true),
         [ImportTemplates.BacCreditOnlinePdfV1] = new(ImportTemplates.BacCreditOnlinePdfV1, "Estado de tarjeta", AccountKind.Liability, false)
     };
 
