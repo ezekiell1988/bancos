@@ -8,5 +8,11 @@ node_modules/
 .claude/
 .DS_Store
 **/appsettings.Development.json
+.env
+.vs/
+**/bin/
+**/obj/
+*.user
+*.suo
 .vscode/*
 !.vscode/mcp.json
