@@ -1,0 +1,17 @@
+.hero { padding: 2rem; border-radius: var(--radius-xl); color: var(--color-surface-raised); background: linear-gradient(135deg, var(--color-brand-dark), var(--color-brand)); }
+.hero h1 { margin: .2rem 0; font-size: clamp(2rem, 5vw, 3rem); }
+.hero p { margin: 0; color: var(--color-brand-text); }
+
+.eyebrow { font-size: .8rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+
+.imports form { display: grid; inline-size: 100%; margin-top: 1.5rem; }
+
+.dropzone { min-height: 150px; place-items: center; padding: 1.5rem; border: 2px dashed var(--color-border-dashed); border-radius: var(--radius-lg); background: var(--color-surface-raised); text-align: center; cursor: pointer; }
+.dropzone.dragging { border-color: var(--color-brand); background: var(--color-brand-soft); }
+.dropzone input { position: absolute; inline-size: 1px; opacity: 0; }
+.dropzone span { color: var(--color-text-muted); font-weight: 400; }
+
+.queue { margin: 0; padding: 0; list-style: none; }
+.queue li { display: flex; justify-content: space-between; padding: .5rem 0; border-bottom: 1px solid var(--color-border-subtle); }
+.queue button { padding: .2rem .45rem; background: var(--color-text-muted); }
+.empty { margin: 0; color: var(--color-warning); }
