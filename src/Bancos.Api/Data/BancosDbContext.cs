@@ -24,6 +24,28 @@ public sealed class BancosDbContext(DbContextOptions<BancosDbContext> options) :
         b.Entity<ReconciliationTransaction>().HasOne(x => x.Reconciliation).WithMany(x => x.Transactions).HasForeignKey(x => x.ReconciliationId);
         b.Entity<ReconciliationTransaction>().HasOne(x => x.Transaction).WithMany().HasForeignKey(x => x.TransactionId);
         b.Entity<Transaction>().HasOne(x => x.Category).WithMany().HasForeignKey(x => x.CategoryId).OnDelete(DeleteBehavior.Restrict);
+        b.Entity<CreditFinancing>().HasOne(x => x.Import).WithMany().HasForeignKey(x => x.ImportId).OnDelete(DeleteBehavior.Restrict);
+        b.Entity<LoanStatement>().HasOne(x => x.Import).WithMany().HasForeignKey(x => x.ImportId).OnDelete(DeleteBehavior.Restrict);
+        SeedDefaults(b);
+    }
+
+    private static void SeedDefaults(ModelBuilder b)
+    {
+        var created = new DateTime(2025, 12, 31, 0, 0, 0, DateTimeKind.Utc);
+        var ownerId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+        var assetId = Guid.Parse("00000000-0000-0000-0000-000000000101");
+        var liabilityId = Guid.Parse("00000000-0000-0000-0000-000000000102");
+        b.Entity<Owner>().HasData(new Owner { Id = ownerId, DisplayName = "Propietario predeterminado", CreatedUtc = created });
+        b.Entity<Account>().HasData(
+            new Account { Id = assetId, Code = "1", Name = "Activo", Kind = AccountKind.Asset, CreatedUtc = created },
+            new Account { Id = liabilityId, Code = "2", Name = "Pasivo", Kind = AccountKind.Liability, CreatedUtc = created },
+            new Account { Id = Guid.Parse("00000000-0000-0000-0000-000000000103"), Code = "3", Name = "Capital", Kind = AccountKind.Equity, CreatedUtc = created },
+            new Account { Id = Guid.Parse("00000000-0000-0000-0000-000000000104"), Code = "4", Name = "Ingreso", Kind = AccountKind.Income, CreatedUtc = created },
+            new Account { Id = Guid.Parse("00000000-0000-0000-0000-000000000105"), Code = "5", Name = "Gasto", Kind = AccountKind.Expense, CreatedUtc = created },
+            new Account { Id = Guid.Parse("00000000-0000-0000-0000-000000000106"), Code = "6", Name = "Control", Kind = AccountKind.Control, CreatedUtc = created });
+        b.Entity<AccountAuxiliary>().HasData(
+            new AccountAuxiliary { Id = Guid.Parse("00000000-0000-0000-0000-000000000201"), Name = "Cuenta transaccional CRC", AccountId = assetId, OwnerId = ownerId, CreatedUtc = created },
+            new AccountAuxiliary { Id = Guid.Parse("00000000-0000-0000-0000-000000000202"), Name = "Financiamientos", AccountId = liabilityId, OwnerId = ownerId, CreatedUtc = created });
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken ct = default)

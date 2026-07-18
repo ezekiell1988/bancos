@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-18 CR (TASK-EBC-FE-01 completada)
+> **Última actualización:** 2026-07-18 CR (TASK-EBC-FE-02 completada)
 
 ## En curso
 
@@ -21,6 +21,16 @@
 * Aprobar y ejecutar `TASK-EZ-BE-01` mediante `iaWorkflow`.
 
 ## Completado en sesiones recientes
+
+* **2026-07-18** — TASK-EBC-FE-02 cerrada: Pantalla de importaciones renovada con arrastrar y soltar múltiples archivos, cola de carga y auxiliares disponibles. — EBC
+
+* **2026-07-18** — TASK-EBC-DB-02 cerrada: Base reinicializada con una única migración inicial que incluye catálogo contable y auxiliares semilla no sensibles. — EBC
+
+* **2026-07-18** — TASK-EBC-INF-06 cerrada: Script de arranque reubicado en .codex y referencias actualizadas. — EBC
+
+* **2026-07-18** — TASK-EBC-INF-05 cerrada: La acción del entorno ahora nombra e invoca explícitamente el arranque integrado de API y web. — EBC
+
+* **2026-07-18** — TASK-EBC-INF-04 cerrada: Entorno reutilizable de Bancos creado; reemplaza dos configuraciones ajenas y arranca el desarrollo HTTPS integrado. — EBC
 
 * **2026-07-18** — TASK-EBC-FE-01 cerrada: Dashboard Angular standalone minimalista por features para importaciones y revisión, servido por la API, con proxy HTTPS y arranque integrado en modo watch. — EBC
 
