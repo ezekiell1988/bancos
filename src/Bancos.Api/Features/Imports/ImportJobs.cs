@@ -9,10 +9,12 @@ using System.Security.Cryptography;
 using System.Text;
 
 namespace Bancos.Api.Features.Imports;
-public sealed class ImportJobs(BancosDbContext db, ImportTemplateDetector detector, BcrDebitCsvParser bcrParser, BacCreditFinancingXlsParser financingParser, CoopealianzaLoanPdfParser loanParser, ClassificationService classification, ILogger<ImportJobs> logger)
+public sealed class ImportJobs(BancosDbContext db, ImportTemplateDetector detector, BcrDebitCsvParser bcrParser, AccountMovementSpreadsheetParser spreadsheetParser, BacCreditFinancingXlsParser financingParser, CardStatementParser cardParser, CoopealianzaLoanPdfParser loanParser, ClassificationService classification, ILogger<ImportJobs> logger)
 {
-    public ImportJobs(BancosDbContext db, ImportTemplateDetector detector, BcrDebitCsvParser bcrParser, BacCreditFinancingXlsParser financingParser, CoopealianzaLoanPdfParser loanParser, ILogger<ImportJobs> logger)
-        : this(db, detector, bcrParser, financingParser, loanParser, new ClassificationService(db), logger) { }
+    public ImportJobs(BancosDbContext db, ImportTemplateDetector detector, BcrDebitCsvParser bcrParser, BacCreditFinancingXlsParser financingParser, CoopealianzaLoanPdfParser loanParser, ClassificationService classification, ILogger<ImportJobs> logger)
+        : this(db, detector, bcrParser, new AccountMovementSpreadsheetParser(), financingParser, new CardStatementParser(), loanParser, classification, logger) { }
+    public ImportJobs(BancosDbContext db, ImportTemplateDetector detector, BcrDebitCsvParser bcrParser, AccountMovementSpreadsheetParser spreadsheetParser, BacCreditFinancingXlsParser financingParser, CoopealianzaLoanPdfParser loanParser, ILogger<ImportJobs> logger)
+        : this(db, detector, bcrParser, spreadsheetParser, financingParser, new CardStatementParser(), loanParser, new ClassificationService(db), logger) { }
 
     public async Task ProcessAsync(Guid importId, PerformContext? context)
     {
@@ -55,20 +57,18 @@ public sealed class ImportJobs(BancosDbContext db, ImportTemplateDetector detect
                 }
                 WriteStage(context, "Validated balance and {0} loan payments; persisted new fingerprints.", loan.Payments.Count);
             }
-            else if (template == ImportTemplates.BcrDebitCsvV1)
+            else if (template is ImportTemplates.BcrDebitCsvV1 or ImportTemplates.BcrDebitHtmlXlsV1)
             {
-                WriteStage(context, "Extracting and validating BCR debit movements.");
-                var movements = bcrParser.Parse(await File.ReadAllTextAsync(import.TemporaryPath));
-                var fingerprints = movements.Select(movement => CreateFingerprint(import.AccountAuxiliaryId, movement)).ToArray();
-                var existing = await db.Transactions.Where(transaction => transaction.AccountAuxiliaryId == import.AccountAuxiliaryId && fingerprints.Contains(transaction.SourceFingerprint)).Select(transaction => transaction.SourceFingerprint).ToListAsync();
-                foreach (var movement in movements.Zip(fingerprints))
-                {
-                    if (existing.Contains(movement.Second)) continue;
-                    var transaction = new Transaction { ImportId = import.Id, AccountAuxiliaryId = import.AccountAuxiliaryId, BookingDate = movement.First.BookingDate, ExternalReference = movement.First.ExternalReference, SourceFingerprint = movement.Second, AmountCrc = movement.First.Credit - movement.First.Debit, OriginalAmount = movement.First.Credit - movement.First.Debit, DescriptionNormalized = ImportTemplateDetector.Normalize(movement.First.Description) };
-                    await classification.ClassifyAsync(transaction);
-                    db.Transactions.Add(transaction);
-                }
+                var movements = template == ImportTemplates.BcrDebitCsvV1 ? bcrParser.Parse(await File.ReadAllTextAsync(import.TemporaryPath)) : spreadsheetParser.Parse(await File.ReadAllBytesAsync(import.TemporaryPath));
+                await PersistMovements(import, movements, classification);
                 WriteStage(context, "Validated {0} movements and persisted the new fingerprints.", movements.Count);
+            }
+            else if (template is ImportTemplates.BacCreditCsvV1 or ImportTemplates.BacCreditOnlinePdfV1)
+            {
+                WriteStage(context, "Extracting and validating card statement movements.");
+                var movements = cardParser.Parse(await File.ReadAllBytesAsync(import.TemporaryPath));
+                await PersistCardMovements(import, movements, classification);
+                WriteStage(context, "Validated {0} card movements and persisted the new fingerprints.", movements.Count);
             }
             else throw new InvalidDataException($"El extractor para '{template}' no está disponible.");
             import.Status = ImportStatus.Completed; import.ProcessedUtc = DateTime.UtcNow; await db.SaveChangesAsync(); WriteStage(context, "Import completed.");
@@ -78,9 +78,53 @@ public sealed class ImportJobs(BancosDbContext db, ImportTemplateDetector detect
     }
 
     private static void WriteStage(PerformContext? context, string message, params object[] arguments) => context?.WriteLine(message, arguments);
+    private async Task PersistCardMovements(Import import, IReadOnlyList<ParsedCardMovement> movements, ClassificationService classification)
+    {
+        var rateDates = movements.Where(movement => movement.OriginalCurrencyCode == "USD" && movement.AmountCrc is null).Select(movement => movement.BookingDate).Distinct().ToArray();
+        var rates = rateDates.Length == 0 ? new Dictionary<DateOnly, decimal>() : await db.ExchangeRates
+            .Where(rate => rate.CurrencyCode == "USD" && rateDates.Contains(rate.RateDate))
+            .ToDictionaryAsync(rate => rate.RateDate, rate => rate.CrcPerUnit);
+        var normalizedMovements = movements.Select(movement => movement.AmountCrc is not null ? movement : rates.TryGetValue(movement.BookingDate, out var rate)
+            ? movement with { AmountCrc = movement.OriginalAmount * rate }
+            : throw new InvalidDataException($"No existe tipo de cambio USD para la fecha {movement.BookingDate:yyyy-MM-dd}.")).ToArray();
+        var fingerprints = normalizedMovements.Select(movement => CreateFingerprint(import.AccountAuxiliaryId, movement)).ToArray();
+        var existing = await db.Transactions.Where(transaction => transaction.AccountAuxiliaryId == import.AccountAuxiliaryId && fingerprints.Contains(transaction.SourceFingerprint)).Select(transaction => transaction.SourceFingerprint).ToListAsync();
+        foreach (var movement in normalizedMovements.Zip(fingerprints))
+        {
+            if (existing.Contains(movement.Second)) continue;
+            var transaction = new Transaction
+            {
+                ImportId = import.Id, AccountAuxiliaryId = import.AccountAuxiliaryId, BookingDate = movement.First.BookingDate,
+                ExternalReference = movement.First.ExternalReference, SourceFingerprint = movement.Second, AmountCrc = movement.First.AmountCrc!.Value,
+                OriginalAmount = movement.First.OriginalAmount, OriginalCurrencyCode = movement.First.OriginalCurrencyCode,
+                ExchangeRate = movement.First.OriginalCurrencyCode == "USD" && movement.First.OriginalAmount != 0 ? movement.First.AmountCrc!.Value / movement.First.OriginalAmount : null,
+                OperationType = movement.First.Operation switch { CardOperationKind.Payment => TransactionOperationType.CardPayment, CardOperationKind.Interest => TransactionOperationType.CardInterest, CardOperationKind.Charge => TransactionOperationType.CardCharge, _ => TransactionOperationType.CardPurchase },
+                DescriptionNormalized = ImportTemplateDetector.Normalize(movement.First.Description)
+            };
+            await classification.ClassifyAsync(transaction);
+            db.Transactions.Add(transaction);
+        }
+    }
+    private async Task PersistMovements(Import import, IReadOnlyList<ParsedBankMovement> movements, ClassificationService classification)
+    {
+        var fingerprints = movements.Select(movement => CreateFingerprint(import.AccountAuxiliaryId, movement)).ToArray();
+        var existing = await db.Transactions.Where(transaction => transaction.AccountAuxiliaryId == import.AccountAuxiliaryId && fingerprints.Contains(transaction.SourceFingerprint)).Select(transaction => transaction.SourceFingerprint).ToListAsync();
+        foreach (var movement in movements.Zip(fingerprints))
+        {
+            if (existing.Contains(movement.Second)) continue;
+            var transaction = new Transaction { ImportId = import.Id, AccountAuxiliaryId = import.AccountAuxiliaryId, BookingDate = movement.First.BookingDate, ExternalReference = movement.First.ExternalReference, SourceFingerprint = movement.Second, AmountCrc = movement.First.Credit - movement.First.Debit, OriginalAmount = movement.First.Credit - movement.First.Debit, DescriptionNormalized = ImportTemplateDetector.Normalize(movement.First.Description) };
+            await classification.ClassifyAsync(transaction);
+            db.Transactions.Add(transaction);
+        }
+    }
     private static string CreateFingerprint(Guid accountAuxiliaryId, ParsedBankMovement movement)
     {
         var source = string.Join('|', accountAuxiliaryId, movement.BookingDate, movement.ExternalReference.Trim(), ImportTemplateDetector.Normalize(movement.Description), movement.Debit, movement.Credit, "CRC");
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(source)));
+    }
+    private static string CreateFingerprint(Guid accountAuxiliaryId, ParsedCardMovement movement)
+    {
+        var source = string.Join('|', accountAuxiliaryId, movement.BookingDate, movement.ExternalReference.Trim(), ImportTemplateDetector.Normalize(movement.Description), movement.OriginalAmount, movement.OriginalCurrencyCode, movement.AmountCrc, movement.Operation);
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(source)));
     }
     private static string CreateFingerprint(Guid accountAuxiliaryId, ParsedCreditFinancing financing)

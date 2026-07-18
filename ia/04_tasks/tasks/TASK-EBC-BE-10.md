@@ -1,6 +1,6 @@
 # TASK-EBC-BE-10 — Extractor de estados de tarjeta por formatos confirmados
 
-**Estado:** Lista
+**Estado:** En revisión
 **Autor:** Ezequiel Baltodano Cubillo `<pendiente>`
 **Rama:** `dev`
 **Fecha inicio:** 2026-07-18 16:34 CR
@@ -95,6 +95,8 @@ Deshabilitar las plantillas de tarjeta y revertir la migración o cambios de par
 * [ ] Progreso/documentación actualizado
 
 ## Notas / contexto adicional
+
+* Pendiente de revisión: Se implementaron extractores de estados de tarjeta CSV, XLS/HTML y PDF con clasificación de compras, pagos, intereses y cargos; se habilitaron las plantillas BAC de tarjeta y se preservan importes USD junto con CRC (desde el documento o tipo de cambio diario).
 
 * Aprobada por Ezequiel Baltodano Cubillo el 2026-07-18 16:34 CR.
 

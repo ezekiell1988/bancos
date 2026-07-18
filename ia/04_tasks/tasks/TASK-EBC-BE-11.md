@@ -1,6 +1,6 @@
 # TASK-EBC-BE-11 — Extractor de movimientos de cuenta XLS y HTML
 
-**Estado:** Lista
+**Estado:** En revisión
 **Autor:** Ezequiel Baltodano Cubillo `<pendiente>`
 **Rama:** `dev`
 **Fecha inicio:** 2026-07-18 16:40 CR
@@ -94,6 +94,8 @@ Deshabilitar las plantillas XLS/HTML y revertir parsers.
 * [ ] Progreso/documentación actualizado
 
 ## Notas / contexto adicional
+
+* Pendiente de revisión: Parser de movimientos XLS/HTML implementado e integrado al job; las entradas correspondientes ya se presentan como importables.
 
 * Aprobada por Ezequiel Baltodano Cubillo el 2026-07-18 16:40 CR.
 
