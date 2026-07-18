@@ -7,6 +7,7 @@ using Bancos.Api.Features.Parsing;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
 namespace Bancos.Api.Features.Imports;
@@ -16,7 +17,7 @@ public static class ImportsModule
     public static IServiceCollection AddImportsModule(this IServiceCollection services)
     {
         services.AddScoped<ImportJobs>(); services.AddScoped<BacCreditFinancingXlsParser>(); services.AddScoped<CoopealianzaLoanPdfParser>();
-        services.AddScoped<IImportJobScheduler, HangfireImportJobScheduler>();
+        services.AddScoped<IImportJobScheduler, HangfireImportJobScheduler>(); services.AddScoped<ImportTemplatePatternService>();
         services.AddSingleton<ImportTemplateDetector>();
         services.AddSingleton<BcrDebitCsvParser>();
         return services;
@@ -25,36 +26,52 @@ public static class ImportsModule
     {
         var group = app.MapGroup("/api/imports").WithTags("Imports");
         group.MapPost("/preview", Preview).DisableAntiforgery();
+        group.MapPost("/learn", Learn).DisableAntiforgery();
         group.MapPost("/upload", Upload).DisableAntiforgery();
         group.MapGet("/", List);
         group.MapGet("/{id:guid}", Get);
         return app;
     }
-    private static async Task<Ok<ImportPreviewBatchResponse>> Preview(IFormFile file, BancosDbContext db, ImportTemplateDetector detector, CancellationToken ct)
+    private static async Task<Ok<ImportPreviewBatchResponse>> Preview(IFormFile file, BancosDbContext db, ImportTemplatePatternService patterns, CancellationToken ct)
     {
         var sources = ZipImportReader.Read(file.FileName, await ReadContent(file, ct));
         var entries = new List<ImportPreviewEntryResponse>();
         foreach (var source in sources)
         {
-            try { var detection = detector.Detect(source.Content); var plan = await ResolvePlan(detection.Template, db, ct); entries.Add(new(source.Path, ToPreviewResponse(detection, plan))); }
+            try { var detection = await patterns.DetectAsync(source.Content, ct); var plan = await ResolvePlan(detection.Template, db, ct); entries.Add(new(source.Path, ToPreviewResponse(detection, plan))); }
             catch (Exception) when (source.Content.Length > 0) { entries.Add(new(source.Path, new(ImportTemplates.Unknown, "No se pudo analizar", "unsupported", "Este archivo interno no se puede procesar."))); }
         }
         return TypedResults.Ok(new ImportPreviewBatchResponse(entries));
     }
 
-    private static async Task<Results<Created<ImportResponse>, ValidationProblem>> Upload(IFormFile file, string? template, BancosDbContext db, ImportTemplateDetector detector, IImportJobScheduler scheduler, IOptions<StorageOptions> storage, CancellationToken ct)
+    private static async Task<Results<NoContent, ValidationProblem>> Learn(IFormFile file, [FromForm] string entryPath, [FromForm] string template, ImportTemplatePatternService patterns, CancellationToken ct)
+    {
+        if (ImportReviewTemplates.Get(template) is null)
+            return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["template"] = ["El tipo confirmado no es válido."] });
+        var source = ZipImportReader.Read(file.FileName, await ReadContent(file, ct)).SingleOrDefault(x => x.Path == entryPath);
+        if (source is null)
+            return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["entryPath"] = ["No se encontró el archivo dentro del ZIP."] });
+        await patterns.LearnAsync(source.Content, template, ct);
+        return TypedResults.NoContent();
+    }
+
+    private static async Task<Results<Created<ImportResponse>, ValidationProblem>> Upload(IFormFile file, string? entryPath, string? template, BancosDbContext db, ImportTemplatePatternService patterns, IImportJobScheduler scheduler, IOptions<StorageOptions> storage, CancellationToken ct)
     {
         if (file.Length == 0) return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["file"] = ["El archivo no puede estar vacío."] });
-        var detection = detector.Detect(await ReadContent(file, ct));
+        var sources = ZipImportReader.Read(file.FileName, await ReadContent(file, ct));
+        var source = entryPath is null ? sources.SingleOrDefault() : sources.SingleOrDefault(x => x.Path == entryPath);
+        if (source is null) return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["file"] = ["No se encontró el archivo seleccionado dentro del ZIP."] });
+        var detection = await patterns.DetectAsync(source.Content, ct);
         var selectedTemplate = string.IsNullOrWhiteSpace(template) ? detection.Template : template;
         var plan = await ResolvePlan(selectedTemplate, db, ct);
         if (plan.Error is not null) return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["template"] = [plan.Error] });
 
         Directory.CreateDirectory(storage.Value.TemporaryPath); var path = Path.Combine(storage.Value.TemporaryPath, $"{Guid.NewGuid():N}.upload");
-        await using (var destination = File.Create(path)) await file.CopyToAsync(destination, ct);
-        string hash; await using (var input = File.OpenRead(path)) hash = Convert.ToHexString(await SHA256.HashDataAsync(input, ct));
+        await File.WriteAllBytesAsync(path, source.Content, ct);
+        var hash = Convert.ToHexString(SHA256.HashData(source.Content));
         if (await db.ImportFingerprints.AnyAsync(x => x.Hash == hash, ct)) { File.Delete(path); return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["file"] = ["An identical import already exists."] }); }
-        var import = new Import { FileName = Path.GetFileName(file.FileName), TemporaryPath = path, ContentHash = hash, AccountAuxiliaryId = plan.AccountAuxiliaryId!.Value, Template = selectedTemplate };
+        if (!string.IsNullOrWhiteSpace(template) && detection.Template == ImportTemplates.Unknown) await patterns.LearnAsync(source.Content, selectedTemplate, ct);
+        var import = new Import { FileName = Path.GetFileName(source.Path), TemporaryPath = path, ContentHash = hash, AccountAuxiliaryId = plan.AccountAuxiliaryId!.Value, Template = selectedTemplate };
         db.Imports.Add(import); db.ImportFingerprints.Add(new ImportFingerprint { Hash = hash, ImportId = import.Id }); await db.SaveChangesAsync(ct);
         scheduler.Enqueue(import.Id);
         return TypedResults.Created($"/api/imports/{import.Id}", new ImportResponse(import.Id, import.Status));
