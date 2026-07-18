@@ -13,6 +13,66 @@ namespace Bancos.Api.Tests;
 public sealed class ImportTemplateDetectorTests
 {
     [Fact]
+    public void Parses_card_csv_operations_and_preserves_usd_with_crc_equivalent()
+    {
+        var csv = "Date,Description,Operation,Reference,Amount,Currency,Amount CRC\n2026-07-01,Compra de prueba,Compra,REF-1,10.00,USD,5200.00\n2026-07-02,Pago de prueba,Pago,REF-2,2000.00,CRC,2000.00\n2026-07-03,Interés de prueba,Interés,REF-3,25.00,CRC,25.00\n2026-07-04,Cargo de prueba,Cargo,REF-4,15.00,CRC,15.00";
+
+        var movements = new CardStatementParser().ParseCsv(csv);
+
+        Assert.Collection(movements,
+            purchase => { Assert.Equal(CardOperationKind.Purchase, purchase.Operation); Assert.Equal("USD", purchase.OriginalCurrencyCode); Assert.Equal(10m, purchase.OriginalAmount); Assert.Equal(5200m, purchase.AmountCrc); },
+            payment => Assert.Equal(CardOperationKind.Payment, payment.Operation),
+            interest => Assert.Equal(CardOperationKind.Interest, interest.Operation),
+            charge => Assert.Equal(CardOperationKind.Charge, charge.Operation));
+    }
+
+    [Fact]
+    public void Keeps_usd_card_movement_without_crc_equivalent_for_daily_rate_resolution()
+    {
+        var csv = "Date,Description,Amount,Currency\n2026-07-01,Compra de prueba,10.00,USD";
+
+        var movement = Assert.Single(new CardStatementParser().ParseCsv(csv));
+        Assert.Null(movement.AmountCrc);
+    }
+
+    [Fact]
+    public void Detects_and_parses_bac_card_payment_summary_without_cardholder_data()
+    {
+        var csv = "Product,Name,Date,Minimum payment/due date,Minimum payment/ Local Amount,Minimum Payment / Dollars Amount,Cash payment/Due date,Cash payment/ Local amount,Cash payment / Dollar amount\nCard product,Ignored,2026-07-01,2026-07-10,0,0,2026-07-15,2000,0";
+
+        var detection = new ImportTemplateDetector().Detect(Encoding.UTF8.GetBytes(csv));
+        var movement = Assert.Single(new CardStatementParser().ParseCsv(csv));
+
+        Assert.Equal(ImportTemplates.BacCreditCsvV1, detection.Template);
+        Assert.Equal(CardOperationKind.Payment, movement.Operation);
+        Assert.Equal("Pago de tarjeta", movement.Description);
+        Assert.Equal(2000m, movement.AmountCrc);
+    }
+
+    [Fact]
+    public async Task Persists_card_operation_and_currency_amounts()
+    {
+        await using var db = new BancosDbContext(new DbContextOptionsBuilder<BancosDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+        var auxiliary = new AccountAuxiliary { Name = "Fixture card", AccountId = Guid.NewGuid(), OwnerId = Guid.NewGuid() };
+        var path = Path.GetTempFileName();
+        var import = new Import { FileName = "card.csv", TemporaryPath = path, ContentHash = "card-fixture-hash", AccountAuxiliaryId = auxiliary.Id, Template = ImportTemplates.BacCreditCsvV1 };
+        db.AccountAuxiliaries.Add(auxiliary); db.Imports.Add(import); await db.SaveChangesAsync();
+        var job = new ImportJobs(db, new ImportTemplateDetector(), new BcrDebitCsvParser(), new BacCreditFinancingXlsParser(), new CoopealianzaLoanPdfParser(), new ClassificationService(db), NullLogger<ImportJobs>.Instance);
+        try
+        {
+            await File.WriteAllTextAsync(path, "Date,Description,Operation,Reference,Amount,Currency,Amount CRC\n2026-07-01,Compra de prueba,Compra,REF-1,10.00,USD,5200.00");
+            await job.ProcessAsync(import.Id, null);
+
+            var transaction = Assert.Single(await db.Transactions.ToListAsync());
+            Assert.Equal(TransactionOperationType.CardPurchase, transaction.OperationType);
+            Assert.Equal("USD", transaction.OriginalCurrencyCode);
+            Assert.Equal(10m, transaction.OriginalAmount);
+            Assert.Equal(5200m, transaction.AmountCrc);
+        }
+        finally { if (File.Exists(path)) File.Delete(path); }
+    }
+
+    [Fact]
     public void Detects_bcr_debit_csv_from_content_not_filename()
     {
         var content = "oficina;fechaMovimiento;numeroDocumento;debito;credito;descripcion\n01;18/07/2026;ref-1;10,00;;Movimiento de prueba";

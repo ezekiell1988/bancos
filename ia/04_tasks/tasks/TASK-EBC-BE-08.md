@@ -1,6 +1,6 @@
 # TASK-EBC-BE-08 — Revisión de archivos dentro de ZIP
 
-**Estado:** Lista
+**Estado:** En revisión
 **Autor:** Ezequiel Baltodano Cubillo `<pendiente>`
 **Rama:** `dev`
 **Fecha inicio:** 2026-07-18 15:41 CR
@@ -100,6 +100,8 @@ Revertir contratos y UI de ZIP; los temporales por entrada se eliminan si ocurre
 * [ ] Progreso/documentación actualizado
 
 ## Notas / contexto adicional
+
+* Pendiente de revisión: ZIP seguro implementado: recorre entradas permitidas, ignora directorios y metadatos de macOS, limita tamaño y crea importaciones individuales por entrada.
 
 * Aprobada por Ezequiel Baltodano Cubillo el 2026-07-18 15:41 CR.
 

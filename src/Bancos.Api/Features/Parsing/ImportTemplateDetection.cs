@@ -35,7 +35,7 @@ public sealed class ImportTemplateDetector
         var matches = new List<(string Template, string[] Evidence)>();
         if (contentKind == "csv" && ContainsAll(normalized, ";", "oficina", "fechamovimiento", "numerodocumento", "debito", "credito", "descripcion"))
             matches.Add((ImportTemplates.BcrDebitCsvV1, ["delimitador ;", "encabezados de movimientos BCR"]));
-        if (contentKind == "csv" && ContainsAll(normalized, ",", "product", "name", "date") && (normalized.Contains("pago minimo") || normalized.Contains("pago contado")))
+        if (contentKind == "csv" && ContainsAll(normalized, ",", "product", "name", "date") && (normalized.Contains("pago minimo") || normalized.Contains("pago contado") || (normalized.Contains("minimum payment") && normalized.Contains("cash payment"))))
             matches.Add((ImportTemplates.BacCreditCsvV1, ["encabezados BAC", "campos de pago"]));
         if (contentKind == "html" && ContainsAll(normalized, "banco de costa rica", "movimientos por rango de fechas"))
             matches.Add((ImportTemplates.BcrDebitHtmlXlsV1, ["Banco de Costa Rica", "Movimientos por rango de fechas"]));
