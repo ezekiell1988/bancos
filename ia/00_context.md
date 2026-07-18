@@ -27,7 +27,7 @@
 
 * Datos financieros y credenciales son sensibles: nunca copiarlos a `/ia`, logs o prompts de IA.
 * La moneda funcional es CRC. USD conserva importe original, importe convertido y tipo de cambio diario único.
-* Solo pasivos USD generan diferencial cambiario en alcance inicial.
+* Activos y pasivos USD generan diferencial cambiario en alcance inicial.
 * Archivos importados se descartan después de extracción exitosa; persisten datos estructurados y huellas de importación.
 * No hay autenticación local. Azure exige una tarea de seguridad aprobada antes de publicar.
 

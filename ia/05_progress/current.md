@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-18 CR (TASK-EBC-BE-03 completada)
+> **Última actualización:** 2026-07-18 CR (TASK-EBC-FE-01 completada)
 
 ## En curso
 
@@ -21,6 +21,16 @@
 * Aprobar y ejecutar `TASK-EZ-BE-01` mediante `iaWorkflow`.
 
 ## Completado en sesiones recientes
+
+* **2026-07-18** — TASK-EBC-FE-01 cerrada: Dashboard Angular standalone minimalista por features para importaciones y revisión, servido por la API, con proxy HTTPS y arranque integrado en modo watch. — EBC
+
+* **2026-07-18** — TASK-EBC-BE-06 cerrada: Implementada y validada clasificación determinística de movimientos: coincidencia exacta aprobada, reglas por patrón, categoría General pendiente de revisión y endpoints mínimos de categorías, reglas y revisión. — EBC
+
+* **2026-07-18** — TASK-EBC-BE-05 cerrada: Implementado extractor PDF Coopealianza con validación de saldo y composición de pagos, persistencia idempotente de estados y pagos, migración SQL y pruebas con fixture PDF anonimizado. — EBC
+
+* **2026-07-18** — TASK-EBC-DOC-01 cerrada: ADR-02 y 00_context.md actualizados para que activos y pasivos USD generen diferencial cambiario. — EBC
+
+* **2026-07-18** — TASK-EBC-BE-04 cerrada: Implementado el lector BAC de financiamientos XLS binario con persistencia idempotente por auxiliar. — EBC
 
 * **2026-07-18** — TASK-EBC-BE-03 cerrada: Se agregaron endpoints mínimos de propietarios, cuentas y auxiliares; el upload BCR ahora agenda mediante Hangfire y el job es idempotente tras completar. Se eliminó la precisión decimal global para usar los valores predeterminados de EF y se añadió la migración correspondiente. — EBC
 
