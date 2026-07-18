@@ -1,6 +1,6 @@
 # TASK-EBC-QA-01 — Revisión final colaborativa de funcionalidad
 
-**Estado:** Borrador
+**Estado:** Lista
 **Autor:** Ezequiel Baltodano Cubillo `<pendiente>`
 **Rama:** `main`
 **Fecha inicio:** 2026-07-18 15:07 CR
@@ -8,7 +8,7 @@
 **Área:** QA
 **Prioridad:** media
 **Riesgo:** medio
-**Aprobación:** pendiente
+**Aprobación:** aprobada
 
 ---
 
@@ -92,6 +92,8 @@ No aplica; la tarea es de revisión.
 * [ ] Progreso/documentación actualizado
 
 ## Notas / contexto adicional
+
+* Aprobada por Ezequiel Baltodano Cubillo el 2026-07-18 15:09 CR.
 
 Requiere participación del usuario para confirmar UX y comportamiento.
 
