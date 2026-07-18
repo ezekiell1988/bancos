@@ -16,6 +16,7 @@ public static class ImportsModule
     public static IServiceCollection AddImportsModule(this IServiceCollection services)
     {
         services.AddScoped<ImportJobs>();
+        services.AddScoped<IImportJobScheduler, HangfireImportJobScheduler>();
         services.AddSingleton<ImportTemplateDetector>();
         services.AddSingleton<BcrDebitCsvParser>();
         return services;
@@ -26,7 +27,7 @@ public static class ImportsModule
         group.MapPost("/upload", Upload).DisableAntiforgery();
         return app;
     }
-    private static async Task<Results<Created<ImportResponse>, ValidationProblem>> Upload(IFormFile file, Guid accountAuxiliaryId, BancosDbContext db, IBackgroundJobClient jobs, IOptions<StorageOptions> storage, CancellationToken ct)
+    private static async Task<Results<Created<ImportResponse>, ValidationProblem>> Upload(IFormFile file, Guid accountAuxiliaryId, BancosDbContext db, IImportJobScheduler scheduler, IOptions<StorageOptions> storage, CancellationToken ct)
     {
         if (file.Length == 0) return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["file"] = ["The file must not be empty."] });
         if (!await db.AccountAuxiliaries.AnyAsync(x => x.Id == accountAuxiliaryId, ct)) return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["accountAuxiliaryId"] = ["The account auxiliary was not found."] });
@@ -36,8 +37,13 @@ public static class ImportsModule
         if (await db.ImportFingerprints.AnyAsync(x => x.Hash == hash, ct)) { File.Delete(path); return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["file"] = ["An identical import already exists."] }); }
         var import = new Import { FileName = Path.GetFileName(file.FileName), TemporaryPath = path, ContentHash = hash, AccountAuxiliaryId = accountAuxiliaryId };
         db.Imports.Add(import); db.ImportFingerprints.Add(new ImportFingerprint { Hash = hash, ImportId = import.Id }); await db.SaveChangesAsync(ct);
-        jobs.Enqueue<ImportJobs>(x => x.ProcessAsync(import.Id, null!));
+        scheduler.Enqueue(import.Id);
         return TypedResults.Created($"/api/imports/{import.Id}", new ImportResponse(import.Id, import.Status));
     }
 }
 public sealed record ImportResponse(Guid Id, ImportStatus Status);
+public interface IImportJobScheduler { void Enqueue(Guid importId); }
+public sealed class HangfireImportJobScheduler(IBackgroundJobClient jobs) : IImportJobScheduler
+{
+    public void Enqueue(Guid importId) => jobs.Enqueue<ImportJobs>(x => x.ProcessAsync(importId, null!));
+}

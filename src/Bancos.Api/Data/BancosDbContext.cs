@@ -20,7 +20,6 @@ public sealed class BancosDbContext(DbContextOptions<BancosDbContext> options) :
         b.Entity<ReconciliationTransaction>().HasKey(x => new { x.ReconciliationId, x.TransactionId });
         b.Entity<ReconciliationTransaction>().HasOne(x => x.Reconciliation).WithMany(x => x.Transactions).HasForeignKey(x => x.ReconciliationId);
         b.Entity<ReconciliationTransaction>().HasOne(x => x.Transaction).WithMany().HasForeignKey(x => x.TransactionId);
-        foreach (var type in b.Model.GetEntityTypes()) foreach (var property in type.GetProperties().Where(x => x.ClrType == typeof(decimal))) { property.SetPrecision(18); property.SetScale(4); }
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken ct = default)
