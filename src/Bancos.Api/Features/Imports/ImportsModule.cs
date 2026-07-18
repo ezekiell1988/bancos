@@ -24,23 +24,69 @@ public static class ImportsModule
     public static IEndpointRouteBuilder MapImportsEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/imports").WithTags("Imports");
+        group.MapPost("/preview", Preview).DisableAntiforgery();
         group.MapPost("/upload", Upload).DisableAntiforgery();
         group.MapGet("/", List);
         group.MapGet("/{id:guid}", Get);
         return app;
     }
-    private static async Task<Results<Created<ImportResponse>, ValidationProblem>> Upload(IFormFile file, Guid accountAuxiliaryId, BancosDbContext db, IImportJobScheduler scheduler, IOptions<StorageOptions> storage, CancellationToken ct)
+    private static async Task<Ok<ImportPreviewResponse>> Preview(IFormFile file, BancosDbContext db, ImportTemplateDetector detector, CancellationToken ct)
     {
-        if (file.Length == 0) return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["file"] = ["The file must not be empty."] });
-        if (!await db.AccountAuxiliaries.AnyAsync(x => x.Id == accountAuxiliaryId, ct)) return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["accountAuxiliaryId"] = ["The account auxiliary was not found."] });
+        var detection = await Detect(file, detector, ct);
+        var plan = await ResolvePlan(detection.Template, db, ct);
+        return TypedResults.Ok(ToPreviewResponse(detection, plan));
+    }
+
+    private static async Task<Results<Created<ImportResponse>, ValidationProblem>> Upload(IFormFile file, string? template, BancosDbContext db, ImportTemplateDetector detector, IImportJobScheduler scheduler, IOptions<StorageOptions> storage, CancellationToken ct)
+    {
+        if (file.Length == 0) return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["file"] = ["El archivo no puede estar vacío."] });
+        var detection = await Detect(file, detector, ct);
+        var selectedTemplate = string.IsNullOrWhiteSpace(template) ? detection.Template : template;
+        var plan = await ResolvePlan(selectedTemplate, db, ct);
+        if (plan.Error is not null) return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["template"] = [plan.Error] });
+
         Directory.CreateDirectory(storage.Value.TemporaryPath); var path = Path.Combine(storage.Value.TemporaryPath, $"{Guid.NewGuid():N}.upload");
         await using (var destination = File.Create(path)) await file.CopyToAsync(destination, ct);
         string hash; await using (var input = File.OpenRead(path)) hash = Convert.ToHexString(await SHA256.HashDataAsync(input, ct));
         if (await db.ImportFingerprints.AnyAsync(x => x.Hash == hash, ct)) { File.Delete(path); return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["file"] = ["An identical import already exists."] }); }
-        var import = new Import { FileName = Path.GetFileName(file.FileName), TemporaryPath = path, ContentHash = hash, AccountAuxiliaryId = accountAuxiliaryId };
+        var import = new Import { FileName = Path.GetFileName(file.FileName), TemporaryPath = path, ContentHash = hash, AccountAuxiliaryId = plan.AccountAuxiliaryId!.Value, Template = selectedTemplate };
         db.Imports.Add(import); db.ImportFingerprints.Add(new ImportFingerprint { Hash = hash, ImportId = import.Id }); await db.SaveChangesAsync(ct);
         scheduler.Enqueue(import.Id);
         return TypedResults.Created($"/api/imports/{import.Id}", new ImportResponse(import.Id, import.Status));
+    }
+
+    private static async Task<ImportTemplateDetection> Detect(IFormFile file, ImportTemplateDetector detector, CancellationToken ct)
+    {
+        await using var input = file.OpenReadStream();
+        using var content = new MemoryStream();
+        await input.CopyToAsync(content, ct);
+        return detector.Detect(content.ToArray());
+    }
+
+    private static async Task<ImportPlan> ResolvePlan(string template, BancosDbContext db, CancellationToken ct)
+    {
+        var metadata = ImportReviewTemplates.Get(template);
+        if (metadata is null) return new(null, "No pudimos identificar el tipo de archivo. Selecciona uno de los tipos disponibles.");
+        if (!metadata.IsEnabled) return new(null, $"Identificamos {metadata.Label}, pero su extractor todavía no está disponible.");
+
+        var candidates = await db.AccountAuxiliaries.AsNoTracking()
+            .Where(x => x.Account!.Kind == metadata.AccountKind)
+            .Select(x => x.Id)
+            .Take(2)
+            .ToListAsync(ct);
+        return candidates.Count switch
+        {
+            1 => new(candidates[0], null),
+            0 => new(null, "No existe un auxiliar compatible para este tipo de archivo."),
+            _ => new(null, "Hay más de un auxiliar compatible; se requiere una selección adicional.")
+        };
+    }
+
+    private static ImportPreviewResponse ToPreviewResponse(ImportTemplateDetection detection, ImportPlan plan)
+    {
+        var metadata = ImportReviewTemplates.Get(detection.Template);
+        var status = plan.Error is null ? "ready" : metadata is null ? "needs-type" : "unsupported";
+        return new ImportPreviewResponse(detection.Template, metadata?.Label ?? "Tipo sin identificar", status, plan.Error);
     }
 
     private static async Task<Ok<List<ImportDetailResponse>>> List(BancosDbContext db, CancellationToken ct) =>
@@ -59,6 +105,25 @@ public static class ImportsModule
 }
 public sealed record ImportResponse(Guid Id, ImportStatus Status);
 public sealed record ImportDetailResponse(Guid Id, Guid AccountAuxiliaryId, string FileName, ImportStatus Status, string? Template, string? FailureReason, DateTime? ProcessedUtc);
+public sealed record ImportPreviewResponse(string Template, string Label, string Status, string? Message);
+internal sealed record ImportPlan(Guid? AccountAuxiliaryId, string? Error);
+
+internal sealed record ImportReviewTemplate(string Template, string Label, AccountKind AccountKind, bool IsEnabled);
+internal static class ImportReviewTemplates
+{
+    private static readonly IReadOnlyDictionary<string, ImportReviewTemplate> Values = new Dictionary<string, ImportReviewTemplate>
+    {
+        [ImportTemplates.BcrDebitCsvV1] = new(ImportTemplates.BcrDebitCsvV1, "Movimientos de cuenta", AccountKind.Asset, true),
+        [ImportTemplates.BacCreditFinancingXlsV1] = new(ImportTemplates.BacCreditFinancingXlsV1, "Financiamientos", AccountKind.Liability, true),
+        [ImportTemplates.CoopealianzaLoanPdfV1] = new(ImportTemplates.CoopealianzaLoanPdfV1, "Estado de préstamo", AccountKind.Liability, true),
+        [ImportTemplates.BacCreditCsvV1] = new(ImportTemplates.BacCreditCsvV1, "Estado de tarjeta", AccountKind.Liability, false),
+        [ImportTemplates.BcrDebitHtmlXlsV1] = new(ImportTemplates.BcrDebitHtmlXlsV1, "Movimientos de cuenta", AccountKind.Asset, false),
+        [ImportTemplates.BacCreditOnlinePdfV1] = new(ImportTemplates.BacCreditOnlinePdfV1, "Estado de tarjeta", AccountKind.Liability, false)
+    };
+
+    public static ImportReviewTemplate? Get(string template) => Values.GetValueOrDefault(template);
+    public static IReadOnlyList<ImportReviewTemplate> Enabled { get; } = Values.Values.Where(x => x.IsEnabled).ToArray();
+}
 public interface IImportJobScheduler { void Enqueue(Guid importId); }
 public sealed class HangfireImportJobScheduler(IBackgroundJobClient jobs) : IImportJobScheduler
 {

@@ -12,6 +12,15 @@
 .dropzone span { color: var(--color-text-muted); font-weight: 400; }
 
 .queue { margin: 0; padding: 0; list-style: none; }
-.queue li { display: flex; justify-content: space-between; padding: .5rem 0; border-bottom: 1px solid var(--color-border-subtle); }
+.queue li { display: flex; min-width: 0; justify-content: space-between; gap: 1rem; padding: .75rem 0; border-bottom: 1px solid var(--color-border-subtle); }
+.queue li > div { display: grid; min-width: 0; gap: .35rem; }
+.queue strong, .queue small { overflow-wrap: anywhere; }
 .queue button { padding: .2rem .45rem; background: var(--color-text-muted); }
-.empty { margin: 0; color: var(--color-warning); }
+.status { display: inline-flex; inline-size: fit-content; padding: .2rem .45rem; border-radius: var(--radius-md); background: var(--color-brand-soft); color: var(--color-brand-dark); font-size: .85rem; font-weight: 700; }
+.status.needs-type { background: var(--color-warning); color: var(--color-text); }
+.status.unsupported { background: var(--color-danger); color: var(--color-surface-raised); }
+.queue select { max-inline-size: 100%; }
+
+@media (max-width: 480px) {
+  .queue li { align-items: start; flex-direction: column; }
+}

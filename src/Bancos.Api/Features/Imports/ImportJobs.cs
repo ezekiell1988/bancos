@@ -22,11 +22,12 @@ public sealed class ImportJobs(BancosDbContext db, ImportTemplateDetector detect
         try
         {
             WriteStage(context, "Detecting template from content.");
-            var detection = detector.Detect(await File.ReadAllBytesAsync(import.TemporaryPath));
-            if (!detection.IsKnown) throw new InvalidDataException("No unique documented template matched this file.");
-            import.Template = detection.Template;
-            WriteStage(context, "Template detected: {0}", detection.Template);
-            if (detection.Template == ImportTemplates.BacCreditFinancingXlsV1)
+            var detectedTemplate = detector.Detect(await File.ReadAllBytesAsync(import.TemporaryPath)).Template;
+            var template = import.Template ?? detectedTemplate;
+            if (ImportReviewTemplates.Get(template) is not { IsEnabled: true }) throw new InvalidDataException("No hay un extractor habilitado para este tipo de archivo.");
+            import.Template = template;
+            WriteStage(context, "Template detected: {0}", template);
+            if (template == ImportTemplates.BacCreditFinancingXlsV1)
             {
                 WriteStage(context, "Extracting and validating BAC credit financings.");
                 var financings = financingParser.Parse(await File.ReadAllBytesAsync(import.TemporaryPath));
@@ -39,7 +40,7 @@ public sealed class ImportJobs(BancosDbContext db, ImportTemplateDetector detect
                 }
                 WriteStage(context, "Validated {0} financings and persisted the new fingerprints.", financings.Count);
             }
-            else if (detection.Template == ImportTemplates.CoopealianzaLoanPdfV1)
+            else if (template == ImportTemplates.CoopealianzaLoanPdfV1)
             {
                 WriteStage(context, "Extracting and validating Coopealianza loan payments.");
                 var loan = loanParser.Parse(await File.ReadAllBytesAsync(import.TemporaryPath));
@@ -54,7 +55,7 @@ public sealed class ImportJobs(BancosDbContext db, ImportTemplateDetector detect
                 }
                 WriteStage(context, "Validated balance and {0} loan payments; persisted new fingerprints.", loan.Payments.Count);
             }
-            else if (detection.Template == ImportTemplates.BcrDebitCsvV1)
+            else if (template == ImportTemplates.BcrDebitCsvV1)
             {
                 WriteStage(context, "Extracting and validating BCR debit movements.");
                 var movements = bcrParser.Parse(await File.ReadAllTextAsync(import.TemporaryPath));
@@ -69,7 +70,7 @@ public sealed class ImportJobs(BancosDbContext db, ImportTemplateDetector detect
                 }
                 WriteStage(context, "Validated {0} movements and persisted the new fingerprints.", movements.Count);
             }
-            else throw new InvalidDataException($"Template '{detection.Template}' is recognized but its extractor is not enabled yet.");
+            else throw new InvalidDataException($"El extractor para '{template}' no está disponible.");
             import.Status = ImportStatus.Completed; import.ProcessedUtc = DateTime.UtcNow; await db.SaveChangesAsync(); WriteStage(context, "Import completed.");
         }
         catch (Exception exception) { import.Status = ImportStatus.Failed; import.FailureReason = exception.Message; await db.SaveChangesAsync(); throw; }

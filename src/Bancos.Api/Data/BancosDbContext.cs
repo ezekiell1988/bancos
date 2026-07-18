@@ -44,8 +44,8 @@ public sealed class BancosDbContext(DbContextOptions<BancosDbContext> options) :
             new Account { Id = Guid.Parse("00000000-0000-0000-0000-000000000105"), Code = "5", Name = "Gasto", Kind = AccountKind.Expense, CreatedUtc = created },
             new Account { Id = Guid.Parse("00000000-0000-0000-0000-000000000106"), Code = "6", Name = "Control", Kind = AccountKind.Control, CreatedUtc = created });
         b.Entity<AccountAuxiliary>().HasData(
-            new AccountAuxiliary { Id = Guid.Parse("00000000-0000-0000-0000-000000000201"), Name = "Cuenta transaccional CRC", AccountId = assetId, OwnerId = ownerId, CreatedUtc = created },
-            new AccountAuxiliary { Id = Guid.Parse("00000000-0000-0000-0000-000000000202"), Name = "Financiamientos", AccountId = liabilityId, OwnerId = ownerId, CreatedUtc = created });
+            new AccountAuxiliary { Id = Guid.Parse("00000000-0000-0000-0000-000000000201"), Name = "Cuenta bancaria", AccountId = assetId, OwnerId = ownerId, CreatedUtc = created },
+            new AccountAuxiliary { Id = Guid.Parse("00000000-0000-0000-0000-000000000202"), Name = "Créditos y financiamientos", AccountId = liabilityId, OwnerId = ownerId, CreatedUtc = created });
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken ct = default)
