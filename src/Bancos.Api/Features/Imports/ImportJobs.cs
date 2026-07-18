@@ -13,6 +13,7 @@ public sealed class ImportJobs(BancosDbContext db, ImportTemplateDetector detect
     public async Task ProcessAsync(Guid importId, PerformContext? context)
     {
         var import = await db.Imports.SingleOrDefaultAsync(x => x.Id == importId) ?? throw new InvalidOperationException("Import was not found.");
+        if (import.Status == ImportStatus.Completed) return;
         import.Status = ImportStatus.Processing; await db.SaveChangesAsync(); WriteStage(context, "Starting import."); logger.LogInformation("Processing import {ImportId}", importId);
         try
         {

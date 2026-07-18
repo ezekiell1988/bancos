@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-18 CR (TASK-EBC-INF-02 completada)
+> **Última actualización:** 2026-07-18 CR (TASK-EBC-BE-03 completada)
 
 ## En curso
 
@@ -21,6 +21,8 @@
 * Aprobar y ejecutar `TASK-EZ-BE-01` mediante `iaWorkflow`.
 
 ## Completado en sesiones recientes
+
+* **2026-07-18** — TASK-EBC-BE-03 cerrada: Se agregaron endpoints mínimos de propietarios, cuentas y auxiliares; el upload BCR ahora agenda mediante Hangfire y el job es idempotente tras completar. Se eliminó la precisión decimal global para usar los valores predeterminados de EF y se añadió la migración correspondiente. — EBC
 
 * **2026-07-18** — TASK-EBC-INF-02 cerrada: Aplicada y verificada la migración de importaciones; el workflow de despliegue quedó deshabilitado y documentado hasta definir el contenedor. Se preparó la publicación de los cambios del proyecto. — EBC
 
