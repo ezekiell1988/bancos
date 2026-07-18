@@ -19,8 +19,9 @@ export class ImportsApi {
     return this.http.post<ImportPreviewBatch>('/api/imports/preview', payload);
   }
 
-  upload(file: File, template?: string) {
+  upload(file: File, entryPath: string, template?: string) {
     const payload = new FormData();
+    payload.set('entryPath', entryPath);
     if (template) payload.set('template', template);
     payload.set('file', file);
     return this.http.post<ImportItem>('/api/imports/upload', payload);
