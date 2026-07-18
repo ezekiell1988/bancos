@@ -1,0 +1,10 @@
+{
+  "servers": {
+    "dbQuery": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["${workspaceFolder}/.mcp/db-query/server.mjs", "--project-root", "${workspaceFolder}"],
+      "dev": { "watch": ".mcp/db-query/**/*.mjs", "debug": { "type": "node" } }
+    }
+  }
+}

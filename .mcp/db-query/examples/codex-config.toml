@@ -1,0 +1,8 @@
+[mcp_servers.db_query]
+command = "node"
+args = [
+  "/ruta/al/proyecto/.mcp/db-query/server.mjs",
+  "--project-root",
+  "/ruta/al/proyecto"
+]
+startup_timeout_sec = 30

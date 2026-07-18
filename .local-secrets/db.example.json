@@ -1,0 +1,8 @@
+{
+  "Server": "your-server,1433",
+  "Database": "voicebot",
+  "User": "readonly_user",
+  "Password": "DO_NOT_COMMIT_REAL_PASSWORD",
+  "Options": "-No",
+  "Note": "Usar un login SQL con permisos de solo lectura (db_datareader). Nunca el usuario de producción."
+}

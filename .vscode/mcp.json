@@ -1,0 +1,30 @@
+{
+  "servers": {
+    "iaWorkflow": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "${workspaceFolder}/.mcp/ia-workflow/server.mjs",
+        "--project-root",
+        "${workspaceFolder}"
+      ],
+      "dev": {
+        "watch": ".mcp/ia-workflow/**/*.mjs",
+        "debug": { "type": "node" }
+      }
+    },
+    "dbQuery": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "${workspaceFolder}/.mcp/db-query/server.mjs",
+        "--project-root",
+        "${workspaceFolder}"
+      ],
+      "dev": {
+        "watch": ".mcp/db-query/**/*.mjs",
+        "debug": { "type": "node" }
+      }
+    }
+  }
+}

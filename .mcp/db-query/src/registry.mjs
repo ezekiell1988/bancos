@@ -1,0 +1,6 @@
+import { readdirSync } from "node:fs";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
+export function listToolFiles(dir) { return readdirSync(dir).filter((file) => file.endsWith(".mjs") && !file.startsWith("_")).sort(); }
+export async function loadTools(dir) { const tools = []; for (const file of listToolFiles(dir)) { const tool = (await import(pathToFileURL(path.join(dir, file)).href)).default; validate(tool, path.basename(file, ".mjs"), file); tools.push(tool); } return tools.sort((a, b) => (a.order ?? 100) - (b.order ?? 100) || a.name.localeCompare(b.name)); }
+function validate(tool, expected, file) { const fail = (message) => { throw new Error(`tools/${file}: ${message}`); }; if (!tool || typeof tool !== "object") fail("export default requerido"); if (tool.name !== expected) fail(`name debe ser ${expected}`); if (!/^[a-z][a-z0-9_]*$/.test(tool.name)) fail("name debe ser snake_case"); if (!tool.description?.trim()) fail("description requerida"); if (tool.inputSchema?.type !== "object" || tool.inputSchema.additionalProperties !== false) fail("schema object con additionalProperties:false requerido"); if (typeof tool.handler !== "function") fail("handler requerido"); if (tool.format && !["json", "toon"].includes(tool.format)) fail("format inválido"); if (typeof tool.smoke !== "function") fail("smoke co-ubicado requerido"); }

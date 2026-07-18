@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "iaWorkflow": {
+      "command": "node",
+      "args": [
+        ".mcp/ia-workflow/server.mjs",
+        "--project-root",
+        "."
+      ]
+    },
+    "dbQuery": {
+      "command": "node",
+      "args": [
+        ".mcp/db-query/server.mjs",
+        "--project-root",
+        "."
+      ]
+    }
+  }
+}

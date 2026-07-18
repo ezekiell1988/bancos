@@ -1,0 +1,17 @@
+{
+  "servers": {
+    "iaWorkflow": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "${workspaceFolder}/.mcp/ia-workflow/server.mjs",
+        "--project-root",
+        "${workspaceFolder}"
+      ],
+      "dev": {
+        "watch": ".mcp/ia-workflow/**/*.mjs",
+        "debug": { "type": "node" }
+      }
+    }
+  }
+}

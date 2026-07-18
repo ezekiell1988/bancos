@@ -1,0 +1,12 @@
+{
+  "apiKey": "YOUR_API_KEY_HERE",
+  "projectEndpoint": "https://{resource-name}.services.ai.azure.com/api/projects/{project-name}",
+  "azureOpenAIEndpoint": "https://{resource-name}.openai.azure.com/openai/v1",
+  "models": {
+    "realtimeTranslation": "gpt-realtime-translate",
+    "realtime": "gpt-realtime",
+    "imageGeneration": "gpt-image-2",
+    "videoGeneration": "sora-2",
+    "llm": "gpt-5.5"
+  }
+}

@@ -1,0 +1,8 @@
+[mcp_servers.ia_workflow]
+command = "node"
+args = [
+  "/ruta/al/proyecto/.mcp/ia-workflow/server.mjs",
+  "--project-root",
+  "/ruta/al/proyecto"
+]
+startup_timeout_sec = 30

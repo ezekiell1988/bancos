@@ -1,0 +1,12 @@
+.local-secrets/*.json
+!.local-secrets/*.example.json
+.local-output/
+src/input/
+node_modules/
+.agents/
+.codex/
+.claude/
+.DS_Store
+**/appsettings.Development.json
+.vscode/*
+!.vscode/mcp.json
