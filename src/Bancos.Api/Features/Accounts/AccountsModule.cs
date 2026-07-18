@@ -15,6 +15,7 @@ public static class AccountsModule
         group.MapPost("/owners", CreateOwner);
         group.MapPost("/", CreateAccount);
         group.MapPost("/auxiliaries", CreateAuxiliary);
+        group.MapGet("/auxiliaries", ListAuxiliaries);
         group.MapGet("/auxiliaries/{id:guid}", GetAuxiliary);
         return app;
     }
@@ -47,6 +48,12 @@ public static class AccountsModule
         var auxiliary = await db.AccountAuxiliaries.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id, ct);
         return auxiliary is null ? TypedResults.NotFound() : TypedResults.Ok(ToResponse(auxiliary));
     }
+
+    private static async Task<Ok<List<AccountAuxiliaryResponse>>> ListAuxiliaries(BancosDbContext db, CancellationToken ct) =>
+        TypedResults.Ok(await db.AccountAuxiliaries.AsNoTracking()
+            .OrderBy(x => x.Name)
+            .Select(x => new AccountAuxiliaryResponse(x.Id, x.Name, x.Iban, x.OwnerId, x.AccountId))
+            .ToListAsync(ct));
 
     private static AccountAuxiliaryResponse ToResponse(AccountAuxiliary value) => new(value.Id, value.Name, value.Iban, value.OwnerId, value.AccountId);
 }

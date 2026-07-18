@@ -15,7 +15,7 @@ public static class ImportsModule
 {
     public static IServiceCollection AddImportsModule(this IServiceCollection services)
     {
-        services.AddScoped<ImportJobs>();
+        services.AddScoped<ImportJobs>(); services.AddScoped<BacCreditFinancingXlsParser>(); services.AddScoped<CoopealianzaLoanPdfParser>();
         services.AddScoped<IImportJobScheduler, HangfireImportJobScheduler>();
         services.AddSingleton<ImportTemplateDetector>();
         services.AddSingleton<BcrDebitCsvParser>();
@@ -25,6 +25,8 @@ public static class ImportsModule
     {
         var group = app.MapGroup("/api/imports").WithTags("Imports");
         group.MapPost("/upload", Upload).DisableAntiforgery();
+        group.MapGet("/", List);
+        group.MapGet("/{id:guid}", Get);
         return app;
     }
     private static async Task<Results<Created<ImportResponse>, ValidationProblem>> Upload(IFormFile file, Guid accountAuxiliaryId, BancosDbContext db, IImportJobScheduler scheduler, IOptions<StorageOptions> storage, CancellationToken ct)
@@ -40,8 +42,23 @@ public static class ImportsModule
         scheduler.Enqueue(import.Id);
         return TypedResults.Created($"/api/imports/{import.Id}", new ImportResponse(import.Id, import.Status));
     }
+
+    private static async Task<Ok<List<ImportDetailResponse>>> List(BancosDbContext db, CancellationToken ct) =>
+        TypedResults.Ok(await db.Imports.AsNoTracking()
+            .OrderByDescending(x => x.CreatedUtc)
+            .Select(x => new ImportDetailResponse(x.Id, x.AccountAuxiliaryId, x.FileName, x.Status, x.Template, x.FailureReason, x.ProcessedUtc))
+            .ToListAsync(ct));
+
+    private static async Task<Results<Ok<ImportDetailResponse>, NotFound>> Get(Guid id, BancosDbContext db, CancellationToken ct)
+    {
+        var import = await db.Imports.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id, ct);
+        return import is null
+            ? TypedResults.NotFound()
+            : TypedResults.Ok(new ImportDetailResponse(import.Id, import.AccountAuxiliaryId, import.FileName, import.Status, import.Template, import.FailureReason, import.ProcessedUtc));
+    }
 }
 public sealed record ImportResponse(Guid Id, ImportStatus Status);
+public sealed record ImportDetailResponse(Guid Id, Guid AccountAuxiliaryId, string FileName, ImportStatus Status, string? Template, string? FailureReason, DateTime? ProcessedUtc);
 public interface IImportJobScheduler { void Enqueue(Guid importId); }
 public sealed class HangfireImportJobScheduler(IBackgroundJobClient jobs) : IImportJobScheduler
 {

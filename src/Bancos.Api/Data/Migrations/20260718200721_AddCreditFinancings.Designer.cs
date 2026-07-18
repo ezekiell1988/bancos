@@ -4,6 +4,7 @@ using Bancos.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Bancos.Api.Data.Migrations
 {
     [DbContext(typeof(BancosDbContext))]
-    partial class BancosDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260718200721_AddCreditFinancings")]
+    partial class AddCreditFinancings
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -506,86 +509,6 @@ namespace Bancos.Api.Data.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Bancos.Api.Domain.LoanPayment", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("Capital")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("CreatedUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("Interest")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("LateFee")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<Guid>("LoanStatementId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("OtherCharges")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateOnly>("PaymentDate")
-                        .HasColumnType("date");
-
-                    b.Property<string>("SourceFingerprint")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<decimal>("Total")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime?>("UpdatedUtc")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("LoanStatementId", "SourceFingerprint")
-                        .IsUnique();
-
-                    b.ToTable("LoanPayments");
-                });
-
-            modelBuilder.Entity("Bancos.Api.Domain.LoanStatement", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("AccountAuxiliaryId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("ImportId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("OutstandingBalance")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("SourceFingerprint")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime?>("UpdatedUtc")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ImportId");
-
-                    b.HasIndex("AccountAuxiliaryId", "SourceFingerprint")
-                        .IsUnique();
-
-                    b.ToTable("LoanStatements");
-                });
-
             modelBuilder.Entity("Bancos.Api.Domain.Owner", b =>
                 {
                     b.Property<Guid>("Id")
@@ -691,15 +614,6 @@ namespace Bancos.Api.Data.Migrations
                     b.Property<DateOnly>("BookingDate")
                         .HasColumnType("date");
 
-                    b.Property<Guid?>("CategoryId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("ClassificationSource")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ClassificationStatus")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("CreatedUtc")
                         .HasColumnType("datetime2");
 
@@ -732,8 +646,6 @@ namespace Bancos.Api.Data.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CategoryId");
 
                     b.HasIndex("ImportId");
 
@@ -830,36 +742,6 @@ namespace Bancos.Api.Data.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Bancos.Api.Domain.LoanPayment", b =>
-                {
-                    b.HasOne("Bancos.Api.Domain.LoanStatement", "LoanStatement")
-                        .WithMany("Payments")
-                        .HasForeignKey("LoanStatementId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("LoanStatement");
-                });
-
-            modelBuilder.Entity("Bancos.Api.Domain.LoanStatement", b =>
-                {
-                    b.HasOne("Bancos.Api.Domain.AccountAuxiliary", "AccountAuxiliary")
-                        .WithMany()
-                        .HasForeignKey("AccountAuxiliaryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Bancos.Api.Domain.Import", "Import")
-                        .WithMany()
-                        .HasForeignKey("ImportId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("AccountAuxiliary");
-
-                    b.Navigation("Import");
-                });
-
             modelBuilder.Entity("Bancos.Api.Domain.ReconciliationTransaction", b =>
                 {
                     b.HasOne("Bancos.Api.Domain.Reconciliation", "Reconciliation")
@@ -881,18 +763,11 @@ namespace Bancos.Api.Data.Migrations
 
             modelBuilder.Entity("Bancos.Api.Domain.Transaction", b =>
                 {
-                    b.HasOne("Bancos.Api.Domain.Category", "Category")
-                        .WithMany()
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("Bancos.Api.Domain.Import", "Import")
                         .WithMany()
                         .HasForeignKey("ImportId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Category");
 
                     b.Navigation("Import");
                 });
@@ -905,11 +780,6 @@ namespace Bancos.Api.Data.Migrations
             modelBuilder.Entity("Bancos.Api.Domain.JournalEntry", b =>
                 {
                     b.Navigation("Lines");
-                });
-
-            modelBuilder.Entity("Bancos.Api.Domain.LoanStatement", b =>
-                {
-                    b.Navigation("Payments");
                 });
 
             modelBuilder.Entity("Bancos.Api.Domain.Reconciliation", b =>

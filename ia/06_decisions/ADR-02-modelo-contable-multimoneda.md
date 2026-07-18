@@ -5,7 +5,7 @@
 
 ## Decisión
 
-Moneda funcional CRC. Movimientos guardan CRC, USD, moneda original y tipo diario único. Pasivos USD generan diferencial cambiario mensual regenerable; activos USD quedan fuera inicialmente.
+Moneda funcional CRC. Movimientos guardan CRC, USD, moneda original y tipo diario único. Activos y pasivos USD generan diferencial cambiario mensual regenerable.
 
 Clasificación usa regla exacta por cuenta/descripción, reglas por patrón, Azure AI, categoría previa y `General`. Manual alimenta reglas y tags.
 

@@ -4,6 +4,7 @@ using Bancos.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Bancos.Api.Data.Migrations
 {
     [DbContext(typeof(BancosDbContext))]
-    partial class BancosDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260718202002_AddTransactionClassification")]
+    partial class AddTransactionClassification
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -705,7 +708,7 @@ namespace Bancos.Api.Data.Migrations
 
                     b.Property<string>("DescriptionNormalized")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<decimal?>("ExchangeRate")
                         .HasColumnType("decimal(18,2)");
@@ -739,6 +742,8 @@ namespace Bancos.Api.Data.Migrations
 
                     b.HasIndex("AccountAuxiliaryId", "SourceFingerprint")
                         .IsUnique();
+
+                    b.HasIndex("AccountAuxiliaryId", "DescriptionNormalized", "ClassificationStatus");
 
                     b.ToTable("Transactions");
                 });
