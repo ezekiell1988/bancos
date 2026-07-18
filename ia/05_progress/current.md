@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-18 CR (TASK-EBC-FE-02 completada)
+> **Última actualización:** 2026-07-18 CR (TASK-EBC-FE-03 completada)
 
 ## En curso
 
@@ -21,6 +21,10 @@
 * Aprobar y ejecutar `TASK-EZ-BE-01` mediante `iaWorkflow`.
 
 ## Completado en sesiones recientes
+
+* **2026-07-18** — TASK-EBC-FE-03 cerrada: Se eliminó el límite fijo del formulario de importaciones y se habilitó ancho fluido dentro del contenedor. — EBC
+
+* **2026-07-18** — ISSUE-002 resuelto: El formulario ahora usa inline-size: 100% dentro del contenedor principal.
 
 * **2026-07-18** — TASK-EBC-FE-02 cerrada: Pantalla de importaciones renovada con arrastrar y soltar múltiples archivos, cola de carga y auxiliares disponibles. — EBC
 
