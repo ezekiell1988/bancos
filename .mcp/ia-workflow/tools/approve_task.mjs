@@ -10,6 +10,7 @@ export default {
     const preview = toolJson(await callTool("approve_task", { id: state.taskId }));
     check("approve_task genera preview", preview.applied === false);
     const applied = toolJson(await callTool("approve_task", { id: state.taskId, approver: "smoke", apply: true }));
-    check("approve_task mueve a Lista", applied.applied === true);
+    const current = toolJson(await callTool("ia_read_file", { path: "04_tasks/current.md", mode: "full" }));
+    check("approve_task mueve a Lista", applied.applied === true && current.text?.includes("## Lista") && current.text?.includes(state.taskId));
   },
 };

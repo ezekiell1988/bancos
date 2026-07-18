@@ -164,7 +164,7 @@ export function insertAfterHeading(text, heading, entry) {
 export function removeTaskRows(text, id) {
   return text
     .split(/\r?\n/)
-    .filter((line) => !line.includes(`| ${id} |`))
+    .filter((line) => !line.includes(id))
     .join("\n");
 }
 

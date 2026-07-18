@@ -23,6 +23,7 @@ El servidor expone una fachada publica para usuarios no tecnicos y mantiene prim
 | Accion publica | Proposito |
 |---|---|
 | `create_task` | Crear una TASK en `Borrador` con contrato completo. |
+| `migrate_task` | Normalizar una TASK `Borrador` creada con formato legado antes de aprobarla. |
 | `approve_task` | Validar campos obligatorios y mover a `Lista`. |
 | `work_task` | Trabajar solo una tarea `Lista`, con rechazo seguro para borradores o riesgo alto sin aprobacion. |
 | `finish_task` | Cerrar o mover a revisión; al completar sincroniza `03`, `04` y `05`. |
@@ -31,6 +32,7 @@ El servidor expone una fachada publica para usuarios no tecnicos y mantiene prim
 Reglas:
 
 * `create_task` crea tareas en `Borrador`.
+* `migrate_task` normaliza una tarea heredada en preview antes de aprobarla.
 * `approve_task` valida contrato y mueve a `Lista`.
 * `work_task` rechaza tareas en `Borrador`, `Bloqueada`, `En revision` o `Completada`.
 * Si `Riesgo: alto`, `work_task` exige `Aprobacion: aprobada`.

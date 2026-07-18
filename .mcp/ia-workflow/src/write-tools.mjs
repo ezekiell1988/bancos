@@ -55,6 +55,8 @@ async function buildOperationChanges(operation, input) {
       return buildCreateTaskChanges(input);
     case "approve_task":
       return buildApproveTaskChanges(input);
+    case "migrate_task":
+      return buildMigrateTaskChanges(input);
     case "finish_task":
       return buildFinishTaskChanges(input);
     case "close_task":
@@ -193,11 +195,11 @@ ${notes}
   const currentPath = "04_tasks/current.md";
   const currentText = await optionalText(currentPath);
   const row = status === "Borrador"
-    ? `| ${id} | ${area} | ${title} | ${priority} | ${risk} |`
-    : `| ${id} | ${area} | ${title} | ${priority} |`;
-  const updatedCurrent = insertTableRow(
+    ? `| \`${id}\` | ${title} | ${risk} | ${approval} |`
+    : `| \`${id}\` | ${area} | ${title} | ${priority} |`;
+  const updatedCurrent = insertCurrentTaskRow(
     updateLastUpdatedLine(currentText, `${todayCrDate()} CR (${id} creada)`),
-    currentHeadingForStatus(status),
+    status,
     row
   );
 
@@ -230,10 +232,10 @@ async function buildApproveTaskChanges(input) {
 
   const currentPath = "04_tasks/current.md";
   const currentText = await optionalText(currentPath);
-  const row = `| ${id} | ${contract.area} | ${contract.title} | ${contract.priority} |`;
-  const updatedCurrent = insertTableRow(
+  const row = `| \`${id}\` | ${contract.area} | ${contract.title} | ${contract.priority} |`;
+  const updatedCurrent = insertCurrentTaskRow(
     updateLastUpdatedLine(removeTaskRows(currentText, id), `${todayCrDate()} CR (${id} aprobada)`),
-    "## Próximas (Lista / ready to start — en orden de implementación)",
+    "Lista",
     row
   );
 
@@ -241,6 +243,124 @@ async function buildApproveTaskChanges(input) {
     { action: "update", path: taskPath, before: taskText, after: approvedTask },
     { action: "update", path: currentPath, before: currentText, after: updatedCurrent },
   ];
+}
+
+async function buildMigrateTaskChanges(input) {
+  const id = sanitizeTaskId(requireString(input.id, "id"));
+  const taskPath = `04_tasks/tasks/${id}.md`;
+  const taskText = await optionalText(taskPath);
+  if (!taskText) throw rpcError(-32602, `No existe la tarea activa ${id}`);
+
+  const legacy = inspectTaskContract(taskText);
+  if (!["Borrador", "Lista"].includes(legacy.status)) {
+    throw rpcError(-32602, `Solo se migran tareas en Borrador o Lista. Estado actual: ${legacy.status}`);
+  }
+
+  const expectedOutput = requireSpanishText(input.expectedOutput, "expectedOutput");
+  const area = requireEnum(input.area ?? readLegacyTaskField(taskText, "Área") ?? readLegacyTaskField(taskText, "Area") ?? legacy.area, "area", ["FE", "BE", "DB", "INF", "DOC", "MCP", "QA"]);
+  const priority = normalizePriority(input.priority ?? readLegacyTaskField(taskText, "Prioridad") ?? legacy.priority);
+  const risk = normalizeRisk(input.risk ?? readLegacyTaskField(taskText, "Riesgo") ?? legacy.risk);
+  const context = readTaskSection(taskText, "Contexto") || "Contexto pendiente de completar.";
+  const objective = readTaskSection(taskText, "Objetivo") || legacy.title;
+  const allowedScope = input.allowedScope ? readSpanishArrayOrDefault(input.allowedScope, "allowedScope", []) : firstNonEmptyList(readBulletSection(taskText, "Incluye"), readBulletSection(taskText, "Alcance permitido"));
+  const outOfScope = input.outOfScope ? readSpanishArrayOrDefault(input.outOfScope, "outOfScope", []) : firstNonEmptyList(readBulletSection(taskText, "No incluye"), readBulletSection(taskText, "Fuera de alcance"));
+  const acceptanceCriteria = input.acceptanceCriteria ? readSpanishArrayOrDefault(input.acceptanceCriteria, "acceptanceCriteria", []) : readBulletSection(taskText, "Criterios de aceptación");
+  const technicalPlan = input.technicalPlan ? readSpanishArrayOrDefault(input.technicalPlan, "technicalPlan", []) : readListSection(taskText, "Plan técnico");
+  const validation = input.validation ? readSpanishArrayOrDefault(input.validation, "validation", []) : readBulletSection(taskText, "Validación");
+  const rollback = input.rollback ? requireSpanishText(input.rollback, "rollback") : readTaskSection(taskText, "Rollback") || "Revertir los cambios de la tarea en control de versiones.";
+  const likelyFiles = readPlainArrayOrDefault(input.likelyFiles, ["pendiente de confirmar"]);
+  const dependencies = readPlainArrayOrDefault(input.dependencies, ["ninguna"]);
+  const notes = `Migrada al contrato canónico el ${currentCrTimestamp()}.`;
+
+  const migratedTask = `# ${id} — ${legacy.title}
+
+**Estado:** ${legacy.status}
+**Autor:** ${input.authorName ? String(input.authorName).trim() : "Ezequiel Baltodano Cubillo"}
+**Rama:** \`${input.branch ? String(input.branch).trim() : "main"}\`
+**Fecha inicio:** ${currentCrTimestamp()}
+**Fecha cierre:** —
+**Área:** ${area}
+**Prioridad:** ${priority}
+**Riesgo:** ${risk}
+**Aprobación:** ${legacy.approval}
+
+---
+
+## Título
+
+${legacy.title}
+
+## Contexto
+
+${context}
+
+## Objetivo
+
+${objective}
+
+## Alcance permitido
+
+${formatBullets(allowedScope, ["Pendiente de definir."])}
+
+## Fuera de alcance
+
+${formatBullets(outOfScope, ["Pendiente de definir."])}
+
+## Criterios de aceptación
+
+${formatChecklist(acceptanceCriteria, [expectedOutput])}
+
+## Riesgos
+
+${risk === "alto" ? "Riesgo alto: requiere aprobación explícita antes de implementar." : `Riesgo ${risk}.`}
+
+## Archivos afectados / probables
+
+${formatCodeBullets(likelyFiles)}
+
+## Plan técnico
+
+${formatNumberedList(technicalPlan, ["Completar el plan técnico."])}
+
+## Pasos
+
+${formatNumberedList(technicalPlan, ["Completar los pasos de ejecución."])}
+
+## Salida esperada
+
+${expectedOutput}
+
+## Validación
+
+${formatChecklist(validation, ["Validación pendiente de definir."])}
+
+## Rollback
+
+${rollback}
+
+## Dependencias
+
+${formatBullets(dependencies, ["ninguna"])}
+
+## Checklist
+
+* [ ] Alcance revisado
+* [ ] Riesgo revisado
+* [ ] Aprobación registrada si aplica
+* [ ] Implementación completa
+* [ ] Validación completa
+* [ ] Progreso/documentación actualizado
+
+## Notas / contexto adicional
+
+* ${notes}
+
+## Issues vinculados
+
+* ninguno
+`;
+
+  return [{ action: "update", path: taskPath, before: taskText, after: migratedTask }];
 }
 
 async function buildFinishTaskChanges(input) {
@@ -810,13 +930,40 @@ function normalizeTaskStatus(value) {
 
 function currentHeadingForStatus(status) {
   const map = {
-    Borrador: "## Borradores (requieren aprobación antes de implementar)",
-    Lista: "## Próximas (Lista / ready to start — en orden de implementación)",
+    Borrador: "## Borradores",
+    Lista: "## Lista",
     "En progreso": "## En progreso",
     "En revisión": "## En revisión",
   };
 
   return map[status] ?? "## Próximas (Lista / ready to start — en orden de implementación)";
+}
+
+function insertCurrentTaskRow(text, status, row) {
+  const heading = currentHeadingForStatus(status);
+  const header = status === "Borrador"
+    ? "| ID | Título | Riesgo | Aprobación |\n|---|---|---|---|"
+    : "| ID | Área | Título | Prioridad |\n|---|---|---|---|";
+  const lines = text.split(/\r?\n/);
+  const headingIndex = lines.findIndex((line) => line.trim() === heading);
+  if (headingIndex === -1) return ensureTrailingNewline(`${text.trimEnd()}\n\n${heading}\n\n${header}\n${row}`);
+
+  let sectionEnd = lines.findIndex((line, index) => index > headingIndex && /^##\s+/.test(line));
+  if (sectionEnd === -1) sectionEnd = lines.length;
+  const separatorIndex = lines.findIndex((line, index) => index > headingIndex && index < sectionEnd && /^\|\s*-+/.test(line.trim()));
+  if (separatorIndex !== -1) {
+    lines.splice(separatorIndex + 1, 0, row);
+    return lines.join("\n");
+  }
+
+  const emptyIndex = lines.findIndex((line, index) => index > headingIndex && index < sectionEnd && line.trim() === "Sin tareas.");
+  if (emptyIndex !== -1) {
+    lines.splice(emptyIndex, 1, header, row);
+    return lines.join("\n");
+  }
+
+  lines.splice(headingIndex + 1, 0, "", header, row);
+  return lines.join("\n");
 }
 
 function inspectTaskContract(taskText) {
@@ -843,6 +990,11 @@ function inspectTaskContract(taskText) {
 function readTaskField(text, label) {
   const escaped = escapeRegExp(label);
   return text.match(new RegExp(`^\\*\\*${escaped}:\\*\\*\\s*(.+)$`, "m"))?.[1]?.trim();
+}
+
+function readLegacyTaskField(text, label) {
+  const escaped = escapeRegExp(label);
+  return text.match(new RegExp(`^>\\s*${escaped}:\\s*(.+)$`, "m"))?.[1]?.trim();
 }
 
 function replaceTaskField(text, label, value) {
@@ -949,13 +1101,49 @@ function readBulletSection(text, heading) {
       break;
     }
 
-    const match = line.trim().match(/^\*\s+`?(.+?)`?$/);
+    const match = line.trim().match(/^\*\s+(.+)$/);
     if (match) {
       items.push(match[1]);
     }
   }
 
   return items;
+}
+
+function readTaskSection(text, heading) {
+  const escaped = escapeRegExp(heading);
+  const match = text.match(new RegExp(`^## ${escaped}\\s*\\n([\\s\\S]*?)(?=^##\\s|\\Z)`, "m"));
+  return match?.[1]?.trim() ?? "";
+}
+
+function readListSection(text, heading) {
+  return readTaskSection(text, heading)
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^\s*(?:\d+[.)]|[-*])\s+/, "").trim())
+    .filter(Boolean);
+}
+
+function formatBullets(items, fallback) {
+  const values = items.length > 0 ? items : fallback;
+  return values.map((item) => `* ${item}`).join("\n");
+}
+
+function formatCodeBullets(items) {
+  return items.map((item) => `* \`${item}\``).join("\n");
+}
+
+function formatChecklist(items, fallback) {
+  const values = items.length > 0 ? items : fallback;
+  return values.map((item) => `* [ ] ${item.replace(/^\[\s\]\s*/, "")}`).join("\n");
+}
+
+function formatNumberedList(items, fallback) {
+  const values = items.length > 0 ? items : fallback;
+  return values.map((item, index) => `${index + 1}. ${item}`).join("\n");
+}
+
+function firstNonEmptyList(...lists) {
+  return lists.find((items) => items.length > 0) ?? [];
 }
 
 async function applyChanges(changes) {
