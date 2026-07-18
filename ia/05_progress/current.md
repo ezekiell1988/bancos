@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-18 CR (TASK-EBC-FE-03 completada)
+> **Última actualización:** 2026-07-18 CR (TASK-EBC-DOC-03 completada)
 
 ## En curso
 
@@ -21,6 +21,14 @@
 * Aprobar y ejecutar `TASK-EZ-BE-01` mediante `iaWorkflow`.
 
 ## Completado en sesiones recientes
+
+* **2026-07-18** — TASK-EBC-DOC-03 cerrada: Se sincronizaron las skills canónicas desde .agents hacia .claude y .codex; el reporte final confirma 56 skills idénticas. — EBC
+
+* **2026-07-18** — TASK-EBC-DOC-02 cerrada: Se creó la skill angular-css-architecture con la convención de tokens globales, styleUrl por componente y validación responsive. — EBC
+
+* **2026-07-18** — TASK-EBC-FE-04 cerrada: Se crearon tokens CSS semánticos globales y se separaron los estilos de App e Imports mediante styleUrl. — EBC
+
+* **2026-07-18** — ISSUE-003 resuelto: Se definieron tokens semánticos en :root y se trasladaron los estilos de App e Imports a sus hojas CSS asociadas.
 
 * **2026-07-18** — TASK-EBC-FE-03 cerrada: Se eliminó el límite fijo del formulario de importaciones y se habilitó ancho fluido dentro del contenedor. — EBC
 
