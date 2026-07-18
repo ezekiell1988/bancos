@@ -1,6 +1,15 @@
 # 04 — Tareas activas
 
-> **Última actualización:** 2026-07-18 CR (TASK-EZ-BE-01 aprobada)
+> **Última actualización:** 2026-07-18 CR (TASK-EBC-INF-02 completada)
+
+
+
+
+
+
+
+
+
 
 ## En progreso
 
@@ -10,7 +19,6 @@ Sin tareas.
 
 | ID | Área | Título | Prioridad |
 |---|---|---|---|
-| `TASK-EZ-BE-01` | BE | Base .NET, MSSQL e importación regenerable | alta |
 
 ## Borradores
 

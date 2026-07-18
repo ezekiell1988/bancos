@@ -1,0 +1,25 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bancos.Api", "src/Bancos.Api/Bancos.Api.csproj", "{D84E6593-74B9-44C9-9E57-12A239AB6CE9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bancos.Api.Tests", "tests/Bancos.Api.Tests/Bancos.Api.Tests.csproj", "{6CE48733-5C8D-4C29-9654-E4C4AFBDFD6C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D84E6593-74B9-44C9-9E57-12A239AB6CE9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D84E6593-74B9-44C9-9E57-12A239AB6CE9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D84E6593-74B9-44C9-9E57-12A239AB6CE9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D84E6593-74B9-44C9-9E57-12A239AB6CE9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6CE48733-5C8D-4C29-9654-E4C4AFBDFD6C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6CE48733-5C8D-4C29-9654-E4C4AFBDFD6C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6CE48733-5C8D-4C29-9654-E4C4AFBDFD6C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6CE48733-5C8D-4C29-9654-E4C4AFBDFD6C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
+
