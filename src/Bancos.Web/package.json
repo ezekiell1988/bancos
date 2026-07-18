@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "start": "ng serve --proxy-config proxy.conf.json --ssl --ssl-cert certs/localhost.pem --ssl-key certs/localhost.key",
-    "start:full": "pwsh -ExecutionPolicy Bypass -File ./scripts/start-dev.ps1",
+    "start:full": "pwsh -ExecutionPolicy Bypass -File ../../.codex/start-dev.ps1",
     "build": "ng build && rm -rf ../Bancos.Api/wwwroot && mkdir -p ../Bancos.Api/wwwroot && cp -R dist/bancos-web/browser/. ../Bancos.Api/wwwroot/"
   },
   "dependencies": {
