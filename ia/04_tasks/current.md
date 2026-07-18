@@ -1,6 +1,8 @@
 # 04 — Tareas activas
 
-> **Última actualización:** 2026-07-18 CR (TASK-EBC-DOC-03 completada)
+> **Última actualización:** 2026-07-18 CR (TASK-EBC-BE-07 en revisión)
+
+
 
 
 
@@ -42,7 +44,6 @@ Sin tareas.
 
 | ID | Área | Título | Prioridad |
 |---|---|---|---|
-| `TASK-EBC-QA-01` | QA | Revisión final colaborativa de funcionalidad | media |
 
 ## Borradores
 
@@ -57,3 +58,5 @@ Sin tareas.
 ## En revisión
 
 Sin tareas.
+| TASK-EBC-QA-01 | QA | Revisión final colaborativa de funcionalidad | media |
+| TASK-EBC-BE-07 | BE | Pre-revisión automática de archivos importados | alta |
