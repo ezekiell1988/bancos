@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-18 CR (TASK-EBC-DB-03 completada)
+> **Última actualización:** 2026-07-18 CR (TASK-EBC-BE-21 completada)
 
 ## En curso
 
@@ -21,6 +21,8 @@
 * Aprobar y ejecutar `TASK-EZ-BE-01` mediante `iaWorkflow`.
 
 ## Completado en sesiones recientes
+
+* **2026-07-18** — TASK-EBC-BE-21 cerrada: Se soportaron de forma explícita las variantes restantes de movimientos de cuenta: los CSV BCR omiten únicamente el pie de resumen estructural y continúan rechazando dobles direcciones ambiguas; las hojas reconocen fechas contables y de transacción. Los jobs 5, 9 y 11 finalizaron correctamente. — EBC
 
 * **2026-07-18** — TASK-EBC-DB-03 cerrada: Se deshabilitaron los reintentos automáticos para ImportJobs mediante AutomaticRetry Attempts=0 y se aplicó la migración pendiente AddTransactionOperationType a dbbancos. — EBC
 

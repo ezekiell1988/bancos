@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-18 CR (TASK-EBC-BE-18 completada)
+> **Última actualización:** 2026-07-18 CR (TASK-EBC-BE-21 completada)
 
 
 
 ## Completado
+
+* **2026-07-18** — TASK-EBC-BE-21: Se soportaron de forma explícita las variantes restantes de movimientos de cuenta: los CSV BCR omiten únicamente el pie de resumen estructural y continúan rechazando dobles direcciones ambiguas; las hojas reconocen fechas contables y de transacción. Los jobs 5, 9 y 11 finalizaron correctamente. — EBC
 
 * **2026-07-18** — TASK-EBC-BE-18: Upload ahora vincula entryPath, entryIndex y template explícitamente desde multipart/form-data. La búsqueda de respaldo dejó de usar SingleOrDefault, eliminando el 500 incluso si un cliente antiguo omite entryIndex. — EBC
 

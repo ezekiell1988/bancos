@@ -36,7 +36,8 @@ public sealed partial class CoopealianzaLoanPdfParser
                 ParseAmount(match.Groups["total"].Value, "total")))
             .ToArray();
 
-        if (payments.Length == 0) throw new InvalidDataException("Coopealianza loan PDF does not contain payment rows.");
+        // Some valid statements only report the current balance. Persisting that snapshot is
+        // useful and does not invent a payment that was not present in the source document.
         foreach (var payment in payments)
         {
             var components = payment.Capital + payment.Interest + payment.LateFee + payment.OtherCharges;
@@ -52,9 +53,7 @@ public sealed partial class CoopealianzaLoanPdfParser
         ? result : throw new InvalidDataException($"Invalid Coopealianza payment date '{value}'.");
     private static decimal ParseAmount(string value, string field)
     {
-        var normalized = value.Replace("₡", string.Empty).Replace("CRC", string.Empty, StringComparison.OrdinalIgnoreCase).Trim();
-        if (decimal.TryParse(normalized, NumberStyles.Number | NumberStyles.AllowCurrencySymbol, CultureInfo.GetCultureInfo("es-CR"), out var result)
-            || decimal.TryParse(normalized, NumberStyles.Number | NumberStyles.AllowCurrencySymbol, CultureInfo.InvariantCulture, out result)) return result;
+        if (MoneyParser.TryParse(value, out var result)) return result;
         throw new InvalidDataException($"Invalid Coopealianza loan {field} '{value}'.");
     }
 
