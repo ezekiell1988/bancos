@@ -40,7 +40,18 @@ public sealed class BcrImportIntegrationTests : IClassFixture<BancosApiFactory>
         var db = scope.ServiceProvider.GetRequiredService<BancosDbContext>();
         Assert.Equal(2, await db.Transactions.CountAsync());
         Assert.Equal(ImportStatus.Completed, (await db.Imports.SingleAsync(x => x.Id == import.Id)).Status);
+        var progress = await db.ImportProgress.SingleAsync(x => x.ImportId == import.Id);
+        Assert.Equal(ImportStatus.Completed, progress.Status);
+        Assert.Equal(100, progress.Percent);
         Assert.Contains(await db.AuditLogs.ToListAsync(), log => log.EntityName == nameof(Import) && log.Action == nameof(EntityState.Modified));
+
+        var progressResponse = await client.GetAsync($"/api/imports/{import.Id}/progress");
+        progressResponse.EnsureSuccessStatusCode();
+        var snapshot = await progressResponse.Content.ReadFromJsonAsync<ImportProgressResponse>();
+        Assert.NotNull(snapshot);
+        Assert.Equal(import.Id, snapshot!.ImportId);
+        Assert.Equal(nameof(ImportStatus.Completed), snapshot.Status);
+        Assert.Equal(100, snapshot.Percent);
     }
 
     private static async Task<TResponse> CreateAsync<TRequest, TResponse>(HttpClient client, string path, TRequest request)

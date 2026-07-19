@@ -8,6 +8,7 @@ using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
 namespace Bancos.Api.Features.Imports;
@@ -18,6 +19,11 @@ public static class ImportsModule
     {
         services.AddScoped<ImportJobs>(); services.AddScoped<BacCreditFinancingXlsParser>(); services.AddScoped<AccountMovementSpreadsheetParser>(); services.AddScoped<CardStatementParser>(); services.AddScoped<CoopealianzaLoanPdfParser>();
         services.AddScoped<IImportJobScheduler, HangfireImportJobScheduler>(); services.AddScoped<ImportTemplatePatternService>();
+        services.AddOptions<ImportProgressOptions>().BindConfiguration(ImportProgressOptions.Section).ValidateDataAnnotations().ValidateOnStart();
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddSingleton<IImportProgressStore, EfImportProgressStore>();
+        services.AddSingleton<IImportProgressPublisher, SignalRImportProgressPublisher>();
+        services.AddScoped<IImportProgressReporter, ImportProgressReporter>();
         services.AddSingleton<ImportTemplateDetector>();
         services.AddSingleton<BcrDebitCsvParser>();
         return services;
@@ -29,6 +35,7 @@ public static class ImportsModule
         group.MapPost("/learn", Learn).DisableAntiforgery();
         group.MapPost("/upload", Upload).DisableAntiforgery();
         group.MapGet("/", List);
+        group.MapGet("/{id:guid}/progress", GetProgress);
         group.MapGet("/{id:guid}", Get);
         return app;
     }
@@ -72,7 +79,10 @@ public static class ImportsModule
         if (await db.ImportFingerprints.AnyAsync(x => x.Hash == hash, ct)) { File.Delete(path); return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["file"] = ["An identical import already exists."] }); }
         if (!string.IsNullOrWhiteSpace(template) && detection.Template == ImportTemplates.Unknown) await patterns.LearnAsync(source.Content, selectedTemplate, ct);
         var import = new Import { FileName = Path.GetFileName(source.Path), TemporaryPath = path, ContentHash = hash, AccountAuxiliaryId = plan.AccountAuxiliaryId!.Value, Template = selectedTemplate };
-        db.Imports.Add(import); db.ImportFingerprints.Add(new ImportFingerprint { Hash = hash, ImportId = import.Id }); await db.SaveChangesAsync(ct);
+        db.Imports.Add(import);
+        db.ImportProgress.Add(new ImportProgress { ImportId = import.Id, Attempt = 0, Stage = ImportProgressStages.Queued, Current = 0, Total = 0, Percent = 0, Status = ImportStatus.Queued, UpdatedUtc = DateTime.UtcNow });
+        db.ImportFingerprints.Add(new ImportFingerprint { Hash = hash, ImportId = import.Id });
+        await db.SaveChangesAsync(ct);
         scheduler.Enqueue(import.Id);
         return TypedResults.Created($"/api/imports/{import.Id}", new ImportResponse(import.Id, import.Status));
     }
@@ -119,7 +129,10 @@ public static class ImportsModule
     private static async Task<Ok<List<ImportDetailResponse>>> List(BancosDbContext db, CancellationToken ct) =>
         TypedResults.Ok(await db.Imports.AsNoTracking()
             .OrderByDescending(x => x.CreatedUtc)
-            .Select(x => new ImportDetailResponse(x.Id, x.AccountAuxiliaryId, x.FileName, x.Status, x.Template, x.FailureReason, x.ProcessedUtc))
+            .Select(x => new ImportDetailResponse(x.Id, x.AccountAuxiliaryId, x.FileName, x.Status, x.Template, x.FailureReason, x.ProcessedUtc,
+                db.ImportProgress.Where(progress => progress.ImportId == x.Id)
+                    .Select(progress => new ImportProgressResponse(progress.ImportId, progress.Attempt, progress.Stage, progress.Current, progress.Total, progress.Percent, progress.Status.ToString(), progress.UpdatedUtc))
+                    .SingleOrDefault()))
             .ToListAsync(ct));
 
     private static async Task<Results<Ok<ImportDetailResponse>, NotFound>> Get(Guid id, BancosDbContext db, CancellationToken ct)
@@ -127,11 +140,22 @@ public static class ImportsModule
         var import = await db.Imports.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id, ct);
         return import is null
             ? TypedResults.NotFound()
-            : TypedResults.Ok(new ImportDetailResponse(import.Id, import.AccountAuxiliaryId, import.FileName, import.Status, import.Template, import.FailureReason, import.ProcessedUtc));
+            : TypedResults.Ok(new ImportDetailResponse(import.Id, import.AccountAuxiliaryId, import.FileName, import.Status, import.Template, import.FailureReason, import.ProcessedUtc,
+                await db.ImportProgress.AsNoTracking().Where(x => x.ImportId == id)
+                    .Select(x => new ImportProgressResponse(x.ImportId, x.Attempt, x.Stage, x.Current, x.Total, x.Percent, x.Status.ToString(), x.UpdatedUtc))
+                    .SingleOrDefaultAsync(ct)));
+    }
+
+    private static async Task<Results<Ok<ImportProgressResponse>, NotFound>> GetProgress(Guid id, BancosDbContext db, CancellationToken ct)
+    {
+        var progress = await db.ImportProgress.AsNoTracking().Where(x => x.ImportId == id)
+            .Select(x => new ImportProgressResponse(x.ImportId, x.Attempt, x.Stage, x.Current, x.Total, x.Percent, x.Status.ToString(), x.UpdatedUtc))
+            .SingleOrDefaultAsync(ct);
+        return progress is null ? TypedResults.NotFound() : TypedResults.Ok(progress);
     }
 }
 public sealed record ImportResponse(Guid Id, ImportStatus Status);
-public sealed record ImportDetailResponse(Guid Id, Guid AccountAuxiliaryId, string FileName, ImportStatus Status, string? Template, string? FailureReason, DateTime? ProcessedUtc);
+public sealed record ImportDetailResponse(Guid Id, Guid AccountAuxiliaryId, string FileName, ImportStatus Status, string? Template, string? FailureReason, DateTime? ProcessedUtc, ImportProgressResponse? Progress);
 public sealed record ImportPreviewResponse(string Template, string Label, string Status, string? Message);
 public sealed record ImportPreviewEntryResponse(int EntryIndex, string Path, ImportPreviewResponse Preview);
 public sealed record ImportPreviewBatchResponse(IReadOnlyList<ImportPreviewEntryResponse> Entries);

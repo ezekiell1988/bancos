@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-18 CR (TASK-EBC-BE-21 completada)
+> **Última actualización:** 2026-07-18 CR (TASK-EBC-BE-22 completada)
 
 
 
 ## Completado
+
+* **2026-07-18** — TASK-EBC-BE-22: Progreso observable y sanitizado de importaciones implementado con persistencia independiente, Hangfire.Console, SignalR, snapshots REST y UI Angular. — EBC
 
 * **2026-07-18** — TASK-EBC-BE-21: Se soportaron de forma explícita las variantes restantes de movimientos de cuenta: los CSV BCR omiten únicamente el pie de resumen estructural y continúan rechazando dobles direcciones ambiguas; las hojas reconocen fechas contables y de transacción. Los jobs 5, 9 y 11 finalizaron correctamente. — EBC
 

@@ -1,6 +1,8 @@
 # 04 — Tareas activas
 
-> **Última actualización:** 2026-07-18 CR (TASK-EBC-BE-22 aprobada)
+> **Última actualización:** 2026-07-18 CR (TASK-EBC-BE-22 completada)
+
+
 
 
 
@@ -70,7 +72,6 @@ Sin tareas.
 
 | ID | Área | Título | Prioridad |
 |---|---|---|---|
-| `TASK-EBC-BE-22` | BE | Mostrar progreso en tiempo real de jobs de importación | alta |
 | `TASK-EBC-BE-19` | BE | Corregir fallos restantes de lectores de importación | alta |
 
 ## Borradores
