@@ -194,11 +194,37 @@ public sealed class ImportTemplateDetectorTests
         Assert.Equal(0m, movements[0].Credit);
     }
 
+    [Theory]
+    [InlineData("1,453.00", 1453)]
+    [InlineData("1.453,00", 1453)]
+    public void Parses_bcr_export_amounts_with_thousands_separators(string value, decimal expected)
+    {
+        var csv = $"oficina;fechaMovimiento;numeroDocumento;debito;credito;descripcion\n01;18/07/2026;ref-1;{value};;Movimiento de prueba";
+
+        var movement = Assert.Single(new BcrDebitCsvParser().Parse(csv));
+
+        Assert.Equal(expected, movement.Debit);
+    }
+
     [Fact]
     public void Rejects_bcr_movement_with_two_directions()
     {
         var csv = "oficina;fechaMovimiento;numeroDocumento;debito;credito;descripcion\n01;18/07/2026;ref-1;10,00;5,00;Movimiento de prueba";
+
         Assert.Throws<InvalidDataException>(() => new BcrDebitCsvParser().Parse(csv));
+    }
+
+    [Fact]
+    public void Ignores_only_the_anonymized_bcr_trailing_summary_signature()
+    {
+        var csv = "oficina;fechaMovimiento;numeroDocumento;debito;credito;descripcion;\n"
+            + "01;17/07/2026;ref-1;10,00;;Movimiento de prueba;90,00\n"
+            + "01;18/07/2026;resumen;10,00;5,00;;";
+
+        var movement = Assert.Single(new BcrDebitCsvParser().Parse(csv));
+
+        Assert.Equal(10m, movement.Debit);
+        Assert.Equal(0m, movement.Credit);
     }
 
     [Fact]
@@ -238,6 +264,23 @@ public sealed class ImportTemplateDetectorTests
         Assert.Equal("Movimiento anonimizado", movement.Description);
         Assert.Equal(10m, movement.Debit);
         Assert.Equal(0m, movement.Credit);
+    }
+
+    [Fact]
+    public void Parses_anonymized_account_html_with_accounting_date_headers()
+    {
+        var html = """
+            <html><body><table>
+              <tr><th>Fecha contable</th><th>Fecha transacción</th><th>Documento</th><th>Descripción</th><th>Débitos</th><th>Créditos</th></tr>
+              <tr><td>18/07/2026</td><td>17/07/2026</td><td>REF-1</td><td>Movimiento anonimizado</td><td></td><td>25,00</td></tr>
+            </table></body></html>
+            """;
+
+        var movement = Assert.Single(new AccountMovementSpreadsheetParser().Parse(Encoding.UTF8.GetBytes(html)));
+
+        Assert.Equal(new DateOnly(2026, 7, 18), movement.BookingDate);
+        Assert.Equal(0m, movement.Debit);
+        Assert.Equal(25m, movement.Credit);
     }
 
     [Fact]

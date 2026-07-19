@@ -29,6 +29,9 @@ public sealed class BacCreditFinancingXlsParser
         {
             var values = RequiredHeaders.ToDictionary(header => header, header => GetCell(row, columns[header]));
             if (values.Values.All(string.IsNullOrWhiteSpace)) continue;
+            // Exported XLS files can include subtotal/footer rows after the financing table.
+            // A record is only valid when it starts with a date; all other rows are metadata.
+            if (!TryParseDate(values["fecha"], out _)) continue;
             if (values.Values.Any(string.IsNullOrWhiteSpace)) throw new InvalidDataException("Each BAC financing row must include every required value.");
             financings.Add(new ParsedCreditFinancing(
                 ParseDate(values["fecha"]),
@@ -64,10 +67,15 @@ public sealed class BacCreditFinancingXlsParser
         return DateOnly.TryParse(datePart, CultureInfo.GetCultureInfo("es-CR"), DateTimeStyles.AllowWhiteSpaces, out var result) || DateOnly.TryParse(datePart, CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out result)
         ? result : throw new InvalidDataException($"Invalid BAC financing date '{value}'.");
     }
+    private static bool TryParseDate(string value, out DateOnly result)
+    {
+        var datePart = value.Trim().Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
+        return DateOnly.TryParse(datePart, CultureInfo.GetCultureInfo("es-CR"), DateTimeStyles.AllowWhiteSpaces, out result)
+            || DateOnly.TryParse(datePart, CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out result);
+    }
     private static decimal ParseAmount(string value, string field)
     {
-        var normalized = value.Replace("₡", string.Empty).Replace("CRC", string.Empty, StringComparison.OrdinalIgnoreCase).Trim();
-        if (decimal.TryParse(normalized, NumberStyles.Number | NumberStyles.AllowCurrencySymbol, CultureInfo.GetCultureInfo("es-CR"), out var result) || decimal.TryParse(normalized, NumberStyles.Number | NumberStyles.AllowCurrencySymbol, CultureInfo.InvariantCulture, out result)) return result;
+        if (MoneyParser.TryParse(value, out var result)) return result;
         throw new InvalidDataException($"Invalid BAC financing {field} '{value}'.");
     }
 }

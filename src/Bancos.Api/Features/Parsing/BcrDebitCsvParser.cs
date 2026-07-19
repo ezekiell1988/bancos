@@ -17,13 +17,20 @@ public sealed class BcrDebitCsvParser
         if (columns.Any(pair => pair.Value < 0)) throw new InvalidDataException("The BCR file is missing a required header.");
 
         var movements = new List<ParsedBankMovement>();
-        foreach (var row in rows.Skip(1))
+        var movementRows = rows.Skip(1).ToArray();
+        for (var rowIndex = 0; rowIndex < movementRows.Length; rowIndex++)
         {
+            var row = movementRows[rowIndex];
             var values = Split(row);
             if (values.Length != header.Length) throw new InvalidDataException("A BCR movement row has an invalid column count.");
             var debit = ParseAmount(values[columns["debito"]]);
             var credit = ParseAmount(values[columns["credito"]]);
-            if ((debit == 0m) == (credit == 0m)) throw new InvalidDataException("Every BCR movement must have exactly one direction.");
+            if (debit == 0m && credit == 0m) continue;
+            if (debit != 0m && credit != 0m)
+            {
+                if (IsTrailingSummaryRow(header, values, columns, rowIndex, movementRows.Length)) continue;
+                throw new InvalidDataException("Every BCR movement must have exactly one direction.");
+            }
             if (!TryParseDate(values[columns["fechamovimiento"]], out var bookingDate)) throw new InvalidDataException("A BCR movement has an invalid date.");
             movements.Add(new ParsedBankMovement(bookingDate, values[columns["numerodocumento"]], values[columns["descripcion"]], debit, credit));
         }
@@ -43,7 +50,15 @@ public sealed class BcrDebitCsvParser
             throw new InvalidDataException("The BCR opening balance, movements, and closing balance do not reconcile.");
     }
 
+    private static bool IsTrailingSummaryRow(string[] header, string[] values, IReadOnlyDictionary<string, int> columns, int rowIndex, int rowCount) =>
+        rowIndex == rowCount - 1
+        && header.Length > RequiredHeaders.Length
+        && string.IsNullOrWhiteSpace(header[^1])
+        && string.IsNullOrWhiteSpace(values[columns["descripcion"]]);
+
     private static string[] Split(string row) => row.Split(';').Select(value => value.Trim().Trim('"')).ToArray();
-    private static decimal ParseAmount(string value) => string.IsNullOrWhiteSpace(value) ? 0m : decimal.Parse(value, NumberStyles.Number, CultureInfo.GetCultureInfo("es-CR"));
+    private static decimal ParseAmount(string value) => MoneyParser.TryParse(value, out var amount)
+        ? amount
+        : throw new InvalidDataException("Un movimiento BCR tiene un importe inválido.");
     private static bool TryParseDate(string value, out DateOnly date) => DateOnly.TryParse(value, CultureInfo.GetCultureInfo("es-CR"), DateTimeStyles.None, out date) || DateOnly.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.None, out date);
 }

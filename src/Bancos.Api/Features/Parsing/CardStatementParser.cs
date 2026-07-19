@@ -79,9 +79,7 @@ public sealed class CardStatementParser
     private static IReadOnlyList<ParsedCardMovement> ParseBacPaymentSummary(IReadOnlyList<string[]> rows)
     {
         var headerIndex = rows.ToList().FindIndex(row =>
-            FindColumn(row, ["name"]) >= 0
-            && FindColumn(row, ["date"]) >= 0
-            && FindColumn(row, ["minimum payment/local amount", "minimum payment/ local amount", "minimum payment local amount"]) >= 0
+            FindColumn(row, DateHeaders) >= 0
             && FindColumn(row, ["cash payment/local amount", "cash payment/ local amount", "cash payment local amount"]) >= 0
             && FindColumn(row, ["cash payment/dollar amount", "cash payment / dollar amount", "cash payment dollar amount"]) >= 0);
         if (headerIndex < 0) throw new InvalidDataException("El estado de tarjeta no contiene una tabla de movimientos con fecha, descripción e importe.");
@@ -93,7 +91,9 @@ public sealed class CardStatementParser
         var movements = new List<ParsedCardMovement>();
         foreach (var row in rows.Skip(headerIndex + 1))
         {
-            var dateValue = TryGet(row, dueDateColumn, out var dueDate) && TryParseDate(dueDate, out var parsedDueDate) ? parsedDueDate : TryGet(row, statementDateColumn, out var statementDate) && TryParseDate(statementDate, out var parsedStatementDate) ? parsedStatementDate : throw new InvalidDataException("El resumen de tarjeta tiene una fecha inválida.");
+            if (!(TryGet(row, dueDateColumn, out var dueDate) && TryParseDate(dueDate, out var parsedDueDate))
+                && !(TryGet(row, statementDateColumn, out var statementDate) && TryParseDate(statementDate, out parsedDueDate))) continue;
+            var dateValue = parsedDueDate;
             AddPayment(row, localAmountColumn, "CRC", dateValue, movements);
             AddPayment(row, dollarAmountColumn, "USD", dateValue, movements);
         }
@@ -113,7 +113,7 @@ public sealed class CardStatementParser
         var movements = new List<ParsedCardMovement>();
         foreach (var line in text.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
-            var match = Regex.Match(line, "^(?<date>\\d{1,2}[/-]\\d{1,2}[/-]\\d{2,4})\\s+(?<description>.+?)\\s+(?<amount>(?:US\\$|USD|₡)?\\s*[+-]?[\\d.,]+)(?:\\s+(?<crc>(?:₡|CRC)\\s*[+-]?[\\d.,]+))?$", RegexOptions.IgnoreCase);
+            var match = Regex.Match(line, "^(?<date>\\d{1,2}(?:[/-]\\d{1,2}[/-]\\d{2,4}|\\s+(?:ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)[a-z.]*\\s+\\d{2,4}))\\s+(?<description>.+?)\\s+(?<amount>(?:US\\$|USD|₡)?\\s*[+-]?[\\d.,]+)(?:\\s+(?<crc>(?:₡|CRC)\\s*[+-]?[\\d.,]+))?$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
             if (!match.Success || !TryParseDate(match.Groups["date"].Value, out var date) || !TryParseAmount(match.Groups["amount"].Value, out var originalAmount)) continue;
             var amountText = match.Groups["amount"].Value;
             var currency = InferCurrency(amountText, line);
@@ -150,10 +150,7 @@ public sealed class CardStatementParser
     private static bool TryParseDate(string value, out DateOnly date) => DateOnly.TryParse(value, CultureInfo.GetCultureInfo("es-CR"), DateTimeStyles.AllowWhiteSpaces, out date) || DateOnly.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out date);
     private static bool TryParseAmount(string value, out decimal amount)
     {
-        var normalized = value.Replace("US$", string.Empty, StringComparison.OrdinalIgnoreCase).Replace("USD", string.Empty, StringComparison.OrdinalIgnoreCase).Replace("CRC", string.Empty, StringComparison.OrdinalIgnoreCase).Replace("₡", string.Empty).Trim();
-        var style = NumberStyles.Number | NumberStyles.AllowLeadingSign;
-        var culture = normalized.Contains('.') && !normalized.Contains(',') ? CultureInfo.InvariantCulture : CultureInfo.GetCultureInfo("es-CR");
-        return decimal.TryParse(normalized, style, culture, out amount) || decimal.TryParse(normalized, style, culture == CultureInfo.InvariantCulture ? CultureInfo.GetCultureInfo("es-CR") : CultureInfo.InvariantCulture, out amount);
+        return MoneyParser.TryParse(value, out amount);
     }
     private static string NormalizeCurrency(string value) => value.Contains("USD", StringComparison.OrdinalIgnoreCase) || value.Contains("US$", StringComparison.OrdinalIgnoreCase) || value.Contains('$') ? "USD" : "CRC";
     private static string InferCurrency(string amount, string context) => NormalizeCurrency(amount + " " + context);
