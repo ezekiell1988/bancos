@@ -1,9 +1,12 @@
 using System.Text;
+using System.IO.Compression;
+using System.Reflection;
 using Bancos.Api.Data;
 using Bancos.Api.Domain;
 using Bancos.Api.Features.Imports;
 using Bancos.Api.Features.Parsing;
 using Bancos.Api.Features.Classification;
+using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
@@ -12,6 +15,59 @@ namespace Bancos.Api.Tests;
 
 public sealed class ImportTemplateDetectorTests
 {
+    [Fact]
+    public void Import_jobs_fail_without_automatic_retries()
+    {
+        var retry = typeof(ImportJobs).GetCustomAttribute<AutomaticRetryAttribute>();
+
+        Assert.NotNull(retry);
+        Assert.Equal(0, retry.Attempts);
+        Assert.Equal(AttemptsExceededAction.Fail, retry.OnAttemptsExceeded);
+    }
+
+    [Fact]
+    public void Keeps_a_stable_identity_for_repeated_zip_paths()
+    {
+        using var stream = new MemoryStream();
+        using (var archive = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: true))
+        {
+            foreach (var content in new[] { "first", "second" })
+            {
+                var entry = archive.CreateEntry("statements/movements.csv");
+                using var writer = new StreamWriter(entry.Open(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), bufferSize: 1024, leaveOpen: false);
+                writer.Write(content);
+            }
+        }
+
+        var entries = ZipImportReader.Read("fixture.zip", stream.ToArray());
+
+        Assert.Collection(entries,
+            first => { Assert.Equal(0, first.EntryIndex); Assert.Equal("statements/movements.csv", first.Path); Assert.Equal("first", Encoding.UTF8.GetString(first.Content)); },
+            second => { Assert.Equal(1, second.EntryIndex); Assert.Equal("statements/movements.csv", second.Path); Assert.Equal("second", Encoding.UTF8.GetString(second.Content)); });
+    }
+
+    [Fact]
+    public void Resolves_the_first_matching_entry_index_without_throwing()
+    {
+        var first = new ImportSource(0, "first.csv", Encoding.UTF8.GetBytes("first"));
+        var duplicate = new ImportSource(0, "second.csv", Encoding.UTF8.GetBytes("second"));
+
+        var source = ImportsModule.FindSource([first, duplicate], "first.csv", 0);
+
+        Assert.Same(first, source);
+    }
+
+    [Fact]
+    public void Resolves_the_first_matching_path_without_an_entry_index()
+    {
+        var first = new ImportSource(0, "movements.csv", Encoding.UTF8.GetBytes("first"));
+        var duplicate = new ImportSource(1, "movements.csv", Encoding.UTF8.GetBytes("second"));
+
+        var source = ImportsModule.FindSource([first, duplicate], "movements.csv", null);
+
+        Assert.Same(first, source);
+    }
+
     [Fact]
     public void Parses_card_csv_operations_and_preserves_usd_with_crc_equivalent()
     {
@@ -50,6 +106,27 @@ public sealed class ImportTemplateDetectorTests
     }
 
     [Fact]
+    public void Detects_and_parses_bac_card_payment_summary_without_product_header()
+    {
+        var csv = "Identifier,Name,Date,Minimum payment/due date,Minimum payment/ Local Amount,Minimum Payment / Dollars Amount,Cash payment/Due date,Cash payment/ Local amount,Cash payment / Dollar amount\nA-1,Ignored,2026-07-01,2026-07-10,0,0,2026-07-15,2000,0";
+
+        var detection = new ImportTemplateDetector().Detect(Encoding.UTF8.GetBytes(csv));
+        var movement = Assert.Single(new CardStatementParser().ParseCsv(csv));
+
+        Assert.Equal(ImportTemplates.BacCreditCsvV1, detection.Template);
+        Assert.Equal(CardOperationKind.Payment, movement.Operation);
+        Assert.Equal(2000m, movement.AmountCrc);
+    }
+
+    [Fact]
+    public void Detects_binary_account_movement_spreadsheet_signature()
+    {
+        var detection = ImportTemplateDetector.Detect("Fecha Referencia Descripción Débito Crédito Saldo", "xls");
+
+        Assert.Equal(ImportTemplates.BankAccountMovementsXlsV1, detection.Template);
+    }
+
+    [Fact]
     public async Task Persists_card_operation_and_currency_amounts()
     {
         await using var db = new BancosDbContext(new DbContextOptionsBuilder<BancosDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
@@ -68,6 +145,7 @@ public sealed class ImportTemplateDetectorTests
             Assert.Equal("USD", transaction.OriginalCurrencyCode);
             Assert.Equal(10m, transaction.OriginalAmount);
             Assert.Equal(5200m, transaction.AmountCrc);
+            Assert.False(File.Exists(path));
         }
         finally { if (File.Exists(path)) File.Delete(path); }
     }
@@ -86,6 +164,24 @@ public sealed class ImportTemplateDetectorTests
     {
         var result = new ImportTemplateDetector().Detect(Encoding.UTF8.GetBytes("un contenido sin encabezados bancarios documentados"));
         Assert.Equal(ImportTemplates.Unknown, result.Template);
+    }
+
+    [Fact]
+    public async Task Learns_a_safe_structure_and_reuses_it_before_static_detection()
+    {
+        await using var db = new BancosDbContext(new DbContextOptionsBuilder<BancosDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+        var patterns = new ImportTemplatePatternService(db);
+        var confirmed = Encoding.UTF8.GetBytes("Nombre;Referencia;Fecha;Monto\nPersona privada;ABC-001;2026-07-18;1.234,50");
+        var future = Encoding.UTF8.GetBytes("Nombre;Referencia;Fecha;Monto\nOtra persona;XYZ-999;2026-08-21;9.876,00");
+
+        await patterns.LearnAsync(confirmed, ImportTemplates.BcrDebitCsvV1, CancellationToken.None);
+        var detection = await patterns.DetectAsync(future, CancellationToken.None);
+        var pattern = Assert.Single(await db.ImportTemplatePatterns.ToListAsync());
+
+        Assert.Equal(ImportTemplates.BcrDebitCsvV1, detection.Template);
+        Assert.Equal(["patrón confirmado localmente"], detection.Evidence);
+        Assert.DoesNotContain("Persona", pattern.SignatureHash, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("1.234,50", pattern.SignatureHash, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -119,6 +215,29 @@ public sealed class ImportTemplateDetectorTests
         var html = ImportTemplateDetector.Detect("Banco de Costa Rica Movimientos por rango de fechas", "html");
         Assert.Equal(ImportTemplates.BacCreditOnlinePdfV1, pdf.Template);
         Assert.Equal(ImportTemplates.BcrDebitHtmlXlsV1, html.Template);
+    }
+
+    [Fact]
+    public void Detects_and_parses_anonymized_bcr_html_xls_movements()
+    {
+        var html = """
+            <html><body><h1>Banco de Costa Rica</h1><p>Movimientos por rango de fechas</p>
+            <table>
+              <tr><th>Fecha movimiento</th><th>Número documento</th><th>Descripción</th><th>Débito</th><th>Crédito</th></tr>
+              <tr><td>18/07/2026</td><td>REF-1</td><td>Movimiento anonimizado</td><td>10,00</td><td></td></tr>
+            </table></body></html>
+            """;
+        var content = Encoding.UTF8.GetBytes(html);
+
+        var detection = new ImportTemplateDetector().Detect(content);
+        var movement = Assert.Single(new AccountMovementSpreadsheetParser().Parse(content));
+
+        Assert.Equal(ImportTemplates.BcrDebitHtmlXlsV1, detection.Template);
+        Assert.Equal(new DateOnly(2026, 7, 18), movement.BookingDate);
+        Assert.Equal("REF-1", movement.ExternalReference);
+        Assert.Equal("Movimiento anonimizado", movement.Description);
+        Assert.Equal(10m, movement.Debit);
+        Assert.Equal(0m, movement.Credit);
     }
 
     [Fact]
@@ -213,6 +332,7 @@ public sealed class ImportTemplateDetectorTests
             await File.WriteAllBytesAsync(path, File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "Fixtures", "bac-credit-financing-invalid.xls")));
             await Assert.ThrowsAnyAsync<Exception>(() => job.ProcessAsync(import.Id, null));
             Assert.Equal(ImportStatus.Failed, (await db.Imports.SingleAsync()).Status);
+            Assert.True(File.Exists(path));
         }
         finally { if (File.Exists(path)) File.Delete(path); }
     }

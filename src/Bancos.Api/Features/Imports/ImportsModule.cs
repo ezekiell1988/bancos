@@ -38,28 +38,28 @@ public static class ImportsModule
         var entries = new List<ImportPreviewEntryResponse>();
         foreach (var source in sources)
         {
-            try { var detection = await patterns.DetectAsync(source.Content, ct); var plan = await ResolvePlan(detection.Template, db, ct); entries.Add(new(source.Path, ToPreviewResponse(detection, plan))); }
-            catch (Exception) when (source.Content.Length > 0) { entries.Add(new(source.Path, new(ImportTemplates.Unknown, "No se pudo analizar", "unsupported", "Este archivo interno no se puede procesar."))); }
+            try { var detection = await patterns.DetectAsync(source.Content, ct); var plan = await ResolvePlan(detection.Template, db, ct); entries.Add(new(source.EntryIndex, source.Path, ToPreviewResponse(detection, plan))); }
+            catch (Exception) when (source.Content.Length > 0) { entries.Add(new(source.EntryIndex, source.Path, new(ImportTemplates.Unknown, "No se pudo analizar", "unsupported", "Este archivo interno no se puede procesar."))); }
         }
         return TypedResults.Ok(new ImportPreviewBatchResponse(entries));
     }
 
-    private static async Task<Results<NoContent, ValidationProblem>> Learn(IFormFile file, [FromForm] string entryPath, [FromForm] string template, ImportTemplatePatternService patterns, CancellationToken ct)
+    private static async Task<Results<NoContent, ValidationProblem>> Learn(IFormFile file, [FromForm] string entryPath, [FromForm] int? entryIndex, [FromForm] string template, ImportTemplatePatternService patterns, CancellationToken ct)
     {
         if (ImportReviewTemplates.Get(template) is null)
             return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["template"] = ["El tipo confirmado no es válido."] });
-        var source = ZipImportReader.Read(file.FileName, await ReadContent(file, ct)).SingleOrDefault(x => x.Path == entryPath);
+        var source = FindSource(ZipImportReader.Read(file.FileName, await ReadContent(file, ct)), entryPath, entryIndex);
         if (source is null)
             return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["entryPath"] = ["No se encontró el archivo dentro del ZIP."] });
         await patterns.LearnAsync(source.Content, template, ct);
         return TypedResults.NoContent();
     }
 
-    private static async Task<Results<Created<ImportResponse>, ValidationProblem>> Upload(IFormFile file, string? entryPath, string? template, BancosDbContext db, ImportTemplatePatternService patterns, IImportJobScheduler scheduler, IOptions<StorageOptions> storage, CancellationToken ct)
+    private static async Task<Results<Created<ImportResponse>, ValidationProblem>> Upload(IFormFile file, [FromForm] string? entryPath, [FromForm] int? entryIndex, [FromForm] string? template, BancosDbContext db, ImportTemplatePatternService patterns, IImportJobScheduler scheduler, IOptions<StorageOptions> storage, CancellationToken ct)
     {
         if (file.Length == 0) return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["file"] = ["El archivo no puede estar vacío."] });
         var sources = ZipImportReader.Read(file.FileName, await ReadContent(file, ct));
-        var source = entryPath is null ? sources.SingleOrDefault() : sources.SingleOrDefault(x => x.Path == entryPath);
+        var source = FindSource(sources, entryPath, entryIndex);
         if (source is null) return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["file"] = ["No se encontró el archivo seleccionado dentro del ZIP."] });
         var detection = await patterns.DetectAsync(source.Content, ct);
         var selectedTemplate = string.IsNullOrWhiteSpace(template) ? detection.Template : template;
@@ -84,6 +84,11 @@ public static class ImportsModule
         await input.CopyToAsync(content, ct);
         return content.ToArray();
     }
+
+    internal static ImportSource? FindSource(IReadOnlyList<ImportSource> sources, string? entryPath, int? entryIndex) =>
+        entryIndex is not null
+            ? sources.FirstOrDefault(x => x.EntryIndex == entryIndex)
+            : entryPath is null ? sources.FirstOrDefault() : sources.FirstOrDefault(x => x.Path == entryPath);
 
     private static async Task<ImportPlan> ResolvePlan(string template, BancosDbContext db, CancellationToken ct)
     {
@@ -128,7 +133,7 @@ public static class ImportsModule
 public sealed record ImportResponse(Guid Id, ImportStatus Status);
 public sealed record ImportDetailResponse(Guid Id, Guid AccountAuxiliaryId, string FileName, ImportStatus Status, string? Template, string? FailureReason, DateTime? ProcessedUtc);
 public sealed record ImportPreviewResponse(string Template, string Label, string Status, string? Message);
-public sealed record ImportPreviewEntryResponse(string Path, ImportPreviewResponse Preview);
+public sealed record ImportPreviewEntryResponse(int EntryIndex, string Path, ImportPreviewResponse Preview);
 public sealed record ImportPreviewBatchResponse(IReadOnlyList<ImportPreviewEntryResponse> Entries);
 internal sealed record ImportPlan(Guid? AccountAuxiliaryId, string? Error);
 
@@ -142,6 +147,7 @@ internal static class ImportReviewTemplates
         [ImportTemplates.CoopealianzaLoanPdfV1] = new(ImportTemplates.CoopealianzaLoanPdfV1, "Estado de préstamo", AccountKind.Liability, true),
         [ImportTemplates.BacCreditCsvV1] = new(ImportTemplates.BacCreditCsvV1, "Estado de tarjeta", AccountKind.Liability, true),
         [ImportTemplates.BcrDebitHtmlXlsV1] = new(ImportTemplates.BcrDebitHtmlXlsV1, "Movimientos de cuenta", AccountKind.Asset, true),
+        [ImportTemplates.BankAccountMovementsXlsV1] = new(ImportTemplates.BankAccountMovementsXlsV1, "Movimientos de cuenta (Excel)", AccountKind.Asset, true),
         [ImportTemplates.BacCreditOnlinePdfV1] = new(ImportTemplates.BacCreditOnlinePdfV1, "Estado de tarjeta", AccountKind.Liability, true)
     };
 

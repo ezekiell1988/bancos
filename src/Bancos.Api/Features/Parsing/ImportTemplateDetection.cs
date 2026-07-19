@@ -9,6 +9,7 @@ public static class ImportTemplates
     public const string BcrDebitCsvV1 = "bcr-debit-csv-v1";
     public const string BacCreditCsvV1 = "bac-credit-csv-v1";
     public const string BcrDebitHtmlXlsV1 = "bcr-debit-html-xls-v1";
+    public const string BankAccountMovementsXlsV1 = "bank-account-movements-xls-v1";
     public const string BacCreditFinancingXlsV1 = "bac-credit-financing-xls-v1";
     public const string BacCreditOnlinePdfV1 = "bac-credit-online-pdf-v1";
     public const string CoopealianzaLoanPdfV1 = "coopealianza-loan-pdf-v1";
@@ -35,12 +36,14 @@ public sealed class ImportTemplateDetector
         var matches = new List<(string Template, string[] Evidence)>();
         if (contentKind == "csv" && ContainsAll(normalized, ";", "oficina", "fechamovimiento", "numerodocumento", "debito", "credito", "descripcion"))
             matches.Add((ImportTemplates.BcrDebitCsvV1, ["delimitador ;", "encabezados de movimientos BCR"]));
-        if (contentKind == "csv" && ContainsAll(normalized, ",", "product", "name", "date") && (normalized.Contains("pago minimo") || normalized.Contains("pago contado") || (normalized.Contains("minimum payment") && normalized.Contains("cash payment"))))
+        if (contentKind == "csv" && IsCardPaymentSummary(normalized))
             matches.Add((ImportTemplates.BacCreditCsvV1, ["encabezados BAC", "campos de pago"]));
         if (contentKind == "html" && ContainsAll(normalized, "banco de costa rica", "movimientos por rango de fechas"))
             matches.Add((ImportTemplates.BcrDebitHtmlXlsV1, ["Banco de Costa Rica", "Movimientos por rango de fechas"]));
         if (contentKind == "xls" && ContainsAll(normalized, "consulta de financiamientos", "fecha", "concepto", "cuotas", "monto de cuota", "saldo inicial", "saldo faltante"))
             matches.Add((ImportTemplates.BacCreditFinancingXlsV1, ["encabezados de financiamientos BAC"]));
+        if (contentKind == "xls" && HasAny(normalized, "descripcion", "detalle") && HasAny(normalized, "debito", "debitos") && HasAny(normalized, "credito", "creditos") && normalized.Contains("fecha"))
+            matches.Add((ImportTemplates.BankAccountMovementsXlsV1, ["encabezados de movimientos en hoja binaria"]));
         if (contentKind == "pdf" && ContainsAll(normalized, "tarjeta de credito", "saldo en colones", "saldo en dolares", "pago de tarjeta al dia"))
             matches.Add((ImportTemplates.BacCreditOnlinePdfV1, ["snapshot de tarjeta BAC"]));
         if (contentKind == "pdf" && ContainsAll(normalized, "ver detalles del prestamo", "capital", "interes", "mora", "otros", "total", "saldo"))
@@ -52,6 +55,10 @@ public sealed class ImportTemplateDetector
     }
 
     private static bool ContainsAll(string text, params string[] values) => values.All(text.Contains);
+    private static bool HasAny(string text, params string[] values) => values.Any(text.Contains);
+    private static bool IsCardPaymentSummary(string text) =>
+        ContainsAll(text, ",", "name", "date", "minimum payment", "cash payment", "local amount")
+        && HasAny(text, "dollar amount", "dollars amount");
     internal static string Normalize(string value) => string.Concat(value.Normalize(NormalizationForm.FormD).Where(c => System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c) != System.Globalization.UnicodeCategory.NonSpacingMark)).ToLowerInvariant();
 }
 

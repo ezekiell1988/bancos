@@ -1,5 +1,7 @@
 using System.Globalization;
+using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
 using ExcelDataReader;
 
 namespace Bancos.Api.Features.Parsing;
@@ -16,9 +18,9 @@ public sealed class AccountMovementSpreadsheetParser
     public IReadOnlyList<ParsedBankMovement> Parse(ReadOnlyMemory<byte> content)
     {
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-        using var stream = new MemoryStream(content.ToArray());
-        using var reader = ExcelReaderFactory.CreateReader(stream);
-        var rows = ReadRows(reader);
+        var bytes = content.ToArray();
+        var text = Encoding.UTF8.GetString(bytes);
+        var rows = text.Contains("<table", StringComparison.OrdinalIgnoreCase) ? ReadHtmlRows(text) : ReadSpreadsheetRows(bytes);
         var headerIndex = rows.FindIndex(row => HasAny(row, DateHeaders) && HasAny(row, DescriptionHeaders) && (HasAny(row, DebitHeaders) || HasAny(row, CreditHeaders)));
         if (headerIndex < 0) throw new InvalidDataException("La hoja no contiene encabezados de movimientos reconocibles.");
         var columns = rows[headerIndex].Select((value, index) => (Header: ImportTemplateDetector.Normalize(value), index)).ToArray();
@@ -36,7 +38,26 @@ public sealed class AccountMovementSpreadsheetParser
         return movements;
     }
 
-    private static List<string[]> ReadRows(IExcelDataReader reader) { var rows = new List<string[]>(); do { while (reader.Read()) rows.Add(Enumerable.Range(0, reader.FieldCount).Select(i => reader.GetValue(i)?.ToString() ?? string.Empty).ToArray()); } while (reader.NextResult()); return rows; }
+    private static List<string[]> ReadSpreadsheetRows(byte[] content)
+    {
+        using var stream = new MemoryStream(content);
+        using var reader = ExcelReaderFactory.CreateReader(stream);
+        var rows = new List<string[]>();
+        do { while (reader.Read()) rows.Add(Enumerable.Range(0, reader.FieldCount).Select(i => reader.GetValue(i)?.ToString() ?? string.Empty).ToArray()); } while (reader.NextResult());
+        return rows;
+    }
+
+    private static List<string[]> ReadHtmlRows(string html) => Regex.Matches(html, "<tr[^>]*>(.*?)</tr>", RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)
+        .Select(row => Regex.Matches(row.Groups[1].Value, "<t[dh][^>]*>(.*?)</t[dh]>", RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)
+            .Select(cell => NormalizeHtmlCell(cell.Groups[1].Value)).ToArray())
+        .Where(row => row.Length > 0)
+        .ToList();
+
+    private static string NormalizeHtmlCell(string value)
+    {
+        var withoutTags = Regex.Replace(value, "<[^>]+>", " ", RegexOptions.CultureInvariant);
+        return Regex.Replace(WebUtility.HtmlDecode(withoutTags).Replace('\u00a0', ' '), "\\s+", " ", RegexOptions.CultureInvariant).Trim();
+    }
     private static bool HasAny(string[] row, string[] labels) => row.Select(ImportTemplateDetector.Normalize).Any(value => labels.Contains(value));
     private static string Get(string[] row, (string Header, int index)[] columns, string[] labels) { var column = columns.FirstOrDefault(x => labels.Contains(x.Header)); return column == default || column.index >= row.Length ? string.Empty : row[column.index].Trim(); }
     private static decimal Amount(string value) { var cleaned = value.Replace("₡", string.Empty).Replace("CRC", string.Empty, StringComparison.OrdinalIgnoreCase).Trim(); return string.IsNullOrEmpty(cleaned) ? 0m : decimal.Parse(cleaned, NumberStyles.Number | NumberStyles.AllowCurrencySymbol, CultureInfo.GetCultureInfo("es-CR")); }

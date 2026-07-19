@@ -1,8 +1,12 @@
-> **Última actualización:** 2026-07-18 CR (TASK-EBC-FE-04 completada)
+> **Última actualización:** 2026-07-18 CR (TASK-EBC-FE-06 completada)
 
 
 
 ## Completado
+
+* **2026-07-18** — TASK-EBC-FE-06: Se normalizó el proxy local: /api mantiene endpoints de aplicación y /_api enruta infraestructura con soporte WebSocket. Health y Hangfire se movieron a /_api/health y /_api/hangfire; se dejó /hubs listo para hubs futuros. — EBC
+
+* **2026-07-18** — TASK-EBC-FE-05: Se restauró la lista completa de entradas ZIP, el selector por archivo pendiente y el conteo exacto de archivos listos. — EBC
 
 * **2026-07-18** — TASK-EBC-FE-04: Se crearon tokens CSS semánticos globales y se separaron los estilos de App e Imports mediante styleUrl. — EBC
 

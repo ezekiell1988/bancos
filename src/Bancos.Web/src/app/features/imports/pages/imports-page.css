@@ -20,6 +20,9 @@
 .status.needs-type { background: var(--color-warning); color: var(--color-text); }
 .status.unsupported { background: var(--color-danger); color: var(--color-surface-raised); }
 .queue select { max-inline-size: 100%; }
+.jobs { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+.jobs a { color: var(--color-brand); font-weight: 700; }
+.notice.error { background: var(--color-danger); color: var(--color-surface-raised); }
 
 @media (max-width: 480px) {
   .queue li { align-items: start; flex-direction: column; }

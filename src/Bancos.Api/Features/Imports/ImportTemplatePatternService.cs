@@ -30,13 +30,50 @@ public sealed class ImportTemplatePatternService(BancosDbContext db)
         await db.SaveChangesAsync(ct);
     }
 
-    private static string CreateSignature(string kind, string text)
+    private static string CreateSignature(string kind, string text) =>
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(CreateStructure(kind, text))));
+
+    /// <summary>
+    /// Produces a document-format fingerprint without retaining document words, values,
+    /// identifiers, or filenames. It intentionally describes only layout and cell classes.
+    /// </summary>
+    private static string CreateStructure(string kind, string text)
     {
-        var lines = text.Replace("\r", string.Empty).Split('\n', StringSplitOptions.RemoveEmptyEntries)
+        var lines = text.Replace("\r", string.Empty)
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Take(24)
-            .Select(line => Regex.Replace(ImportTemplateDetector.Normalize(line), "\\d+", "#"))
-            .Select(line => Regex.Replace(line, "\\s+", " ").Trim());
-        var structure = string.Join('\n', lines.Prepend(kind));
-        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(structure)));
+            .Select(DescribeLine);
+        return string.Join('\n', lines.Prepend($"kind:{kind}"));
     }
+
+    private static string DescribeLine(string line)
+    {
+        var delimiter = Delimiters.FirstOrDefault(line.Contains);
+        if (delimiter == default) return $"line:{DescribeText(line)}";
+
+        var cells = line.Split(delimiter);
+        return $"delimited:{delimiter}:{cells.Length}:{string.Join(',', cells.Select(DescribeText))}";
+    }
+
+    private static string DescribeText(string value)
+    {
+        var compact = Regex.Replace(value, "\\s+", " ").Trim();
+        if (compact.Length == 0) return "empty";
+        if (DatePattern.IsMatch(compact)) return "date";
+        if (NumberPattern.IsMatch(compact)) return "number";
+
+        var hasLetters = compact.Any(char.IsLetter);
+        var hasDigits = compact.Any(char.IsDigit);
+        return (hasLetters, hasDigits) switch
+        {
+            (true, false) => "text",
+            (false, true) => "mixed-symbols",
+            (true, true) => "mixed",
+            _ => "symbols"
+        };
+    }
+
+    private static readonly char[] Delimiters = [';', ',', '\t', '|'];
+    private static readonly Regex DatePattern = new("^\\d{1,4}[-/.]\\d{1,2}[-/.]\\d{1,4}$", RegexOptions.CultureInvariant);
+    private static readonly Regex NumberPattern = new("^[+-]?[₡$€]?\\s*\\d{1,3}(?:[., ]\\d{3})*(?:[.,]\\d+)?%?$", RegexOptions.CultureInvariant);
 }

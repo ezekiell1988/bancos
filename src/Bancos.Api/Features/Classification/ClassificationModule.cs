@@ -9,6 +9,8 @@ public static class ClassificationModule
 {
     public static IServiceCollection AddClassificationModule(this IServiceCollection services)
     {
+        services.AddOptions<ClassificationAiOptions>().BindConfiguration(ClassificationAiOptions.Section);
+        services.AddHttpClient<IFamilyCategorySuggester, AzureAiFamilyCategorySuggester>();
         services.AddScoped<ClassificationService>();
         return services;
     }
@@ -72,10 +74,14 @@ public static class ClassificationModule
     }
 }
 
-public sealed class ClassificationService(BancosDbContext db)
+public sealed class ClassificationService(BancosDbContext db, IFamilyCategorySuggester? ai = null)
 {
     public async Task ClassifyAsync(Transaction transaction, CancellationToken ct = default)
     {
+        var localExact = db.Transactions.Local.Where(x => x.AccountAuxiliaryId == transaction.AccountAuxiliaryId && x.DescriptionNormalized == transaction.DescriptionNormalized && x.ClassificationStatus == ClassificationStatus.Approved && x.CategoryId != null)
+            .OrderByDescending(x => x.UpdatedUtc ?? x.CreatedUtc).ThenByDescending(x => x.Id).Select(x => x.CategoryId).FirstOrDefault();
+        if (localExact is Guid localCategory) { Assign(transaction, localCategory, ClassificationSource.ExactApproved, ClassificationStatus.Approved); return; }
+
         var exact = await db.Transactions.AsNoTracking().Where(x => x.AccountAuxiliaryId == transaction.AccountAuxiliaryId && x.DescriptionNormalized == transaction.DescriptionNormalized && x.ClassificationStatus == ClassificationStatus.Approved && x.CategoryId != null)
             .OrderByDescending(x => x.UpdatedUtc ?? x.CreatedUtc).ThenByDescending(x => x.Id).Select(x => x.CategoryId).FirstOrDefaultAsync(ct);
         if (exact is Guid exactCategory) { Assign(transaction, exactCategory, ClassificationSource.ExactApproved, ClassificationStatus.Approved); return; }
@@ -85,7 +91,28 @@ public sealed class ClassificationService(BancosDbContext db)
         var matched = rules.FirstOrDefault(x => ImportPattern.IsMatch(transaction.DescriptionNormalized, x.Pattern));
         if (matched is not null) { Assign(transaction, matched.CategoryId, ClassificationSource.Rule, ClassificationStatus.Approved); return; }
 
-        var general = await db.Categories.SingleOrDefaultAsync(x => x.Name == "General" && x.ParentId == null, ct);
+        var storedCategories = await db.Categories.Where(x => x.ParentId == null && x.Name != "General").ToListAsync(ct);
+        var categories = storedCategories.Concat(db.Categories.Local.Where(x => x.ParentId == null && x.Name != "General"))
+            .DistinctBy(x => x.Id).OrderBy(x => x.Name).ToList();
+        if (ai is not null)
+        {
+            var suggestion = await ai.SuggestAsync(transaction.DescriptionNormalized, categories.Select(x => x.Name).ToArray(), ct);
+            var suggestedName = suggestion is null ? null : NormalizeCategoryName(suggestion.CategoryName);
+            if (suggestedName is not null && !suggestedName.Equals("General", StringComparison.OrdinalIgnoreCase))
+            {
+                var category = categories.FirstOrDefault(x => x.Name.Equals(suggestedName, StringComparison.OrdinalIgnoreCase));
+                if (category is not null || suggestion!.CreateNew)
+                {
+                    category ??= new Category { Name = suggestedName };
+                    if (db.Entry(category).State == EntityState.Detached) db.Categories.Add(category);
+                    Assign(transaction, category.Id, ClassificationSource.Ai, ClassificationStatus.Approved);
+                    return;
+                }
+            }
+        }
+
+        var general = db.Categories.Local.SingleOrDefault(x => x.Name == "General" && x.ParentId == null)
+            ?? await db.Categories.SingleOrDefaultAsync(x => x.Name == "General" && x.ParentId == null, ct);
         if (general is null) { general = new Category { Name = "General" }; db.Categories.Add(general); }
         Assign(transaction, general.Id, ClassificationSource.General, ClassificationStatus.PendingReview);
     }
@@ -93,6 +120,12 @@ public sealed class ClassificationService(BancosDbContext db)
     private static void Assign(Transaction transaction, Guid categoryId, ClassificationSource source, ClassificationStatus status)
     {
         transaction.CategoryId = categoryId; transaction.ClassificationSource = source; transaction.ClassificationStatus = status;
+    }
+
+    private static string? NormalizeCategoryName(string value)
+    {
+        var name = string.Join(' ', value.Trim().Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+        return name.Length is < 2 or > 80 || name.Any(char.IsControl) ? null : name;
     }
 }
 
