@@ -21,8 +21,8 @@ if (!builder.Environment.IsEnvironment("Testing"))
     builder.Services.AddHangfireServer();
 }
 builder.Services.AddAccountsModule().AddClassificationModule().AddImportsModule().AddReportsModule();
-var app = builder.Build(); app.UseExceptionHandler(); app.MapHealthChecks("/health");
-if (!app.Environment.IsEnvironment("Testing")) app.UseHangfireDashboard("/hangfire");
+var app = builder.Build(); app.UseExceptionHandler(); app.MapHealthChecks("/_api/health");
+if (!app.Environment.IsEnvironment("Testing")) app.UseHangfireDashboard("/_api/hangfire");
 app.UseDefaultFiles(); app.UseStaticFiles();
 app.MapAccountsEndpoints().MapClassificationEndpoints().MapImportsEndpoints().MapReportsEndpoints();
 app.MapFallbackToFile("index.html");

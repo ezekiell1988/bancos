@@ -6,7 +6,7 @@ export interface Auxiliary { id: string; name: string; }
 export interface ImportItem { id: string; accountAuxiliaryId: string; fileName: string; status: 'Queued' | 'Processing' | 'Completed' | 'Failed'; template: string | null; failureReason: string | null; processedUtc: string | null; }
 export type ImportPreviewStatus = 'ready' | 'needs-type' | 'unsupported';
 export interface ImportPreview { template: string; label: string; status: ImportPreviewStatus; message: string | null; }
-export interface ImportPreviewBatch { entries: { path: string; preview: ImportPreview }[]; }
+export interface ImportPreviewBatch { entries: { entryIndex: number; path: string; preview: ImportPreview }[]; }
 
 @Injectable()
 export class ImportsApi {
@@ -19,9 +19,10 @@ export class ImportsApi {
     return this.http.post<ImportPreviewBatch>('/api/imports/preview', payload);
   }
 
-  upload(file: File, entryPath: string, template?: string) {
+  upload(file: File, entryPath: string, entryIndex: number, template?: string) {
     const payload = new FormData();
     payload.set('entryPath', entryPath);
+    payload.set('entryIndex', entryIndex.toString());
     if (template) payload.set('template', template);
     payload.set('file', file);
     return this.http.post<ImportItem>('/api/imports/upload', payload);

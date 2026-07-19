@@ -1,1 +1,5 @@
-{ "/api": { "target": "https://localhost:5001", "secure": false }, "/health": { "target": "https://localhost:5001", "secure": false } }
+{
+  "/api": { "target": "https://localhost:5001", "secure": false },
+  "/_api": { "target": "https://localhost:5001", "secure": false, "ws": true },
+  "/hubs": { "target": "https://localhost:5001", "secure": false, "ws": true }
+}

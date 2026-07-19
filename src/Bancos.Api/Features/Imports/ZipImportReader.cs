@@ -2,7 +2,7 @@ using System.IO.Compression;
 
 namespace Bancos.Api.Features.Imports;
 
-internal sealed record ImportSource(string Path, byte[] Content);
+internal sealed record ImportSource(int EntryIndex, string Path, byte[] Content);
 
 internal static class ZipImportReader
 {
@@ -13,7 +13,7 @@ internal static class ZipImportReader
 
     public static IReadOnlyList<ImportSource> Read(string fileName, byte[] content)
     {
-        if (!fileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) return [new(Path.GetFileName(fileName), content)];
+        if (!fileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) return [new(0, Path.GetFileName(fileName), content)];
         using var archive = new ZipArchive(new MemoryStream(content), ZipArchiveMode.Read, leaveOpen: false);
         var files = archive.Entries.Where(entry =>
             !string.IsNullOrEmpty(entry.Name)
@@ -24,14 +24,15 @@ internal static class ZipImportReader
 
         long total = 0;
         var sources = new List<ImportSource>(files.Length);
-        foreach (var entry in files)
+        for (var entryIndex = 0; entryIndex < files.Length; entryIndex++)
         {
+            var entry = files[entryIndex];
             if (entry.FullName.Contains("..", StringComparison.Ordinal) || Path.IsPathRooted(entry.FullName)) throw new InvalidDataException("El ZIP contiene una ruta no permitida.");
             if (entry.Length > MaxEntryBytes) throw new InvalidDataException("Una entrada del ZIP excede 20 MB.");
             total += entry.Length;
             if (total > MaxTotalBytes) throw new InvalidDataException("El ZIP excede 50 MB descomprimidos.");
             using var stream = entry.Open(); using var buffer = new MemoryStream(); stream.CopyTo(buffer);
-            sources.Add(new(entry.FullName.Replace('\\', '/'), buffer.ToArray()));
+            sources.Add(new(entryIndex, entry.FullName.Replace('\\', '/'), buffer.ToArray()));
         }
         return sources;
     }

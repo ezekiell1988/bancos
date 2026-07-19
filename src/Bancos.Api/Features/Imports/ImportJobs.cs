@@ -2,6 +2,7 @@ using Bancos.Api.Data;
 using Bancos.Api.Domain;
 using Bancos.Api.Features.Parsing;
 using Bancos.Api.Features.Classification;
+using Hangfire;
 using Hangfire.Console;
 using Hangfire.Server;
 using Microsoft.EntityFrameworkCore;
@@ -9,6 +10,7 @@ using System.Security.Cryptography;
 using System.Text;
 
 namespace Bancos.Api.Features.Imports;
+[AutomaticRetry(Attempts = 0, OnAttemptsExceeded = AttemptsExceededAction.Fail)]
 public sealed class ImportJobs(BancosDbContext db, ImportTemplateDetector detector, BcrDebitCsvParser bcrParser, AccountMovementSpreadsheetParser spreadsheetParser, BacCreditFinancingXlsParser financingParser, CardStatementParser cardParser, CoopealianzaLoanPdfParser loanParser, ClassificationService classification, ILogger<ImportJobs> logger)
 {
     public ImportJobs(BancosDbContext db, ImportTemplateDetector detector, BcrDebitCsvParser bcrParser, BacCreditFinancingXlsParser financingParser, CoopealianzaLoanPdfParser loanParser, ClassificationService classification, ILogger<ImportJobs> logger)
@@ -57,7 +59,7 @@ public sealed class ImportJobs(BancosDbContext db, ImportTemplateDetector detect
                 }
                 WriteStage(context, "Validated balance and {0} loan payments; persisted new fingerprints.", loan.Payments.Count);
             }
-            else if (template is ImportTemplates.BcrDebitCsvV1 or ImportTemplates.BcrDebitHtmlXlsV1)
+            else if (template is ImportTemplates.BcrDebitCsvV1 or ImportTemplates.BcrDebitHtmlXlsV1 or ImportTemplates.BankAccountMovementsXlsV1)
             {
                 var movements = template == ImportTemplates.BcrDebitCsvV1 ? bcrParser.Parse(await File.ReadAllTextAsync(import.TemporaryPath)) : spreadsheetParser.Parse(await File.ReadAllBytesAsync(import.TemporaryPath));
                 await PersistMovements(import, movements, classification);
@@ -73,8 +75,14 @@ public sealed class ImportJobs(BancosDbContext db, ImportTemplateDetector detect
             else throw new InvalidDataException($"El extractor para '{template}' no está disponible.");
             import.Status = ImportStatus.Completed; import.ProcessedUtc = DateTime.UtcNow; await db.SaveChangesAsync(); WriteStage(context, "Import completed.");
         }
-        catch (Exception exception) { import.Status = ImportStatus.Failed; import.FailureReason = exception.Message; await db.SaveChangesAsync(); throw; }
-        finally { if (File.Exists(import.TemporaryPath)) File.Delete(import.TemporaryPath); }
+        catch (Exception exception)
+        {
+            import.Status = ImportStatus.Failed;
+            import.FailureReason = exception is InvalidDataException ? exception.Message : "La importación no pudo procesarse.";
+            await db.SaveChangesAsync();
+            throw;
+        }
+        finally { if (import.Status == ImportStatus.Completed && File.Exists(import.TemporaryPath)) File.Delete(import.TemporaryPath); }
     }
 
     private static void WriteStage(PerformContext? context, string message, params object[] arguments) => context?.WriteLine(message, arguments);

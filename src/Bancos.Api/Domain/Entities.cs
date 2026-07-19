@@ -34,6 +34,6 @@ public sealed class AuditLog : AuditableEntity { public required string EntityNa
 public enum AccountKind { Asset, Liability, Equity, Income, Expense, Control }
 public enum ImportStatus { Queued, Processing, Completed, Failed }
 public enum ClosingStatus { Pending, Processing, Completed, Failed }
-public enum ClassificationSource { General, ExactApproved, Rule, Manual }
+public enum ClassificationSource { General = 0, ExactApproved = 1, Rule = 2, Manual = 3, Ai = 4 }
 public enum ClassificationStatus { PendingReview, Approved }
 public enum TransactionOperationType { General, CardPurchase, CardPayment, CardInterest, CardCharge }

@@ -10,5 +10,6 @@ export class ReviewApi {
   private readonly http = inject(HttpClient);
   readonly categories = httpResource<Category[]>(() => '/api/classification/categories');
   readonly pending = httpResource<PendingTransaction[]>(() => '/api/classification/transactions/pending');
+  createCategory(name: string) { return this.http.post<Category>('/api/classification/categories', { name, parentId: null }); }
   approve(transactionId: string, categoryId: string) { return this.http.put(`/api/classification/transactions/${transactionId}/review`, { categoryId }); }
 }

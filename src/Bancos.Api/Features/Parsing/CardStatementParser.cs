@@ -78,7 +78,12 @@ public sealed class CardStatementParser
 
     private static IReadOnlyList<ParsedCardMovement> ParseBacPaymentSummary(IReadOnlyList<string[]> rows)
     {
-        var headerIndex = rows.ToList().FindIndex(row => FindColumn(row, ["product"]) >= 0 && FindColumn(row, ["date"]) >= 0 && FindColumn(row, ["cash payment/local amount", "cash payment/ local amount", "cash payment / dollar amount", "cash payment dollar amount"]) >= 0);
+        var headerIndex = rows.ToList().FindIndex(row =>
+            FindColumn(row, ["name"]) >= 0
+            && FindColumn(row, ["date"]) >= 0
+            && FindColumn(row, ["minimum payment/local amount", "minimum payment/ local amount", "minimum payment local amount"]) >= 0
+            && FindColumn(row, ["cash payment/local amount", "cash payment/ local amount", "cash payment local amount"]) >= 0
+            && FindColumn(row, ["cash payment/dollar amount", "cash payment / dollar amount", "cash payment dollar amount"]) >= 0);
         if (headerIndex < 0) throw new InvalidDataException("El estado de tarjeta no contiene una tabla de movimientos con fecha, descripción e importe.");
         var header = rows[headerIndex];
         var dueDateColumn = FindColumn(header, ["cash payment/due date", "cash payment due date"]);
