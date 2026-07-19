@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddLocalSecrets(builder.Environment.ContentRootPath);
 builder.Services.AddProblemDetails(); builder.Services.AddHealthChecks();
+builder.Services.AddSignalR();
 builder.Services.AddOptions<StorageOptions>().BindConfiguration(StorageOptions.Section).ValidateDataAnnotations().ValidateOnStart();
 if (!builder.Environment.IsEnvironment("Testing"))
 {
@@ -25,6 +26,7 @@ var app = builder.Build(); app.UseExceptionHandler(); app.MapHealthChecks("/_api
 if (!app.Environment.IsEnvironment("Testing")) app.UseHangfireDashboard("/_api/hangfire");
 app.UseDefaultFiles(); app.UseStaticFiles();
 app.MapAccountsEndpoints().MapClassificationEndpoints().MapImportsEndpoints().MapReportsEndpoints();
+app.MapHub<ImportProgressHub>("/hubs/import-progress");
 app.MapFallbackToFile("index.html");
 app.Run();
 public partial class Program;
