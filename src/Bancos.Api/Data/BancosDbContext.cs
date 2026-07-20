@@ -26,7 +26,8 @@ public sealed class BancosDbContext(DbContextOptions<BancosDbContext> options) :
         b.Entity<CreditFinancing>().HasIndex(x => new { x.AccountAuxiliaryId, x.SourceFingerprint }).IsUnique();
         b.Entity<LoanStatement>().HasIndex(x => new { x.AccountAuxiliaryId, x.SourceFingerprint }).IsUnique();
         b.Entity<LoanPayment>().HasIndex(x => new { x.LoanStatementId, x.SourceFingerprint }).IsUnique();
-        b.Entity<Category>().HasIndex(x => new { x.Name, x.ParentId }).IsUnique(); b.Entity<ClassificationTag>().HasIndex(x => x.Name).IsUnique();
+        b.Entity<Category>().HasIndex(x => new { x.Name, x.ParentId }).IsUnique();
+        b.Entity<ClassificationTag>().HasIndex(x => x.Name).IsUnique();
         b.Entity<ExchangeRate>().HasIndex(x => new { x.RateDate, x.CurrencyCode }).IsUnique(); b.Entity<ReportPeriod>().HasIndex(x => x.PeriodEnd).IsUnique();
         b.Entity<JournalLine>().ToTable(t => t.HasCheckConstraint("CK_JournalLines_OneSide", "([DebitCrc] = 0 AND [CreditCrc] > 0) OR ([CreditCrc] = 0 AND [DebitCrc] > 0)"));
         b.Entity<ReconciliationTransaction>().HasKey(x => new { x.ReconciliationId, x.TransactionId });
@@ -55,6 +56,8 @@ public sealed class BancosDbContext(DbContextOptions<BancosDbContext> options) :
         b.Entity<AccountAuxiliary>().HasData(
             new AccountAuxiliary { Id = Guid.Parse("00000000-0000-0000-0000-000000000201"), Name = "Cuenta bancaria", AccountId = assetId, OwnerId = ownerId, CreatedUtc = created },
             new AccountAuxiliary { Id = Guid.Parse("00000000-0000-0000-0000-000000000202"), Name = "Créditos y financiamientos", AccountId = liabilityId, OwnerId = ownerId, CreatedUtc = created });
+        b.Entity<Category>().HasData(
+            new Category { Id = Guid.Parse("00000000-0000-0000-0000-000000000301"), Name = "General", CreatedUtc = created });
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken ct = default)

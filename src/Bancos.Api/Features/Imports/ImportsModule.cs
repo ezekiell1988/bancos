@@ -37,6 +37,7 @@ public static class ImportsModule
         group.MapGet("/", List);
         group.MapGet("/{id:guid}/progress", GetProgress);
         group.MapGet("/{id:guid}", Get);
+        group.MapPost("/{id:guid}/retry", Retry);
         return app;
     }
     private static async Task<Ok<ImportPreviewBatchResponse>> Preview(IFormFile file, BancosDbContext db, ImportTemplatePatternService patterns, CancellationToken ct)
@@ -144,6 +145,16 @@ public static class ImportsModule
                 await db.ImportProgress.AsNoTracking().Where(x => x.ImportId == id)
                     .Select(x => new ImportProgressResponse(x.ImportId, x.Attempt, x.Stage, x.Current, x.Total, x.Percent, x.Status.ToString(), x.UpdatedUtc))
                     .SingleOrDefaultAsync(ct)));
+    }
+
+    private static async Task<Results<Ok<ImportResponse>, NotFound>> Retry(Guid id, BancosDbContext db, IImportJobScheduler scheduler, CancellationToken ct)
+    {
+        var import = await db.Imports.SingleOrDefaultAsync(x => x.Id == id, ct);
+        if (import is null) return TypedResults.NotFound();
+        import.Status = ImportStatus.Queued; import.FailureReason = null;
+        await db.SaveChangesAsync(ct);
+        scheduler.Enqueue(import.Id);
+        return TypedResults.Ok(new ImportResponse(import.Id, import.Status));
     }
 
     private static async Task<Results<Ok<ImportProgressResponse>, NotFound>> GetProgress(Guid id, BancosDbContext db, CancellationToken ct)

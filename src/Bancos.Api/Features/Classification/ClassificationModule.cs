@@ -111,8 +111,8 @@ public sealed class ClassificationService(BancosDbContext db, IFamilyCategorySug
             }
         }
 
-        var general = db.Categories.Local.SingleOrDefault(x => x.Name == "General" && x.ParentId == null)
-            ?? await db.Categories.SingleOrDefaultAsync(x => x.Name == "General" && x.ParentId == null, ct);
+        var general = db.Categories.Local.FirstOrDefault(x => x.Name == "General" && x.ParentId == null)
+            ?? await db.Categories.FirstOrDefaultAsync(x => x.Name == "General" && x.ParentId == null, ct);
         if (general is null) { general = new Category { Name = "General" }; db.Categories.Add(general); }
         Assign(transaction, general.Id, ClassificationSource.General, ClassificationStatus.PendingReview);
     }
