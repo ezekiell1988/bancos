@@ -57,9 +57,12 @@ public sealed partial class CoopealianzaLoanPdfParser
         throw new InvalidDataException($"Invalid Coopealianza loan {field} '{value}'.");
     }
 
-    [GeneratedRegex(@"(?is)saldo.{0,100}?(?<balance>\d[\d.,]*)")]
+    // Matches "Saldo actual:₡ 4 372 249,85" — Bankingly PDFs use regular or non-breaking spaces as thousands separators.
+    [GeneratedRegex(@"(?i)Saldo actual:₡\s*(?<balance>[\d][\d.,\s]*)")]
     private static partial Regex BalanceRegex();
 
-    [GeneratedRegex(@"(?i)(?<date>\d{1,2}/\d{1,2}/\d{4})\s+(?<capital>(?:₡|CRC)?\s*[\d.,]+)\s+(?<interest>(?:₡|CRC)?\s*[\d.,]+)\s+(?<lateFee>(?:₡|CRC)?\s*[\d.,]+)\s+(?<other>(?:₡|CRC)?\s*[\d.,]+)\s+(?<total>(?:₡|CRC)?\s*[\d.,]+)")]
+    // Matches payment history rows: "TxNum dd/MM/yyyy Pago ₡Capital ₡Interés ₡Mora ₡Otros ₡Total ₡SaldoRestante"
+    // ₡ acts as a natural delimiter; [^₡]* captures the number including space-thousands separators.
+    [GeneratedRegex(@"(?<date>\d{2}/\d{2}/\d{4})Pago(?<capital>₡[^₡]*)(?<interest>₡[^₡]*)(?<lateFee>₡[^₡]*)(?<other>₡[^₡]*)(?<total>₡[^₡]*)₡")]
     private static partial Regex PaymentRegex();
 }

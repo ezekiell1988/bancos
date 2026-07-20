@@ -1,6 +1,16 @@
 # 04 — Tareas activas
 
-> **Última actualización:** 2026-07-18 CR (TASK-EBC-BE-22 completada)
+> **Última actualización:** 2026-07-20 CR (TASK-EBC-INF-08 completada)
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -72,13 +82,12 @@ Sin tareas.
 
 | ID | Área | Título | Prioridad |
 |---|---|---|---|
-| `TASK-EBC-BE-19` | BE | Corregir fallos restantes de lectores de importación | alta |
+| `TASK-EBC-DB-05` | DB | Reiniciar base de datos de desarrollo desde migraciones EF | crítica |
 
 ## Borradores
 
 | ID | Título | Riesgo | Aprobación |
 |---|---|---|---|
-| `TASK-EBC-BE-20` | Soportar estados de tarjeta BAC sin filas de movimientos | medio | pendiente |
 | `TASK-EBC-INF-03` | Diseño de autenticación y estrategia de contenedor para despliegue | alto | pendiente |
 
 ## Bloqueadas

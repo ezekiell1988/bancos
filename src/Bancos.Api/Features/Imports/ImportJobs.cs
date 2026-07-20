@@ -62,6 +62,15 @@ public sealed class ImportJobs(BancosDbContext db, ImportTemplateDetector detect
                     foreach (var payment in loan.Payments)
                         statement.Payments.Add(new LoanPayment { PaymentDate = payment.PaymentDate, Capital = payment.Capital, Interest = payment.Interest, LateFee = payment.LateFee, OtherCharges = payment.OtherCharges, Total = payment.Total, SourceFingerprint = CreateFingerprint(payment) });
                     db.LoanStatements.Add(statement);
+                    try { await db.SaveChangesAsync(); }
+                    catch (DbUpdateException)
+                    {
+                        db.ChangeTracker.Clear();
+                        if (!await db.LoanStatements.AnyAsync(x => x.AccountAuxiliaryId == import.AccountAuxiliaryId && x.SourceFingerprint == loanFingerprint))
+                            throw;
+                        // Concurrent job won the race — statement already exists; treat as already imported.
+                        db.Imports.Attach(import);
+                    }
                 }
                 await progress.ReportAsync(importId, attempt, ImportProgressStages.Extracting, loan.Payments.Count, loan.Payments.Count, 70);
                 WriteStage(context, "Validated balance and {0} loan payments; persisted new fingerprints.", loan.Payments.Count);
@@ -77,9 +86,10 @@ public sealed class ImportJobs(BancosDbContext db, ImportTemplateDetector detect
             {
                 await progress.ReportAsync(importId, attempt, ImportProgressStages.Extracting, 0, 0, 10);
                 WriteStage(context, "Extracting and validating card statement movements.");
-                var movements = cardParser.Parse(await File.ReadAllBytesAsync(import.TemporaryPath));
-                await PersistCardMovements(import, movements, classification, progress, attempt);
-                WriteStage(context, "Validated {0} card movements and persisted the new fingerprints.", movements.Count);
+                var statement = cardParser.Parse(await File.ReadAllBytesAsync(import.TemporaryPath));
+                if (statement.RequiresManualReview) throw new InvalidDataException(statement.ManualReviewReason);
+                await PersistCardMovements(import, statement.Movements, classification, progress, attempt);
+                WriteStage(context, "Validated {0} card movements and persisted the new fingerprints.", statement.Movements.Count);
             }
             else throw new InvalidDataException($"El extractor para '{template}' no está disponible.");
             await progress.ReportAsync(importId, attempt, ImportProgressStages.Persisting, 0, 0, 95);
@@ -87,10 +97,22 @@ public sealed class ImportJobs(BancosDbContext db, ImportTemplateDetector detect
             await progress.ReportAsync(importId, attempt, ImportProgressStages.Completed, 0, 0, 100, ImportStatus.Completed);
             WriteStage(context, "Import completed.");
         }
-        catch (Exception exception)
+        catch (InvalidDataException exception)
         {
+            db.ChangeTracker.Clear(); db.Imports.Attach(import);
             import.Status = ImportStatus.Failed;
-            import.FailureReason = exception is InvalidDataException ? exception.Message : "La importación no pudo procesarse.";
+            import.FailureReason = exception.Message;
+            await db.SaveChangesAsync();
+            await progress.ReportAsync(importId, attempt, ImportProgressStages.Failed, 0, 0, 0, ImportStatus.Failed);
+            // Validation failures are final import outcomes: keeping the source permits review,
+            // while completing the Hangfire invocation prevents a retry of unchanged content.
+            WriteStage(context, "Import validation failed: {0}", exception.Message);
+        }
+        catch (Exception)
+        {
+            db.ChangeTracker.Clear(); db.Imports.Attach(import);
+            import.Status = ImportStatus.Failed;
+            import.FailureReason = "La importación no pudo procesarse.";
             await db.SaveChangesAsync();
             await progress.ReportAsync(importId, attempt, ImportProgressStages.Failed, 0, 0, 0, ImportStatus.Failed);
             throw;

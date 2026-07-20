@@ -1,8 +1,23 @@
-> **Última actualización:** 2026-07-18 CR (TASK-EBC-BE-22 completada)
+> **Última actualización:** 2026-07-20 CR (TASK-EBC-INF-08 — fixes de parsers y concurrencia)
 
 
 
 ## Completado
+
+* **2026-07-20** — TASK-EBC-INF-08 (fixes de backend durante validación de importación masiva):
+  * **`ClassificationModule.cs`**: `SingleOrDefaultAsync` → `FirstOrDefaultAsync` para la categoría "General". Causa: múltiples workers de Hangfire creaban duplicados de "General" en BD (el índice único `(Name, ParentId)` no los bloquea cuando `ParentId IS NULL`). El `SingleOrDefault` lanzaba al encontrar más de uno.
+  * **`BancosDbContext.SeedDefaults`** + **migración `SeedGeneralCategory`**: La categoría "General" se siembra desde migración con ID fijo. Elimina la race condition de creación concurrente.
+  * **`ImportJobs.cs` — catch blocks**: Se agregó `db.ChangeTracker.Clear() + db.Imports.Attach(import)` antes de guardar el fallo en ambos catch blocks. Causa: una `DbUpdateException` deja el contexto en estado inconsistente — el segundo `SaveChangesAsync` del catch también fallaba, dejando el import permanentemente en `status=1 Processing`.
+  * **`ImportJobs.cs` — race condition LoanStatements**: Se agrega un `try/catch(DbUpdateException)` al insertar el LoanStatement. Si el registro ya existe (ganó un job concurrente), se limpia el context y se re-attachea `import` para que el `status=Completed` se pueda guardar en el SaveChanges posterior.
+  * **`CoopealianzaLoanPdfParser.cs` — BalanceRegex**: `[\d., ]` → `[\d.,\s]`. Causa: PdfPig usa non-breaking space (U+00A0) como separador de miles en PDFs Bankingly. El espacio ASCII literal no lo capturaba, dejando el balance en solo el primer dígito (ej. `4` en lugar de `4372249.85`).
+  * **`CoopealianzaLoanPdfParser.cs` — PaymentRegex**: Reescrita para PdfPig que concatena texto sin newlines. Usa ₡ como delimitador natural entre campos: `(?<date>\d{2}/\d{2}/\d{4})Pago(?<capital>₡[^₡]*)...`
+  * **`CardStatementParser.cs`**: `ParseBacOnlinePdfConcatenated` para PDFs BAC online (texto concatenado sin saltos). `ParseBacDualAmountRows` para CSV BAC crédito con columnas Local/Dollars separadas.
+  * **`ImportsModule.cs`**: Nuevo endpoint `POST /api/imports/{id}/retry` para re-encolar imports fallidos sin necesidad de volver a subir el archivo.
+  * Ver detalle completo en [IMPORT-PARSER-TROUBLESHOOTING.md](../../06_decisions/IMPORT-PARSER-TROUBLESHOOTING.md). — EBC
+
+* **2026-07-18** — TASK-EBC-BE-20: El parser de estados BAC distingue resúmenes de pago y snapshots sin tabla de movimientos; los deriva a revisión manual segura sin generar movimientos sintéticos. Tras corregir el esquema de progreso, los ocho trabajos afectados finalizaron sin errores de infraestructura. — EBC
+
+* **2026-07-18** — TASK-EBC-BE-19: Se clasificaron los fallos de importación: los ocho jobs fallidos corresponden a estados de tarjeta sin movimientos detallados. Las validaciones de parsing ahora finalizan la importación como fallida, conservan el archivo y completan la invocación de Hangfire sin reintento. — EBC
 
 * **2026-07-18** — TASK-EBC-BE-22: Progreso observable y sanitizado de importaciones implementado con persistencia independiente, Hangfire.Console, SignalR, snapshots REST y UI Angular. — EBC
 

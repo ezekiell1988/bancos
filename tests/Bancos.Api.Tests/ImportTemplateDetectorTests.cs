@@ -92,30 +92,40 @@ public sealed class ImportTemplateDetectorTests
     }
 
     [Fact]
-    public void Detects_and_parses_bac_card_payment_summary_without_cardholder_data()
+    public void Detects_bac_card_payment_summary_without_creating_synthetic_movements()
     {
         var csv = "Product,Name,Date,Minimum payment/due date,Minimum payment/ Local Amount,Minimum Payment / Dollars Amount,Cash payment/Due date,Cash payment/ Local amount,Cash payment / Dollar amount\nCard product,Ignored,2026-07-01,2026-07-10,0,0,2026-07-15,2000,0";
 
         var detection = new ImportTemplateDetector().Detect(Encoding.UTF8.GetBytes(csv));
-        var movement = Assert.Single(new CardStatementParser().ParseCsv(csv));
+        var statement = new CardStatementParser().ParseCsvStatement(csv);
 
         Assert.Equal(ImportTemplates.BacCreditCsvV1, detection.Template);
-        Assert.Equal(CardOperationKind.Payment, movement.Operation);
-        Assert.Equal("Pago de tarjeta", movement.Description);
-        Assert.Equal(2000m, movement.AmountCrc);
+        Assert.Equal(CardStatementContentKind.PaymentSummary, statement.ContentKind);
+        Assert.True(statement.RequiresManualReview);
+        Assert.Empty(statement.Movements);
     }
 
     [Fact]
-    public void Detects_and_parses_bac_card_payment_summary_without_product_header()
+    public void Detects_bac_card_payment_summary_without_product_header()
     {
         var csv = "Identifier,Name,Date,Minimum payment/due date,Minimum payment/ Local Amount,Minimum Payment / Dollars Amount,Cash payment/Due date,Cash payment/ Local amount,Cash payment / Dollar amount\nA-1,Ignored,2026-07-01,2026-07-10,0,0,2026-07-15,2000,0";
 
         var detection = new ImportTemplateDetector().Detect(Encoding.UTF8.GetBytes(csv));
-        var movement = Assert.Single(new CardStatementParser().ParseCsv(csv));
+        var statement = new CardStatementParser().ParseCsvStatement(csv);
 
         Assert.Equal(ImportTemplates.BacCreditCsvV1, detection.Template);
-        Assert.Equal(CardOperationKind.Payment, movement.Operation);
-        Assert.Equal(2000m, movement.AmountCrc);
+        Assert.Equal(CardStatementContentKind.PaymentSummary, statement.ContentKind);
+        Assert.Empty(statement.Movements);
+    }
+
+    [Fact]
+    public void Detects_bac_card_pdf_snapshot_without_creating_synthetic_movements()
+    {
+        var statement = CardStatementParser.ParsePdf("Tarjeta de crédito Saldo en colones Saldo en dólares Pago de tarjeta al día");
+
+        Assert.Equal(CardStatementContentKind.BalanceSnapshot, statement.ContentKind);
+        Assert.True(statement.RequiresManualReview);
+        Assert.Empty(statement.Movements);
     }
 
     [Fact]
@@ -146,6 +156,30 @@ public sealed class ImportTemplateDetectorTests
             Assert.Equal(10m, transaction.OriginalAmount);
             Assert.Equal(5200m, transaction.AmountCrc);
             Assert.False(File.Exists(path));
+        }
+        finally { if (File.Exists(path)) File.Delete(path); }
+    }
+
+    [Fact]
+    public async Task Card_summary_requires_manual_review_and_preserves_source_without_transactions()
+    {
+        await using var db = new BancosDbContext(new DbContextOptionsBuilder<BancosDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+        var auxiliary = new AccountAuxiliary { Name = "Fixture card", AccountId = Guid.NewGuid(), OwnerId = Guid.NewGuid() };
+        var path = Path.GetTempFileName();
+        var import = new Import { FileName = "card-summary.csv", TemporaryPath = path, ContentHash = "card-summary-fixture-hash", AccountAuxiliaryId = auxiliary.Id, Template = ImportTemplates.BacCreditCsvV1 };
+        db.AccountAuxiliaries.Add(auxiliary); db.Imports.Add(import); await db.SaveChangesAsync();
+        var job = new ImportJobs(db, new ImportTemplateDetector(), new BcrDebitCsvParser(), new BacCreditFinancingXlsParser(), new CoopealianzaLoanPdfParser(), new ClassificationService(db), NullLogger<ImportJobs>.Instance);
+        try
+        {
+            await File.WriteAllTextAsync(path, "Product,Name,Date,Minimum payment/due date,Minimum payment/ Local Amount,Minimum Payment / Dollars Amount,Cash payment/Due date,Cash payment/ Local amount,Cash payment / Dollar amount\nCard product,Ignored,2026-07-01,2026-07-10,0,0,2026-07-15,2000,0");
+
+            await job.ProcessAsync(import.Id, null);
+
+            var persistedImport = await db.Imports.SingleAsync();
+            Assert.Equal(ImportStatus.Failed, persistedImport.Status);
+            Assert.Contains("revisión manual", persistedImport.FailureReason, StringComparison.OrdinalIgnoreCase);
+            Assert.Empty(await db.Transactions.ToListAsync());
+            Assert.True(File.Exists(path));
         }
         finally { if (File.Exists(path)) File.Delete(path); }
     }
@@ -362,7 +396,7 @@ public sealed class ImportTemplateDetectorTests
     }
 
     [Fact]
-    public async Task Invalid_financing_data_marks_import_as_failed()
+    public async Task Invalid_financing_data_marks_import_as_failed_without_failing_the_job_and_preserves_the_source()
     {
         await using var db = new BancosDbContext(new DbContextOptionsBuilder<BancosDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
         var auxiliary = new AccountAuxiliary { Name = "Fixture auxiliary", AccountId = Guid.NewGuid(), OwnerId = Guid.NewGuid() };
@@ -373,7 +407,7 @@ public sealed class ImportTemplateDetectorTests
         try
         {
             await File.WriteAllBytesAsync(path, File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "Fixtures", "bac-credit-financing-invalid.xls")));
-            await Assert.ThrowsAnyAsync<Exception>(() => job.ProcessAsync(import.Id, null));
+            await job.ProcessAsync(import.Id, null);
             Assert.Equal(ImportStatus.Failed, (await db.Imports.SingleAsync()).Status);
             Assert.True(File.Exists(path));
         }

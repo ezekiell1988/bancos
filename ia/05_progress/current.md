@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-18 CR (TASK-EBC-BE-22 completada)
+> **Última actualización:** 2026-07-20 CR (TASK-EBC-INF-08 completada)
 
 ## En curso
 
@@ -21,6 +21,18 @@
 * Aprobar y ejecutar `TASK-EZ-BE-01` mediante `iaWorkflow`.
 
 ## Completado en sesiones recientes
+
+* **2026-07-20** — TASK-EBC-INF-08 cerrada: SQL Server 2022 en Docker configurado y validado. Los 19 archivos de src/input.zip se importaron correctamente. Bugs corregidos: SingleOrDefaultAsync→FirstOrDefaultAsync en ClassificationModule, seed de categoría General, ChangeTracker.Clear()+Attach en catch blocks para fallo correcto, BalanceRegex con \\s para non-breaking spaces de PdfPig, race condition en LoanStatements con re-attach del Import. Nuevo endpoint POST /api/imports/{id}/retry. — EBC
+
+* **2026-07-20** — TASK-EBC-INF-07 cerrada: SQL Server local levantado en Docker (puerto 1433), migraciones EF aplicadas, db.json apunta a localhost. appsettings.Development.json limpiado de credenciales hardcodeadas. Procedimiento documentado en ia/06_decisions/DEV-ENV-local-sqlserver.md. — EBC
+
+* **2026-07-18** — TASK-EBC-FE-07 cerrada: La confirmación de carga diferencia archivos ya importados de fallos reales. La protección de huellas permanece activa y los duplicados se conservan visibles en la cola. — EBC
+
+* **2026-07-18** — TASK-EBC-BE-20 cerrada: El parser de estados BAC distingue resúmenes de pago y snapshots sin tabla de movimientos; los deriva a revisión manual segura sin generar movimientos sintéticos. Tras corregir el esquema de progreso, los ocho trabajos afectados finalizaron sin errores de infraestructura. — EBC
+
+* **2026-07-18** — TASK-EBC-DB-04 cerrada: Se aplicó la migración AddImportProgress y se recuperaron de forma controlada las ocho importaciones existentes que habían quedado detenidas por el esquema faltante. El listado volvió a responder; no se reenviaron ni duplicaron archivos, huellas ni movimientos. — EBC
+
+* **2026-07-18** — TASK-EBC-BE-19 cerrada: Se clasificaron los fallos de importación: los ocho jobs fallidos corresponden a estados de tarjeta sin movimientos detallados. Las validaciones de parsing ahora finalizan la importación como fallida, conservan el archivo y completan la invocación de Hangfire sin reintento. — EBC
 
 * **2026-07-18** — TASK-EBC-BE-22 cerrada: Progreso observable y sanitizado de importaciones implementado con persistencia independiente, Hangfire.Console, SignalR, snapshots REST y UI Angular. — EBC
 

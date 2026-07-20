@@ -1,8 +1,12 @@
-> **Última actualización:** 2026-07-18 CR (TASK-EBC-INF-06 completada)
+> **Última actualización:** 2026-07-20 CR (TASK-EBC-INF-08 completada)
 
 
 
 ## Completado
+
+* **2026-07-20** — TASK-EBC-INF-08: SQL Server 2022 en Docker configurado y validado. Los 19 archivos de src/input.zip se importaron correctamente. Bugs corregidos: SingleOrDefaultAsync→FirstOrDefaultAsync en ClassificationModule, seed de categoría General, ChangeTracker.Clear()+Attach en catch blocks para fallo correcto, BalanceRegex con \\s para non-breaking spaces de PdfPig, race condition en LoanStatements con re-attach del Import. Nuevo endpoint POST /api/imports/{id}/retry. — EBC
+
+* **2026-07-20** — TASK-EBC-INF-07: SQL Server local levantado en Docker (puerto 1433), migraciones EF aplicadas, db.json apunta a localhost. appsettings.Development.json limpiado de credenciales hardcodeadas. Procedimiento documentado en ia/06_decisions/DEV-ENV-local-sqlserver.md. — EBC
 
 * **2026-07-18** — TASK-EBC-INF-06: Script de arranque reubicado en .codex y referencias actualizadas. — EBC
 
