@@ -14,6 +14,7 @@ public static class ImportTemplates
     public const string BacCreditOnlinePdfV1 = "bac-credit-online-pdf-v1";
     public const string CoopealianzaLoanPdfV1 = "coopealianza-loan-pdf-v1";
     public const string BacAccountStatementPdfV1 = "bac-account-statement-pdf-v1";
+    public const string BnCardStatementPdfV1 = "bn-card-statement-pdf-v1";
     public const string Unknown = "unknown";
 }
 
@@ -51,6 +52,8 @@ public sealed class ImportTemplateDetector
             matches.Add((ImportTemplates.CoopealianzaLoanPdfV1, ["tabla de préstamo Coopealianza"]));
         if (contentKind == "pdf" && ContainsAll(normalized, "numero de tarjeta", "marca de tarjeta", "plan de lealtad", "pagos vencidos", "pago de contado", "fecha de corte", "total pago de contado"))
             matches.Add((ImportTemplates.BacAccountStatementPdfV1, ["estado de cuenta consolidado BAC"]));
+        if (contentKind == "pdf" && ContainsAll(normalized, "banco nacional de costa rica", "estado de cuenta tarjetas de credito", "detalle de compras del periodo", "total pago de contado"))
+            matches.Add((ImportTemplates.BnCardStatementPdfV1, ["estado de cuenta tarjeta Banco Nacional"]));
 
         return matches.Count == 1
             ? new ImportTemplateDetection(matches[0].Template, contentKind, matches[0].Evidence)

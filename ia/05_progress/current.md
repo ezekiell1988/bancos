@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-20 CR (TASK-EBC-FE-11 completada)
+> **Última actualización:** 2026-07-20 CR (TASK-EBC-BE-24 completada)
 
 ## En curso
 
@@ -21,6 +21,16 @@
 * Aprobar y ejecutar `TASK-EZ-BE-01` mediante `iaWorkflow`.
 
 ## Completado en sesiones recientes
+
+* **2026-07-20** — TASK-EBC-BE-24 cerrada: Parser BN implementado. BnCardStatementPdfParser.cs maneja texto concatenado de PdfPig. Detecta automáticamente bn-card-statement-pdf-v1. Persiste CardStatement (corte ₡210,829 + $6.49 contado, pago mínimo ₡5,000 + $6.49, vence 03/08/2026), 19 Transactions (2 pagos + 17 compras) y 3 CreditFinancings activos (BN Marchamos 12M ₡32,334 y ₡46,324; Compras 6M ₡26,142). — EBC
+
+* **2026-07-20** — **Post-cierre TASK-EBC-FE-08 — Issues resueltos (2026-07-21)**
+
+1. **Proxy de Angular no activo:** `angular.json` no referenciaba `proxy.conf.json` en el target `serve`. Se agregó `"options": { "proxyConfig": "proxy.conf.json" }` — sin esto, todas las llamadas a `/api/*` retornaban el `index.html` en vez de llegar al backend.
+
+2. **Proxy apuntaba al puerto incorrecto:** `proxy.conf.json` tenía target `https://localhost:5001` pero el backend corre en `http://localhost:8000`. Corregido a `http://localhost:8000`.
+
+3. **`ImportStatus` enum serializado como número:** El backend devolvía `status: 2` en vez de `"Completed"`, causando `TypeError: n.status.toLowerCase is not a function` en la página de importaciones. Corregido agregando `JsonStringEnumConverter` vía `ConfigureHttpJsonOptions` en `Program.cs`. — EBC
 
 * **2026-07-20** — TASK-EBC-FE-11 cerrada: Página /loans implementada con endpoint BE GET /api/loans y feature Angular standalone. Muestra financiamientos BAC activos (OutstandingBalance > 0), préstamos Coopealianza con cuota del último pago, y total mensual CRC consolidado en el encabezado. Link "Préstamos" agregado al nav principal. — EBC
 

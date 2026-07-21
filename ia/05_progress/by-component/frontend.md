@@ -1,8 +1,16 @@
-> **Última actualización:** 2026-07-20 CR (TASK-EBC-FE-11 completada)
+> **Última actualización:** 2026-07-20 CR (progreso actualizado)
 
 
 
 ## Completado
+
+* **2026-07-20** — **Post-cierre TASK-EBC-FE-08 — Issues resueltos (2026-07-21)**
+
+1. **Proxy de Angular no activo:** `angular.json` no referenciaba `proxy.conf.json` en el target `serve`. Se agregó `"options": { "proxyConfig": "proxy.conf.json" }` — sin esto, todas las llamadas a `/api/*` retornaban el `index.html` en vez de llegar al backend.
+
+2. **Proxy apuntaba al puerto incorrecto:** `proxy.conf.json` tenía target `https://localhost:5001` pero el backend corre en `http://localhost:8000`. Corregido a `http://localhost:8000`.
+
+3. **`ImportStatus` enum serializado como número:** El backend devolvía `status: 2` en vez de `"Completed"`, causando `TypeError: n.status.toLowerCase is not a function` en la página de importaciones. Corregido agregando `JsonStringEnumConverter` vía `ConfigureHttpJsonOptions` en `Program.cs`. — EBC
 
 * **2026-07-20** — TASK-EBC-FE-11: Página /loans implementada con endpoint BE GET /api/loans y feature Angular standalone. Muestra financiamientos BAC activos (OutstandingBalance > 0), préstamos Coopealianza con cuota del último pago, y total mensual CRC consolidado en el encabezado. Link "Préstamos" agregado al nav principal. — EBC
 

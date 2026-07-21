@@ -11,12 +11,12 @@ using System.Text;
 
 namespace Bancos.Api.Features.Imports;
 [AutomaticRetry(Attempts = 0, OnAttemptsExceeded = AttemptsExceededAction.Fail)]
-public sealed class ImportJobs(BancosDbContext db, ImportTemplateDetector detector, BcrDebitCsvParser bcrParser, AccountMovementSpreadsheetParser spreadsheetParser, BacCreditFinancingXlsParser financingParser, CardStatementParser cardParser, CoopealianzaLoanPdfParser loanParser, BacAccountStatementPdfParser accountStatementParser, ClassificationService classification, IImportProgressReporter progress, ILogger<ImportJobs> logger)
+public sealed class ImportJobs(BancosDbContext db, ImportTemplateDetector detector, BcrDebitCsvParser bcrParser, AccountMovementSpreadsheetParser spreadsheetParser, BacCreditFinancingXlsParser financingParser, CardStatementParser cardParser, CoopealianzaLoanPdfParser loanParser, BacAccountStatementPdfParser accountStatementParser, BnCardStatementPdfParser bnParser, ClassificationService classification, IImportProgressReporter progress, ILogger<ImportJobs> logger)
 {
     public ImportJobs(BancosDbContext db, ImportTemplateDetector detector, BcrDebitCsvParser bcrParser, BacCreditFinancingXlsParser financingParser, CoopealianzaLoanPdfParser loanParser, ClassificationService classification, ILogger<ImportJobs> logger)
-        : this(db, detector, bcrParser, new AccountMovementSpreadsheetParser(), financingParser, new CardStatementParser(), loanParser, new BacAccountStatementPdfParser(), classification, NullImportProgressReporter.Instance, logger) { }
+        : this(db, detector, bcrParser, new AccountMovementSpreadsheetParser(), financingParser, new CardStatementParser(), loanParser, new BacAccountStatementPdfParser(), new BnCardStatementPdfParser(), classification, NullImportProgressReporter.Instance, logger) { }
     public ImportJobs(BancosDbContext db, ImportTemplateDetector detector, BcrDebitCsvParser bcrParser, AccountMovementSpreadsheetParser spreadsheetParser, BacCreditFinancingXlsParser financingParser, CoopealianzaLoanPdfParser loanParser, ILogger<ImportJobs> logger)
-        : this(db, detector, bcrParser, spreadsheetParser, financingParser, new CardStatementParser(), loanParser, new BacAccountStatementPdfParser(), new ClassificationService(db), NullImportProgressReporter.Instance, logger) { }
+        : this(db, detector, bcrParser, spreadsheetParser, financingParser, new CardStatementParser(), loanParser, new BacAccountStatementPdfParser(), new BnCardStatementPdfParser(), new ClassificationService(db), NullImportProgressReporter.Instance, logger) { }
 
     public async Task ProcessAsync(Guid importId, PerformContext? context)
     {
@@ -135,6 +135,46 @@ public sealed class ImportJobs(BancosDbContext db, ImportTemplateDetector detect
                 if (statement.RequiresManualReview) throw new InvalidDataException(statement.ManualReviewReason);
                 await PersistCardMovements(import, statement.Movements, classification, progress, attempt);
                 WriteStage(context, "Validated {0} card movements and persisted the new fingerprints.", statement.Movements.Count);
+            }
+            else if (template == ImportTemplates.BnCardStatementPdfV1)
+            {
+                await progress.ReportAsync(importId, attempt, ImportProgressStages.Extracting, 0, 0, 10);
+                WriteStage(context, "Extracting Banco Nacional card statement.");
+                var bnStatement = bnParser.Parse(await File.ReadAllBytesAsync(import.TemporaryPath));
+                var fingerprint = BnCardStatementPdfParser.CreateFingerprint(import.AccountAuxiliaryId, bnStatement);
+                var existingStatement = await db.CardStatements
+                    .FirstOrDefaultAsync(s => s.AccountAuxiliaryId == import.AccountAuxiliaryId && s.CardNumberMasked == bnStatement.CardNumberMasked && s.StatementDate == bnStatement.StatementDate);
+                if (existingStatement is not null)
+                {
+                    existingStatement.ImportId = import.Id; existingStatement.LoyaltyPlan = bnStatement.LoyaltyPlan; existingStatement.PaymentDueDate = bnStatement.PaymentDueDate;
+                    existingStatement.MinimumPaymentCrc = bnStatement.MinimumPaymentCrc; existingStatement.MinimumPaymentUsd = bnStatement.MinimumPaymentUsd;
+                    existingStatement.CashPaymentCrc = bnStatement.CashPaymentCrc; existingStatement.CashPaymentUsd = bnStatement.CashPaymentUsd;
+                    existingStatement.SourceFingerprint = fingerprint;
+                }
+                else
+                {
+                    db.CardStatements.Add(new CardStatement { ImportId = import.Id, AccountAuxiliaryId = import.AccountAuxiliaryId, CardNumberMasked = bnStatement.CardNumberMasked, CardBrand = bnStatement.CardBrand, LoyaltyPlan = bnStatement.LoyaltyPlan, StatementDate = bnStatement.StatementDate, PaymentDueDate = bnStatement.PaymentDueDate, MinimumPaymentCrc = bnStatement.MinimumPaymentCrc, MinimumPaymentUsd = bnStatement.MinimumPaymentUsd, CashPaymentCrc = bnStatement.CashPaymentCrc, CashPaymentUsd = bnStatement.CashPaymentUsd, SourceFingerprint = fingerprint });
+                }
+                WriteStage(context, "Card statement upserted. Processing {0} movements.", bnStatement.Movements.Count);
+                await progress.ReportAsync(importId, attempt, ImportProgressStages.Extracting, 0, bnStatement.Movements.Count, 30);
+                if (bnStatement.Movements.Count > 0)
+                    await PersistCardMovements(import, bnStatement.Movements, classification, progress, attempt);
+                // Upsert financing lines
+                if (bnStatement.FinancingLines.Count > 0)
+                {
+                    var financingFingerprints = bnStatement.FinancingLines
+                        .Select(f => BnCardStatementPdfParser.CreateFinancingFingerprint(import.AccountAuxiliaryId, bnStatement.StatementDate, f)).ToArray();
+                    var existingFinancings = await db.CreditFinancings
+                        .Where(f => f.AccountAuxiliaryId == import.AccountAuxiliaryId && financingFingerprints.Contains(f.SourceFingerprint))
+                        .Select(f => f.SourceFingerprint).ToListAsync();
+                    foreach (var (line, fp) in bnStatement.FinancingLines.Zip(financingFingerprints))
+                    {
+                        if (!existingFinancings.Contains(fp))
+                            db.CreditFinancings.Add(new CreditFinancing { ImportId = import.Id, AccountAuxiliaryId = import.AccountAuxiliaryId, FinancingDate = bnStatement.StatementDate, Concept = line.Origin, Installments = $"{line.CurrentInstallmentNumber}/{line.TotalInstallments}", InstallmentAmount = line.InstallmentAmount, InitialBalance = line.OriginalAmount, OutstandingBalance = line.OutstandingBalance, CurrencyCode = line.CurrencyCode, SourceFingerprint = fp });
+                    }
+                    WriteStage(context, "Processed {0} financing lines.", bnStatement.FinancingLines.Count);
+                }
+                await progress.ReportAsync(importId, attempt, ImportProgressStages.Extracting, bnStatement.Movements.Count, bnStatement.Movements.Count, 70);
             }
             else throw new InvalidDataException($"El extractor para '{template}' no está disponible.");
             await progress.ReportAsync(importId, attempt, ImportProgressStages.Persisting, 0, 0, 95);

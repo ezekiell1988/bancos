@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Bancos.Api.Data;
 using Bancos.Api.Features.Accounts;
 using Bancos.Api.Features.Classification;
@@ -12,6 +13,7 @@ using Hangfire.SqlServer;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Configuration.AddLocalSecrets(builder.Environment.ContentRootPath);
 builder.Services.AddProblemDetails(); builder.Services.AddHealthChecks();
 builder.Services.AddSignalR();
