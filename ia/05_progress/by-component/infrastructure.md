@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-20 CR (TASK-EBC-INF-09 completada)
+> **Última actualización:** 2026-07-20 CR (TASK-EBC-MCP-02 completada)
 
 
 
 ## Completado
+
+* **2026-07-20** — TASK-EBC-MCP-02: Se registró Bancos.Mcp como servidor MCP HTTP local de VS Code y se documentó el arranque HTTPS y el diagnóstico. El endpoint confirmó tools/list y tools/call para health_status. — EBC
 
 * **2026-07-20** — TASK-EBC-INF-09: Configurado VS Code con launch de dotnet watch para la API en el puerto 8000, Angular ng serve HTTPS en el 4200 y compound Full Stack. — EBC
 
