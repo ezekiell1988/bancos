@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-21 CR (TASK-EBC-DOC-05 completada)
+> **Última actualización:** 2026-07-21 CR (TASK-EBC-INF-11 completada)
 
 ## En curso
 
@@ -21,6 +21,8 @@
 * Aprobar y ejecutar `TASK-EZ-BE-01` mediante `iaWorkflow`.
 
 ## Completado en sesiones recientes
+
+* **2026-07-21** — TASK-EBC-INF-11 cerrada: Registrado Bancos.Mcp como servidor HTTP bancos_mcp en la configuración de Codex. — EBC
 
 * **2026-07-21** — TASK-EBC-DOC-05 cerrada: Documentada en ia/README.md la convención para ubicar tools MCP por feature. — EBC
 
