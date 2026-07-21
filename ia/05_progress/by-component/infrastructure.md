@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-20 CR (TASK-EBC-INF-08 completada)
+> **Última actualización:** 2026-07-20 CR (TASK-EBC-INF-09 completada)
 
 
 
 ## Completado
+
+* **2026-07-20** — TASK-EBC-INF-09: Configurado VS Code con launch de dotnet watch para la API en el puerto 8000, Angular ng serve HTTPS en el 4200 y compound Full Stack. — EBC
 
 * **2026-07-20** — TASK-EBC-INF-08: SQL Server 2022 en Docker configurado y validado. Los 19 archivos de src/input.zip se importaron correctamente. Bugs corregidos: SingleOrDefaultAsync→FirstOrDefaultAsync en ClassificationModule, seed de categoría General, ChangeTracker.Clear()+Attach en catch blocks para fallo correcto, BalanceRegex con \\s para non-breaking spaces de PdfPig, race condition en LoanStatements con re-attach del Import. Nuevo endpoint POST /api/imports/{id}/retry. — EBC
 

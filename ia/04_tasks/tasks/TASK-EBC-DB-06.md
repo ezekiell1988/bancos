@@ -134,6 +134,8 @@ Correcciones de datos son reversibles manualmente si se documenta el estado ante
 
 ## Notas / contexto adicional
 
+* Pendiente de revisión: Se agregó la identidad bancaria del auxiliar y una resolución de auxiliar basada en contenido (IBAN o tarjeta+moneda), sin usar nombre ni ruta de archivo.
+
 * Aprobada por ezekiell1988 el 2026-07-20 20:57 CR.
 
 Sin notas adicionales.
