@@ -20,7 +20,7 @@
           },
           "configurations": { "production": { "optimization": true, "outputHashing": "all" } }
         },
-        "serve": { "builder": "@angular/build:dev-server", "configurations": { "production": { "buildTarget": "bancos-web:build:production" }, "development": { "buildTarget": "bancos-web:build" } }, "defaultConfiguration": "development" }
+        "serve": { "builder": "@angular/build:dev-server", "options": { "proxyConfig": "proxy.conf.json" }, "configurations": { "production": { "buildTarget": "bancos-web:build:production" }, "development": { "buildTarget": "bancos-web:build" } }, "defaultConfiguration": "development" }
       }
     }
   }

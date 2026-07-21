@@ -17,7 +17,7 @@ public static class ImportsModule
 {
     public static IServiceCollection AddImportsModule(this IServiceCollection services)
     {
-        services.AddScoped<ImportJobs>(); services.AddScoped<BacCreditFinancingXlsParser>(); services.AddScoped<AccountMovementSpreadsheetParser>(); services.AddScoped<CardStatementParser>(); services.AddScoped<CoopealianzaLoanPdfParser>(); services.AddScoped<BacAccountStatementPdfParser>();
+        services.AddScoped<ImportJobs>(); services.AddScoped<BacCreditFinancingXlsParser>(); services.AddScoped<AccountMovementSpreadsheetParser>(); services.AddScoped<CardStatementParser>(); services.AddScoped<CoopealianzaLoanPdfParser>(); services.AddScoped<BacAccountStatementPdfParser>(); services.AddScoped<BnCardStatementPdfParser>();
         services.AddScoped<IImportJobScheduler, HangfireImportJobScheduler>(); services.AddScoped<ImportTemplatePatternService>();
         services.AddOptions<ImportProgressOptions>().BindConfiguration(ImportProgressOptions.Section).ValidateDataAnnotations().ValidateOnStart();
         services.TryAddSingleton(TimeProvider.System);
@@ -187,7 +187,8 @@ internal static class ImportReviewTemplates
         [ImportTemplates.BcrDebitHtmlXlsV1] = new(ImportTemplates.BcrDebitHtmlXlsV1, "Movimientos de cuenta", AccountKind.Asset, true),
         [ImportTemplates.BankAccountMovementsXlsV1] = new(ImportTemplates.BankAccountMovementsXlsV1, "Movimientos de cuenta (Excel)", AccountKind.Asset, true),
         [ImportTemplates.BacCreditOnlinePdfV1] = new(ImportTemplates.BacCreditOnlinePdfV1, "Estado de tarjeta", AccountKind.Liability, true),
-        [ImportTemplates.BacAccountStatementPdfV1] = new(ImportTemplates.BacAccountStatementPdfV1, "Estado de cuenta consolidado BAC", AccountKind.Liability, true)
+        [ImportTemplates.BacAccountStatementPdfV1] = new(ImportTemplates.BacAccountStatementPdfV1, "Estado de cuenta consolidado BAC", AccountKind.Liability, true),
+        [ImportTemplates.BnCardStatementPdfV1] = new(ImportTemplates.BnCardStatementPdfV1, "Estado de tarjeta Banco Nacional", AccountKind.Liability, true)
     };
 
     public static ImportReviewTemplate? Get(string template) => Values.GetValueOrDefault(template);
