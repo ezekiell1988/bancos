@@ -17,6 +17,11 @@ en los flujos contables, los jobs ni la persistencia funcional de la API.
 migraciones de EF Core distintos. No comparten tablas ni `__EFMigrationsHistory`.
 Las migraciones de un proyecto se aplican únicamente contra su propia base de datos.
 
+Las tablas del catálogo MCP usan el prefijo `tb` y lower camel case. Sus columnas
+usan lower camel case, con claves descriptivas como `idBanks` e
+`idImportTemplates`. EF Core publica comentarios en español para cada tabla y
+columna; los nombres físicos permanecen en inglés.
+
 ## Features
 
 | Feature | Responsabilidad |
