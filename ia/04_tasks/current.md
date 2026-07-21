@@ -1,6 +1,10 @@
 # 04 — Tareas activas
 
-> **Última actualización:** 2026-07-20 CR (TASK-EBC-FE-11 creada)
+> **Última actualización:** 2026-07-20 CR (TASK-EBC-FE-11 completada)
+
+
+
+
 
 
 
@@ -90,10 +94,6 @@ Sin tareas.
 
 | ID | Título | Riesgo | Aprobación |
 |---|---|---|---|
-| `TASK-EBC-FE-11` | Página de Préstamos y financiamientos | bajo | pendiente |
-| `TASK-EBC-FE-10` | Página de Estado de Situación Financiera | bajo | pendiente |
-| `TASK-EBC-FE-09` | Página de Estado de Resultados mensual | bajo | pendiente |
-| `TASK-EBC-FE-08` | Página de Movimientos por Categoría con filtro y reclasificación | bajo | pendiente |
 | `TASK-EBC-INF-03` | Diseño de autenticación y estrategia de contenedor para despliegue | alto | pendiente |
 
 ## Bloqueadas

@@ -1,0 +1,75 @@
+.loans-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.loans-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.loans-header h1 {
+  margin: 0;
+}
+
+.total-mensual {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  background: var(--color-surface, #f4f4f4);
+  border: 1px solid var(--color-border, #ddd);
+  border-radius: 8px;
+  padding: 0.75rem 1.25rem;
+}
+
+.total-label {
+  font-size: 0.8rem;
+  opacity: 0.65;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.total-amount {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.loans-section h2 {
+  margin: 0 0 0.75rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+th, td {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border, #e0e0e0);
+}
+
+th {
+  font-weight: 600;
+  background: var(--color-surface, #f8f8f8);
+}
+
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.center { text-align: center; }
+.mono { font-family: monospace; }
+
+tfoot tr.subtotal td {
+  font-weight: 700;
+  border-top: 2px solid var(--color-border, #ccc);
+}
+
+.muted { opacity: 0.55; font-style: italic; }
+.notice.error { color: #c00; }

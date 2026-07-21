@@ -1,8 +1,16 @@
-> **Última actualización:** 2026-07-18 CR (TASK-EBC-FE-07 completada)
+> **Última actualización:** 2026-07-20 CR (TASK-EBC-FE-11 completada)
 
 
 
 ## Completado
+
+* **2026-07-20** — TASK-EBC-FE-11: Página /loans implementada con endpoint BE GET /api/loans y feature Angular standalone. Muestra financiamientos BAC activos (OutstandingBalance > 0), préstamos Coopealianza con cuota del último pago, y total mensual CRC consolidado en el encabezado. Link "Préstamos" agregado al nav principal. — EBC
+
+* **2026-07-20** — TASK-EBC-FE-10: Página /reports/balance-sheet implementada con endpoint GET /api/reports/balance-sheet (activos por suma de Transactions en cuentas Asset, pasivos por último CardStatement + CreditFinancings + LoanStatements) y componente Angular BalanceSheetPage. Patrimonio neto visible al final. — E
+
+* **2026-07-20** — TASK-EBC-FE-09: Endpoint GET /api/reports/income-statement?year=&month= implementado en ReportsModule. Feature Angular /reports/income-statement con selector mes/año, tablas de ingresos y gastos agrupados por categoría, y resultado neto (superávit/déficit). Ruta registrada en app.routes.ts. Build Angular limpio con chunk income-statement-page generado. — EBC
+
+* **2026-07-20** — TASK-EBC-FE-08: Página /categories implementada con filtro por categoría y descripción en tiempo real, total del filtro en encabezado, dropdown inline para reclasificar y PATCH que persiste en BD. Endpoints GET /api/transactions y PATCH /api/transactions/{id}/category añadidos en TransactionsModule. Nav link agregado en app.ts. — EBC
 
 * **2026-07-18** — TASK-EBC-FE-07: La confirmación de carga diferencia archivos ya importados de fallos reales. La protección de huellas permanece activa y los duplicados se conservan visibles en la cola. — EBC
 
