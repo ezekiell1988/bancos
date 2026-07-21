@@ -2,7 +2,9 @@ using Bancos.Api.Data;
 using Bancos.Api.Features.Accounts;
 using Bancos.Api.Features.Classification;
 using Bancos.Api.Features.Imports;
+using Bancos.Api.Features.Loans;
 using Bancos.Api.Features.Reports;
+using Bancos.Api.Features.Transactions;
 using Bancos.Api.Infrastructure;
 using Hangfire;
 using Hangfire.Console;
@@ -25,7 +27,7 @@ builder.Services.AddAccountsModule().AddClassificationModule().AddImportsModule(
 var app = builder.Build(); app.UseExceptionHandler(); app.MapHealthChecks("/_api/health");
 if (!app.Environment.IsEnvironment("Testing")) app.UseHangfireDashboard("/_api/hangfire");
 app.UseDefaultFiles(); app.UseStaticFiles();
-app.MapAccountsEndpoints().MapClassificationEndpoints().MapImportsEndpoints().MapReportsEndpoints();
+app.MapAccountsEndpoints().MapClassificationEndpoints().MapImportsEndpoints().MapLoansEndpoints().MapReportsEndpoints().MapTransactionsEndpoints();
 app.MapHub<ImportProgressHub>("/hubs/import-progress");
 app.MapFallbackToFile("index.html");
 app.Run();

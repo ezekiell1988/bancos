@@ -1,0 +1,18 @@
+.filters { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; }
+.filters label { display: flex; flex-direction: column; gap: 0.25rem; flex: 1 1 14rem; }
+.filters select, .filters input { width: 100%; }
+
+.summary { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--color-border); margin-bottom: 0.75rem; }
+
+.list li { display: flex; align-items: center; gap: 1rem; justify-content: space-between; }
+.info { min-width: 0; flex: 1; }
+.info strong { display: block; overflow-wrap: anywhere; }
+.action select { min-width: 10rem; }
+.empty { color: var(--color-muted, #888); }
+
+.pagination { display: flex; align-items: center; gap: 1rem; justify-content: center; margin-top: 1rem; }
+
+@media (max-width: 600px) {
+  .list li { flex-direction: column; align-items: stretch; }
+  .action select { width: 100%; }
+}
