@@ -2,6 +2,18 @@
 
 Usar solo para crear o reparar contexto. No incluir datos sensibles.
 
+## Convenciones de SQL Server
+
+Las tablas del catálogo MCP inician con `tb` y usan lower camel case, por ejemplo,
+`tbImportTemplates`. Sus columnas también usan lower camel case. Las claves
+primarias y foráneas expresan la entidad relacionada, por ejemplo,
+`idImportTemplates` e `idBankAccounts`; no se usa una columna SQL genérica `Id`.
+
+Cada tabla y cada columna nueva debe declarar un comentario en español mediante
+`HasComment(...)` de EF Core. Los nombres de tablas y columnas se conservan en
+inglés. La migración debe incluir esos metadatos para que SQL Server los publique
+como descripciones del esquema.
+
 ## Componentes `00` a `08`
 
 * `00_context.md`: identidad, stack, límites, mapa y validación.

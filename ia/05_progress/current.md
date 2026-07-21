@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-20 CR (TASK-EBC-DOC-04 completada)
+> **Última actualización:** 2026-07-20 CR (progreso actualizado)
 
 ## En curso
 
@@ -21,6 +21,8 @@
 * Aprobar y ejecutar `TASK-EZ-BE-01` mediante `iaWorkflow`.
 
 ## Completado en sesiones recientes
+
+* **2026-07-20** — MCP: se consolidó el catálogo de bancos, cuentas, plantillas y patrones de importación. Se añadieron 15 referencias de cuentas, 40 relaciones cuenta-plantilla y tipos de cambio USD para BAC y BN. El esquema MCP fue regenerado como una única migración inicial, con tablas `tb...`, columnas lower camel case, claves descriptivas y comentarios SQL en español para todas las tablas y columnas. Se validó la migración, la base local, las pruebas del catálogo y los diagnósticos. — EBC
 
 * **2026-07-20** — TASK-EBC-DOC-04 cerrada: Se actualizó la documentación para distinguir Bancos.Api como monolito funcional y Bancos.Mcp como servidor MCP auxiliar independiente, con catálogo, migraciones y base de datos propios. — EBC
 

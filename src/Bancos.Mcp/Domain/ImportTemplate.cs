@@ -11,12 +11,13 @@ public sealed class ImportTemplate
     public DateTimeOffset CreatedAt { get; set; } = CostaRicaTime.Now;
     public DateTimeOffset? UpdatedAt { get; set; }
     public ICollection<ImportTemplatePattern> Patterns { get; set; } = [];
+    public ICollection<BankAccountImportTemplate> BankAccounts { get; set; } = [];
 }
 
 public sealed class ImportTemplatePattern
 {
     public Guid Id { get; set; }
-    public Guid TemplateId { get; set; }
+    public Guid ImportTemplateId { get; set; }
     public string? SignatureHash { get; set; }
     public required string PatternKind { get; set; }
     public string? RequiredTermsJson { get; set; }
@@ -26,7 +27,7 @@ public sealed class ImportTemplatePattern
     public bool IsActive { get; set; } = true;
     public DateTimeOffset CreatedAt { get; set; } = CostaRicaTime.Now;
     public DateTimeOffset? UpdatedAt { get; set; }
-    public ImportTemplate? Template { get; set; }
+    public ImportTemplate? ImportTemplate { get; set; }
 }
 
 public static class CostaRicaTime

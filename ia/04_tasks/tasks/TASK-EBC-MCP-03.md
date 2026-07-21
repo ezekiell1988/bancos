@@ -1,6 +1,6 @@
 # TASK-EBC-MCP-03 — Clasificar archivo local mediante Bancos.Mcp reutilizando el flujo de Bancos.Api
 
-**Estado:** En revisión
+**Estado:** Lista
 **Autor:** Ezequiel Baltodano Cubillo `<pendiente>`
 **Rama:** `dev`
 **Fecha inicio:** 2026-07-20 22:24 CR
