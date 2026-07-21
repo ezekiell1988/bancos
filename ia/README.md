@@ -8,6 +8,13 @@ Esta carpeta conserva conocimiento verificable del proyecto. No incluye estados 
 funcional de Bancos; el MCP es un servidor auxiliar local con su propio catálogo,
 migraciones y base de datos. No comparten tablas ni historial de EF Core.
 
+## Organización de features MCP
+
+Los adaptadores MCP que implementan un caso de uso viven junto a su feature. Por
+ejemplo, `DetectImportTemplateTool`, su servicio y sus opciones pertenecen a
+`Features/TemplateDetection/`. La carpeta `Tools/` se reserva para componentes
+transversales del protocolo, como `IMcpTool`, `ToolRegistry` y `StatusTool`.
+
 ## Índice
 
 | Archivo | Propósito | Leer cuando |

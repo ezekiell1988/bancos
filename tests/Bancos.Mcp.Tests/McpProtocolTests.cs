@@ -2,9 +2,13 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Bancos.Mcp.Tools;
+using Bancos.Mcp.Features.TemplateDetection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Routing;
 using Xunit;
 
 namespace Bancos.Mcp.Tests;
@@ -12,8 +16,13 @@ namespace Bancos.Mcp.Tests;
 public sealed class McpProtocolTests : IClassFixture<McpWebApplicationFactory>
 {
     private readonly HttpClient client;
+    private readonly McpWebApplicationFactory factory;
 
-    public McpProtocolTests(McpWebApplicationFactory factory) => client = factory.CreateClient();
+    public McpProtocolTests(McpWebApplicationFactory factory)
+    {
+        this.factory = factory;
+        client = factory.CreateClient();
+    }
 
     [Fact]
     public async Task Initialize_negotiates_the_client_protocol_version()
@@ -87,6 +96,15 @@ public sealed class McpProtocolTests : IClassFixture<McpWebApplicationFactory>
 
         Assert.Equal(HttpStatusCode.Accepted, notification.StatusCode);
         Assert.Equal(HttpStatusCode.Accepted, clientResponse.StatusCode);
+    }
+
+    [Fact]
+    public void Mcp_post_endpoint_requires_the_bounded_concurrency_policy()
+    {
+        var dataSource = factory.Services.GetRequiredService<EndpointDataSource>();
+        var endpoint = dataSource.Endpoints.Single(endpoint => endpoint.Metadata.GetMetadata<HttpMethodMetadata>()?.HttpMethods.Contains("POST") == true);
+
+        Assert.Equal(TemplateDetectionModule.McpToolsRateLimitPolicy, endpoint.Metadata.GetMetadata<EnableRateLimitingAttribute>()?.PolicyName);
     }
 
     private Task<HttpResponseMessage> PostAsync(string json) => client.PostAsync("/", JsonContent.Create(JsonDocument.Parse(json).RootElement));

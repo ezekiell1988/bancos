@@ -70,7 +70,9 @@ La primera respuesta debe listar las herramientas disponibles. La segunda debe d
 
 `detect_import_template` recibe `relativePath`, una ruta relativa a
 `FileTemplateDetection:InputDirectory`. La configuración base usa `src/input` y
-limita cada archivo a 10 MiB. Acepta exclusivamente `pdf`, `csv`, `xls` y `xlsx`.
+limita cada archivo a 10 MiB. Para XLS/XLSX también acota filas, celdas y caracteres
+extraídos; los límites se configuran en `FileTemplateDetection`. Acepta exclusivamente
+`pdf`, `csv`, `xls` y `xlsx`.
 
 ```bash
 curl --silent --show-error --fail --insecure \
@@ -85,6 +87,10 @@ superan el límite y contenido que no coincide con la extensión. No persiste el
 archivo, no consulta SQL Server y no incluye contenido financiero en la respuesta ni
 en los errores. La eliminación del archivo de entrada sigue siendo responsabilidad del
 usuario.
+
+El endpoint MCP aplica un límite por ventana de solicitudes y una política de
+concurrencia para sus llamadas POST. Los valores locales se ajustan en
+`McpToolRateLimit`; una solicitud rechazada recibe HTTP 429 sin contenido del archivo.
 
 ## Flujo compatible
 

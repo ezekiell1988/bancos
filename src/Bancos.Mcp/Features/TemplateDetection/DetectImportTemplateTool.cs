@@ -1,7 +1,8 @@
 using System.Text.Json;
 using Bancos.Mcp.Protocol;
+using Bancos.Mcp.Tools;
 
-namespace Bancos.Mcp.Tools;
+namespace Bancos.Mcp.Features.TemplateDetection;
 
 public sealed class DetectImportTemplateTool(ImportTemplateDetectionService detectionService) : IMcpTool
 {

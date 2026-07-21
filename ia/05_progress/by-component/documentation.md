@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-20 CR (TASK-EBC-DOC-04 completada)
+> **Última actualización:** 2026-07-21 CR (TASK-EBC-DOC-05 completada)
 
 
 
 ## Completado
+
+* **2026-07-21** — TASK-EBC-DOC-05: Documentada en ia/README.md la convención para ubicar tools MCP por feature. — EBC
 
 * **2026-07-20** — TASK-EBC-DOC-04: Se actualizó la documentación para distinguir Bancos.Api como monolito funcional y Bancos.Mcp como servidor MCP auxiliar independiente, con catálogo, migraciones y base de datos propios. — EBC
 

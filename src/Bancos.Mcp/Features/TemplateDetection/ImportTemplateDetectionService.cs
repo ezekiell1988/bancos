@@ -3,24 +3,31 @@ using System.Text;
 using ExcelDataReader;
 using Microsoft.Extensions.Options;
 using UglyToad.PdfPig;
+using Bancos.Mcp.Catalog;
 
-namespace Bancos.Mcp.Tools;
+namespace Bancos.Mcp.Features.TemplateDetection;
 
 public sealed class ImportTemplateDetectionService
 {
     private static readonly HashSet<string> AllowedExtensions = [".csv", ".pdf", ".xls", ".xlsx"];
     private readonly string inputDirectory;
     private readonly long maxFileSizeBytes;
+    private readonly int maxSpreadsheetRows;
+    private readonly int maxSpreadsheetCells;
+    private readonly int maxExtractedCharacters;
 
     public ImportTemplateDetectionService(IOptions<FileTemplateDetectionOptions> options, IHostEnvironment environment)
-        : this(options.Value.InputDirectory, options.Value.MaxFileSizeBytes, environment.ContentRootPath)
+        : this(options.Value.InputDirectory, options.Value.MaxFileSizeBytes, environment.ContentRootPath, options.Value.MaxSpreadsheetRows, options.Value.MaxSpreadsheetCells, options.Value.MaxExtractedCharacters)
     {
     }
 
-    public ImportTemplateDetectionService(string configuredInputDirectory, long configuredMaxFileSizeBytes, string contentRootPath)
+    public ImportTemplateDetectionService(string configuredInputDirectory, long configuredMaxFileSizeBytes, string contentRootPath, int maxSpreadsheetRows = 10_000, int maxSpreadsheetCells = 100_000, int maxExtractedCharacters = 1_000_000)
     {
         inputDirectory = Path.GetFullPath(configuredInputDirectory, contentRootPath);
         maxFileSizeBytes = configuredMaxFileSizeBytes;
+        this.maxSpreadsheetRows = maxSpreadsheetRows;
+        this.maxSpreadsheetCells = maxSpreadsheetCells;
+        this.maxExtractedCharacters = maxExtractedCharacters;
     }
 
     public async Task<Guid> DetectAsync(string relativePath, CancellationToken cancellationToken)
@@ -91,36 +98,23 @@ public sealed class ImportTemplateDetectionService
         _ => throw new InvalidDataException("El contenido no coincide con el formato declarado.")
     };
 
-    private static string ExtractText(string contentKind, byte[] content) => contentKind switch
+    private string ExtractText(string contentKind, byte[] content) => contentKind switch
     {
         "pdf" => ExtractPdf(content),
         "xls" => ExtractSpreadsheet(content),
-        _ => Encoding.UTF8.GetString(content)
+        _ => ExtractPlainText(content)
     };
 
     private static Guid DetectTemplateId(string contentKind, string text)
     {
         var normalized = Normalize(text);
-        var matches = new List<Guid>();
-
-        if (contentKind == "csv" && ContainsAll(normalized, ";", "oficina", "fechamovimiento", "numerodocumento", "debito", "credito", "descripcion"))
-            matches.Add(TemplateIds.BcrDebitCsv);
-        if (contentKind == "csv" && ContainsAll(normalized, ",", "name", "date", "minimum payment", "cash payment", "local amount") && HasAny(normalized, "dollar amount", "dollars amount"))
-            matches.Add(TemplateIds.BacCreditCsv);
-        if (contentKind == "html" && ContainsAll(normalized, "banco de costa rica") && HasAny(normalized, "movimientos por rango de fechas", "movimientos de la cuenta", "movimientos del d"))
-            matches.Add(TemplateIds.BcrDebitHtmlXls);
-        if (contentKind == "xls" && ContainsAll(normalized, "consulta de financiamientos", "fecha", "concepto", "cuotas", "monto de cuota", "saldo inicial", "saldo faltante"))
-            matches.Add(TemplateIds.BacCreditFinancingXls);
-        if (contentKind == "xls" && normalized.Contains("fecha") && HasAny(normalized, "descripcion", "detalle") && HasAny(normalized, "debito", "debitos") && HasAny(normalized, "credito", "creditos"))
-            matches.Add(TemplateIds.BankAccountMovementsXls);
-        if (contentKind == "pdf" && ContainsAll(normalized, "tarjeta de credito", "saldo en colones", "saldo en dolares", "fecha de pago de contado") && !normalized.Contains("total pago de contado"))
-            matches.Add(TemplateIds.BacCreditOnlinePdf);
-        if (contentKind == "pdf" && ContainsAll(normalized, "ver detalles del prestamo", "capital", "interes", "mora", "otros", "total", "saldo"))
-            matches.Add(TemplateIds.CoopealianzaLoanPdf);
-        if (contentKind == "pdf" && ContainsAll(normalized, "numero de tarjeta", "marca de tarjeta", "plan de lealtad", "pagos vencidos", "pago de contado", "fecha de corte", "total pago de contado"))
-            matches.Add(TemplateIds.BacAccountStatementPdf);
-        if (contentKind == "pdf" && ContainsAll(normalized, "banco nacional de costa rica", "estado de cuenta tarjetas de credito", "detalle de compras del periodo", "total pago de contado"))
-            matches.Add(TemplateIds.BnCardStatementPdf);
+        var matches = ImportTemplateCatalog.Definitions
+            .Where(definition => definition.ContentKind == contentKind)
+            .Where(definition => ContainsAll(normalized, definition.RequiredTerms))
+            .Where(definition => definition.AlternativeTermGroups is null || definition.AlternativeTermGroups.All(group => HasAny(normalized, group)))
+            .Where(definition => definition.ExcludedTerms is null || !HasAny(normalized, definition.ExcludedTerms))
+            .Select(definition => definition.Id)
+            .ToList();
 
         return matches.Count switch
         {
@@ -136,18 +130,41 @@ public sealed class ImportTemplateDetectionService
         return string.Join('\n', document.GetPages().Select(page => page.Text));
     }
 
-    private static string ExtractSpreadsheet(byte[] content)
+    private string ExtractPlainText(byte[] content)
+    {
+        var text = Encoding.UTF8.GetString(content);
+        if (text.Length > maxExtractedCharacters)
+            throw new InvalidDataException("El archivo supera los límites de extracción permitidos.");
+        return text;
+    }
+
+    private string ExtractSpreadsheet(byte[] content)
     {
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
         using var stream = new MemoryStream(content);
         using var reader = ExcelReaderFactory.CreateReader(stream);
         var values = new List<string>();
+        var rows = 0;
+        var cells = 0;
+        var characters = 0;
         do
         {
             while (reader.Read())
+            {
+                if (++rows > maxSpreadsheetRows)
+                    throw new InvalidDataException("El archivo supera los límites de extracción permitidos.");
                 for (var column = 0; column < reader.FieldCount; column++)
                     if (reader.GetValue(column) is { } value)
-                        values.Add(value.ToString()!);
+                    {
+                        if (++cells > maxSpreadsheetCells)
+                            throw new InvalidDataException("El archivo supera los límites de extracción permitidos.");
+                        var text = value.ToString()!;
+                        characters += text.Length;
+                        if (characters > maxExtractedCharacters)
+                            throw new InvalidDataException("El archivo supera los límites de extracción permitidos.");
+                        values.Add(text);
+                    }
+            }
         }
         while (reader.NextResult());
 
@@ -164,16 +181,4 @@ public sealed class ImportTemplateDetectionService
     private static string Normalize(string value) => string.Concat(value.Normalize(NormalizationForm.FormD)
         .Where(character => CharUnicodeInfo.GetUnicodeCategory(character) != UnicodeCategory.NonSpacingMark)).ToLowerInvariant();
 
-    private static class TemplateIds
-    {
-        public static readonly Guid BcrDebitCsv = Guid.Parse("10000000-0000-0000-0000-000000000001");
-        public static readonly Guid BacCreditCsv = Guid.Parse("10000000-0000-0000-0000-000000000002");
-        public static readonly Guid BcrDebitHtmlXls = Guid.Parse("10000000-0000-0000-0000-000000000003");
-        public static readonly Guid BankAccountMovementsXls = Guid.Parse("10000000-0000-0000-0000-000000000004");
-        public static readonly Guid BacCreditFinancingXls = Guid.Parse("10000000-0000-0000-0000-000000000005");
-        public static readonly Guid BacCreditOnlinePdf = Guid.Parse("10000000-0000-0000-0000-000000000006");
-        public static readonly Guid CoopealianzaLoanPdf = Guid.Parse("10000000-0000-0000-0000-000000000007");
-        public static readonly Guid BacAccountStatementPdf = Guid.Parse("10000000-0000-0000-0000-000000000008");
-        public static readonly Guid BnCardStatementPdf = Guid.Parse("10000000-0000-0000-0000-000000000009");
-    }
 }
