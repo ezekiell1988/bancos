@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-20 CR (TASK-EBC-MCP-02 completada)
+> **Última actualización:** 2026-07-20 CR (TASK-EBC-MCP-04 completada)
 
 
 
 ## Completado
+
+* **2026-07-20** — TASK-EBC-MCP-04: Se poblaron McpImportTemplatePatterns con nueve reglas de contenido aprobadas y activas, una por cada plantilla conocida. Las horas del catálogo migraron a DateTimeOffset con offset -06:00 de Costa Rica. La migración incremental fue aplicada y verificada en la base local. — EBC
 
 * **2026-07-20** — TASK-EBC-MCP-02: Se registró Bancos.Mcp como servidor MCP HTTP local de VS Code y se documentó el arranque HTTPS y el diagnóstico. El endpoint confirmó tools/list y tools/call para health_status. — EBC
 

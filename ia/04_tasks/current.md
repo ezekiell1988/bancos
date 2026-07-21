@@ -1,6 +1,15 @@
 # 04 — Tareas activas
 
-> **Última actualización:** 2026-07-20 CR (TASK-EBC-MCP-03 aprobada)
+> **Última actualización:** 2026-07-20 CR (TASK-EBC-DOC-04 completada)
+
+
+
+
+
+
+
+
+
 
 
 
@@ -100,7 +109,6 @@ Sin tareas.
 
 | ID | Área | Título | Prioridad |
 |---|---|---|---|
-| `TASK-EBC-MCP-03` | MCP | Clasificar archivo local mediante Bancos.Mcp reutilizando el flujo de Bancos.Api | alta |
 | `TASK-EBC-INF-10` | INF | Reiniciar API local antes del launch de VS Code | baja |
 
 ## Borradores
@@ -121,3 +129,4 @@ Sin tareas.
 Sin tareas.
 | TASK-EBC-DB-06 | DB | Auditoría de formatos de carga: verificar IBAN, banco y responsable por plantilla | alta |
 | TASK-EBC-DB-05 | DB | Estrategia de dos entornos de base de datos (dev y prod) | crítica |
+| TASK-EBC-MCP-03 | MCP | Clasificar archivo local mediante Bancos.Mcp reutilizando el flujo de Bancos.Api | alta |

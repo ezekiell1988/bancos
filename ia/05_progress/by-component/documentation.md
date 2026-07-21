@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-20 CR (TASK-EBC-MCP-01 completada)
+> **Última actualización:** 2026-07-20 CR (TASK-EBC-DOC-04 completada)
 
 
 
 ## Completado
+
+* **2026-07-20** — TASK-EBC-DOC-04: Se actualizó la documentación para distinguir Bancos.Api como monolito funcional y Bancos.Mcp como servidor MCP auxiliar independiente, con catálogo, migraciones y base de datos propios. — EBC
 
 * **2026-07-20** — TASK-EBC-MCP-01: Se creó el servidor MCP independiente para Copilot Studio con transporte JSON-RPC, tool diagnóstica segura, HTTPS local, pruebas y documentación. — EBC
 

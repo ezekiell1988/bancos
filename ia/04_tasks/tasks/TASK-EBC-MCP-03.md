@@ -1,6 +1,6 @@
 # TASK-EBC-MCP-03 — Clasificar archivo local mediante Bancos.Mcp reutilizando el flujo de Bancos.Api
 
-**Estado:** Lista
+**Estado:** En revisión
 **Autor:** Ezequiel Baltodano Cubillo `<pendiente>`
 **Rama:** `dev`
 **Fecha inicio:** 2026-07-20 22:24 CR
@@ -114,6 +114,8 @@ Eliminar la herramienta MCP, sus opciones y documentación asociada. No debe hab
 * [ ] Progreso/documentación actualizado
 
 ## Notas / contexto adicional
+
+* Pendiente de revisión: Se creó el catálogo EF aislado de Bancos.Mcp: tablas McpImportTemplates y McpImportTemplatePatterns, relación 1:N, restricciones e inicialización de las nueve plantillas conocidas del API. La configuración de desarrollo registra el DbContext sin modificar Bancos.Api.
 
 * Aprobada por Ezequiel Baltodano Cubillo el 2026-07-20 22:25 CR.
 
