@@ -1,6 +1,7 @@
 # 04 — Tareas activas
 
-> **Última actualización:** 2026-07-20 CR (TASK-EBC-MCP-02 completada)
+> **Última actualización:** 2026-07-20 CR (TASK-EBC-MCP-03 aprobada)
+
 
 
 
@@ -99,6 +100,7 @@ Sin tareas.
 
 | ID | Área | Título | Prioridad |
 |---|---|---|---|
+| `TASK-EBC-MCP-03` | MCP | Clasificar archivo local mediante Bancos.Mcp reutilizando el flujo de Bancos.Api | alta |
 | `TASK-EBC-INF-10` | INF | Reiniciar API local antes del launch de VS Code | baja |
 
 ## Borradores
