@@ -38,7 +38,7 @@ public static class AccountsModule
     {
         if (!await db.Owners.AnyAsync(x => x.Id == request.OwnerId, ct) || !await db.Accounts.AnyAsync(x => x.Id == request.AccountId, ct))
             return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["ownerId/accountId"] = ["The owner or account was not found."] });
-        var auxiliary = new AccountAuxiliary { Name = request.Name.Trim(), Iban = request.Iban?.Trim().ToUpperInvariant(), OwnerId = request.OwnerId, AccountId = request.AccountId };
+        var auxiliary = new AccountAuxiliary { Name = request.Name.Trim(), Iban = request.Iban?.Trim().ToUpperInvariant(), Bank = request.Bank?.Trim(), CurrencyCode = request.CurrencyCode?.Trim().ToUpperInvariant(), CardNumberMasked = request.CardNumberMasked?.Trim(), OwnerId = request.OwnerId, AccountId = request.AccountId };
         db.AccountAuxiliaries.Add(auxiliary); await db.SaveChangesAsync(ct);
         return TypedResults.Created($"/api/accounts/auxiliaries/{auxiliary.Id}", ToResponse(auxiliary));
     }
@@ -52,15 +52,20 @@ public static class AccountsModule
     private static async Task<Ok<List<AccountAuxiliaryResponse>>> ListAuxiliaries(BancosDbContext db, CancellationToken ct) =>
         TypedResults.Ok(await db.AccountAuxiliaries.AsNoTracking()
             .OrderBy(x => x.Name)
-            .Select(x => new AccountAuxiliaryResponse(x.Id, x.Name, x.Iban, x.OwnerId, x.AccountId))
+            .Select(x => new AccountAuxiliaryResponse(x.Id, x.Name, x.Iban, x.Bank, x.CurrencyCode, x.CardNumberMasked, x.OwnerId, x.AccountId))
             .ToListAsync(ct));
 
-    private static AccountAuxiliaryResponse ToResponse(AccountAuxiliary value) => new(value.Id, value.Name, value.Iban, value.OwnerId, value.AccountId);
+    private static AccountAuxiliaryResponse ToResponse(AccountAuxiliary value) => new(value.Id, value.Name, value.Iban, value.Bank, value.CurrencyCode, value.CardNumberMasked, value.OwnerId, value.AccountId);
 }
 
 public sealed record CreateOwnerRequest(string DisplayName, string? DocumentReference);
 public sealed record OwnerResponse(Guid Id, string DisplayName);
 public sealed record CreateAccountRequest(string Code, string Name, AccountKind Kind);
 public sealed record AccountResponse(Guid Id, string Code, string Name, AccountKind Kind);
-public sealed record CreateAccountAuxiliaryRequest(string Name, string? Iban, Guid OwnerId, Guid AccountId);
-public sealed record AccountAuxiliaryResponse(Guid Id, string Name, string? Iban, Guid OwnerId, Guid AccountId);
+public sealed record CreateAccountAuxiliaryRequest(string Name, string? Iban, Guid OwnerId, Guid AccountId)
+{
+    public string? Bank { get; init; }
+    public string? CurrencyCode { get; init; }
+    public string? CardNumberMasked { get; init; }
+}
+public sealed record AccountAuxiliaryResponse(Guid Id, string Name, string? Iban, string? Bank, string? CurrencyCode, string? CardNumberMasked, Guid OwnerId, Guid AccountId);

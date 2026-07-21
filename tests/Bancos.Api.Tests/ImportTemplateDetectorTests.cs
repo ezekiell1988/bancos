@@ -92,6 +92,40 @@ public sealed class ImportTemplateDetectorTests
     }
 
     [Fact]
+    public async Task Resolves_a_bac_card_auxiliary_from_content_identity_and_currency()
+    {
+        await using var db = new BancosDbContext(new DbContextOptionsBuilder<BancosDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+        var liability = new Account { Code = "2", Name = "Liability", Kind = AccountKind.Liability };
+        var owner = new Owner { DisplayName = "Owner" };
+        var crc = new AccountAuxiliary { Name = "BAC CRC", AccountId = liability.Id, OwnerId = owner.Id, Bank = "BAC", CurrencyCode = "CRC", CardNumberMasked = "1111-22**-****-4444" };
+        var usd = new AccountAuxiliary { Name = "BAC USD", AccountId = liability.Id, OwnerId = owner.Id, Bank = "BAC", CurrencyCode = "USD", CardNumberMasked = "1111-22**-****-4444" };
+        db.AddRange(liability, owner, crc, usd); await db.SaveChangesAsync();
+        var content = Encoding.UTF8.GetBytes("Card number: 1111 2222 3333 4444\nDate,Description,Amount,Currency\n2026-07-01,Test purchase,10.00,USD");
+
+        var plan = await new ImportAccountResolver(db).ResolveAsync(ImportTemplates.BacCreditCsvV1, content, CancellationToken.None);
+
+        Assert.Null(plan.Error);
+        Assert.Equal(usd.Id, plan.AccountAuxiliaryId);
+    }
+
+    [Fact]
+    public async Task Rejects_a_multicurrency_card_file_instead_of_guessing_an_auxiliary()
+    {
+        await using var db = new BancosDbContext(new DbContextOptionsBuilder<BancosDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+        var liability = new Account { Code = "2", Name = "Liability", Kind = AccountKind.Liability };
+        var owner = new Owner { DisplayName = "Owner" };
+        var crc = new AccountAuxiliary { Name = "BAC CRC", AccountId = liability.Id, OwnerId = owner.Id, Bank = "BAC", CurrencyCode = "CRC", CardNumberMasked = "1111-22**-****-4444" };
+        var usd = new AccountAuxiliary { Name = "BAC USD", AccountId = liability.Id, OwnerId = owner.Id, Bank = "BAC", CurrencyCode = "USD", CardNumberMasked = "1111-22**-****-4444" };
+        db.AddRange(liability, owner, crc, usd); await db.SaveChangesAsync();
+        var content = Encoding.UTF8.GetBytes("Card number: 1111 2222 3333 4444\nDate,Description,Amount,Currency\n2026-07-01,CRC purchase,10.00,CRC\n2026-07-02,USD purchase,10.00,USD");
+
+        var plan = await new ImportAccountResolver(db).ResolveAsync(ImportTemplates.BacCreditCsvV1, content, CancellationToken.None);
+
+        Assert.Null(plan.AccountAuxiliaryId);
+        Assert.NotNull(plan.Error);
+    }
+
+    [Fact]
     public void Detects_bac_card_payment_summary_without_creating_synthetic_movements()
     {
         var csv = "Product,Name,Date,Minimum payment/due date,Minimum payment/ Local Amount,Minimum Payment / Dollars Amount,Cash payment/Due date,Cash payment/ Local amount,Cash payment / Dollar amount\nCard product,Ignored,2026-07-01,2026-07-10,0,0,2026-07-15,2000,0";

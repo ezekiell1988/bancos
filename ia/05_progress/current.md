@@ -22,6 +22,10 @@
 
 ## Completado en sesiones recientes
 
+* **2026-07-20** — TASK-EBC-DB-06: aplicada la migración de identidad bancaria; creados los dos responsables y los 13 auxiliares con IBAN, banco, moneda y responsable. Pendiente: reasignar imports históricos que aún apuntan a auxiliares genéricos y validar cobertura por formato. — EBC
+
+* **2026-07-20** — TASK-EBC-INF-09 cerrada: Configurado VS Code con launch de dotnet watch para la API en el puerto 8000, Angular ng serve HTTPS en el 4200 y compound Full Stack. — EBC
+
 * **2026-07-20** — TASK-EBC-DB-06: Auditoría completada. Se identificaron 8 templates activos en Imports, todos apuntando a 2 auxiliares genéricos sin IBAN ni owner real. Se acordó con el usuario crear 13 AccountAuxiliaries (4 débito, 8 crédito BAC con 2 auxiliares por tarjeta CRC+USD, 1 préstamo Coopealianza) y 2 owners nuevos (Ezequiel Baltodano y Karen Soto para BCR Débito Compartida). Próximo paso: generar y aplicar SQL de inserción. — EBC
 
 * **2026-07-20** — TASK-EBC-BE-24 cerrada: Parser BN implementado. BnCardStatementPdfParser.cs maneja texto concatenado de PdfPig. Detecta automáticamente bn-card-statement-pdf-v1. Persiste CardStatement (corte ₡210,829 + $6.49 contado, pago mínimo ₡5,000 + $6.49, vence 03/08/2026), 19 Transactions (2 pagos + 17 compras) y 3 CreditFinancings activos (BN Marchamos 12M ₡32,334 y ₡46,324; Compras 6M ₡26,142). — EBC
