@@ -25,6 +25,10 @@
         "watch": ".mcp/db-query/**/*.mjs",
         "debug": { "type": "node" }
       }
+    },
+    "bancosMcp": {
+      "type": "http",
+      "url": "https://localhost:7241"
     }
   }
 }

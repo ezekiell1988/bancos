@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-20 CR (TASK-EBC-MCP-01 completada)
+> **Última actualización:** 2026-07-20 CR (TASK-EBC-MCP-02 completada)
 
 ## En curso
 
@@ -21,6 +21,8 @@
 * Aprobar y ejecutar `TASK-EZ-BE-01` mediante `iaWorkflow`.
 
 ## Completado en sesiones recientes
+
+* **2026-07-20** — TASK-EBC-MCP-02 cerrada: Se registró Bancos.Mcp como servidor MCP HTTP local de VS Code y se documentó el arranque HTTPS y el diagnóstico. El endpoint confirmó tools/list y tools/call para health_status. — EBC
 
 * **2026-07-20** — TASK-EBC-MCP-01 cerrada: Se creó el servidor MCP independiente para Copilot Studio con transporte JSON-RPC, tool diagnóstica segura, HTTPS local, pruebas y documentación. — EBC
 
