@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-20 CR (TASK-EBC-MCP-03 completada)
+> **Última actualización:** 2026-07-21 CR (TASK-EBC-DOC-05 completada)
 
 ## En curso
 
@@ -21,6 +21,12 @@
 * Aprobar y ejecutar `TASK-EZ-BE-01` mediante `iaWorkflow`.
 
 ## Completado en sesiones recientes
+
+* **2026-07-21** — TASK-EBC-DOC-05 cerrada: Documentada en ia/README.md la convención para ubicar tools MCP por feature. — EBC
+
+* **2026-07-21** — TASK-EBC-MCP-08 cerrada: Reubicados los componentes propios de TemplateDetection dentro de su feature, conservando las abstractions transversales en Tools. — EBC
+
+* **2026-07-21** — TASK-EBC-MCP-07 cerrada: Centralizado el catálogo de plantillas, modularizado el servidor MCP y protegido el procesamiento local de archivos. — EBC
 
 * **2026-07-20** — TASK-EBC-MCP-03 cerrada: Se incorporó `detect_import_template` en Bancos.Mcp para identificar plantillas de importación mediante una ruta relativa confinada. La herramienta procesa PDF, CSV, XLS y XLSX, devuelve únicamente `idImportTemplates`, no persiste archivos ni consulta SQL Server. El catálogo MCP y la convención de esquema se consolidaron durante la tarea. — EBC
 

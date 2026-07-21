@@ -1,5 +1,6 @@
 using System.IO.Compression;
-using Bancos.Mcp.Tools;
+using Bancos.Mcp.Catalog;
+using Bancos.Mcp.Features.TemplateDetection;
 using Xunit;
 
 namespace Bancos.Mcp.Tests;
@@ -27,7 +28,18 @@ public sealed class ImportTemplateDetectionServiceTests : IDisposable
 
         var id = await CreateService().DetectAsync("statement.xlsx", CancellationToken.None);
 
-        Assert.Equal(Guid.Parse("10000000-0000-0000-0000-000000000004"), id);
+        Assert.Equal(ImportTemplateCatalog.Definitions.Single(definition => definition.Code == "bank-account-movements-xls-v1").Id, id);
+    }
+
+    [Fact]
+    public async Task Rejects_an_xlsx_that_exceeds_the_extraction_cell_limit()
+    {
+        CreateXlsx(Path.Combine(inputDirectory, "large.xlsx"));
+
+        var exception = await Assert.ThrowsAsync<InvalidDataException>(() =>
+            CreateService(maxSpreadsheetCells: 3).DetectAsync("large.xlsx", CancellationToken.None));
+
+        Assert.Equal("El archivo supera los límites de extracción permitidos.", exception.Message);
     }
 
     [Theory]
@@ -75,8 +87,8 @@ public sealed class ImportTemplateDetectionServiceTests : IDisposable
         }
     }
 
-    private ImportTemplateDetectionService CreateService(long maxFileSizeBytes = 1024 * 1024) =>
-        new(inputDirectory, maxFileSizeBytes, inputDirectory);
+    private ImportTemplateDetectionService CreateService(long maxFileSizeBytes = 1024 * 1024, int maxSpreadsheetCells = 100_000) =>
+        new(inputDirectory, maxFileSizeBytes, inputDirectory, maxSpreadsheetCells: maxSpreadsheetCells);
 
         private static void CreateXlsx(string path)
         {

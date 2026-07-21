@@ -1,4 +1,5 @@
 using Bancos.Mcp.Data;
+using Bancos.Mcp.Catalog;
 using Bancos.Mcp.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -9,6 +10,16 @@ namespace Bancos.Mcp.Tests;
 
 public sealed class McpCatalogDbContextTests
 {
+    [Fact]
+    public void Catalog_definitions_are_the_single_source_for_seeded_templates_and_patterns()
+    {
+        var definitions = ImportTemplateCatalog.Definitions;
+
+        Assert.Equal(definitions.Select(definition => definition.Id), ImportTemplateCatalog.SeedTemplates().Select(template => template.Id));
+        Assert.Equal(definitions.Select(definition => definition.Id), ImportTemplateCatalog.SeedPatterns().Select(pattern => pattern.ImportTemplateId));
+        Assert.All(definitions, definition => Assert.NotEmpty(definition.RequiredTerms));
+    }
+
     [Fact]
     public void Catalog_schema_uses_descriptive_lower_camel_case_names_and_comments()
     {
