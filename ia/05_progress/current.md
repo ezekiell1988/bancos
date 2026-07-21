@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-20 CR (progreso actualizado)
+> **Última actualización:** 2026-07-20 CR (TASK-EBC-MCP-01 completada)
 
 ## En curso
 
@@ -21,6 +21,8 @@
 * Aprobar y ejecutar `TASK-EZ-BE-01` mediante `iaWorkflow`.
 
 ## Completado en sesiones recientes
+
+* **2026-07-20** — TASK-EBC-MCP-01 cerrada: Se creó el servidor MCP independiente para Copilot Studio con transporte JSON-RPC, tool diagnóstica segura, HTTPS local, pruebas y documentación. — EBC
 
 * **2026-07-20** — TASK-EBC-DB-06: aplicada la migración de identidad bancaria; creados los dos responsables y los 13 auxiliares con IBAN, banco, moneda y responsable. Pendiente: reasignar imports históricos que aún apuntan a auxiliares genéricos y validar cobertura por formato. — EBC
 
