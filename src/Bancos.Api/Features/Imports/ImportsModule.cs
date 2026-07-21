@@ -17,7 +17,7 @@ public static class ImportsModule
 {
     public static IServiceCollection AddImportsModule(this IServiceCollection services)
     {
-        services.AddScoped<ImportJobs>(); services.AddScoped<BacCreditFinancingXlsParser>(); services.AddScoped<AccountMovementSpreadsheetParser>(); services.AddScoped<CardStatementParser>(); services.AddScoped<CoopealianzaLoanPdfParser>();
+        services.AddScoped<ImportJobs>(); services.AddScoped<BacCreditFinancingXlsParser>(); services.AddScoped<AccountMovementSpreadsheetParser>(); services.AddScoped<CardStatementParser>(); services.AddScoped<CoopealianzaLoanPdfParser>(); services.AddScoped<BacAccountStatementPdfParser>();
         services.AddScoped<IImportJobScheduler, HangfireImportJobScheduler>(); services.AddScoped<ImportTemplatePatternService>();
         services.AddOptions<ImportProgressOptions>().BindConfiguration(ImportProgressOptions.Section).ValidateDataAnnotations().ValidateOnStart();
         services.TryAddSingleton(TimeProvider.System);
@@ -63,7 +63,7 @@ public static class ImportsModule
         return TypedResults.NoContent();
     }
 
-    private static async Task<Results<Created<ImportResponse>, ValidationProblem>> Upload(IFormFile file, [FromForm] string? entryPath, [FromForm] int? entryIndex, [FromForm] string? template, BancosDbContext db, ImportTemplatePatternService patterns, IImportJobScheduler scheduler, IOptions<StorageOptions> storage, CancellationToken ct)
+    private static async Task<Results<Created<ImportResponse>, ValidationProblem>> Upload(IFormFile file, [FromForm] string? entryPath, [FromForm] int? entryIndex, [FromForm] string? template, [FromForm] bool force, BancosDbContext db, ImportTemplatePatternService patterns, IImportJobScheduler scheduler, IOptions<StorageOptions> storage, CancellationToken ct)
     {
         if (file.Length == 0) return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["file"] = ["El archivo no puede estar vacío."] });
         var sources = ZipImportReader.Read(file.FileName, await ReadContent(file, ct));
@@ -74,15 +74,18 @@ public static class ImportsModule
         var plan = await ResolvePlan(selectedTemplate, db, ct);
         if (plan.Error is not null) return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["template"] = [plan.Error] });
 
-        Directory.CreateDirectory(storage.Value.TemporaryPath); var path = Path.Combine(storage.Value.TemporaryPath, $"{Guid.NewGuid():N}.upload");
-        await File.WriteAllBytesAsync(path, source.Content, ct);
         var hash = Convert.ToHexString(SHA256.HashData(source.Content));
-        if (await db.ImportFingerprints.AnyAsync(x => x.Hash == hash, ct)) { File.Delete(path); return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["file"] = ["An identical import already exists."] }); }
+        if (!force && await db.ImportFingerprints.AnyAsync(x => x.Hash == hash, ct))
+            return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["file"] = ["An identical import already exists."] });
+
+        Directory.CreateDirectory(storage.Value.TemporaryPath);
+        var path = Path.Combine(storage.Value.TemporaryPath, $"{Guid.NewGuid():N}.upload");
+        await File.WriteAllBytesAsync(path, source.Content, ct);
         if (!string.IsNullOrWhiteSpace(template) && detection.Template == ImportTemplates.Unknown) await patterns.LearnAsync(source.Content, selectedTemplate, ct);
         var import = new Import { FileName = Path.GetFileName(source.Path), TemporaryPath = path, ContentHash = hash, AccountAuxiliaryId = plan.AccountAuxiliaryId!.Value, Template = selectedTemplate };
         db.Imports.Add(import);
         db.ImportProgress.Add(new ImportProgress { ImportId = import.Id, Attempt = 0, Stage = ImportProgressStages.Queued, Current = 0, Total = 0, Percent = 0, Status = ImportStatus.Queued, UpdatedUtc = DateTime.UtcNow });
-        db.ImportFingerprints.Add(new ImportFingerprint { Hash = hash, ImportId = import.Id });
+        if (!force) db.ImportFingerprints.Add(new ImportFingerprint { Hash = hash, ImportId = import.Id });
         await db.SaveChangesAsync(ct);
         scheduler.Enqueue(import.Id);
         return TypedResults.Created($"/api/imports/{import.Id}", new ImportResponse(import.Id, import.Status));
@@ -183,7 +186,8 @@ internal static class ImportReviewTemplates
         [ImportTemplates.BacCreditCsvV1] = new(ImportTemplates.BacCreditCsvV1, "Estado de tarjeta", AccountKind.Liability, true),
         [ImportTemplates.BcrDebitHtmlXlsV1] = new(ImportTemplates.BcrDebitHtmlXlsV1, "Movimientos de cuenta", AccountKind.Asset, true),
         [ImportTemplates.BankAccountMovementsXlsV1] = new(ImportTemplates.BankAccountMovementsXlsV1, "Movimientos de cuenta (Excel)", AccountKind.Asset, true),
-        [ImportTemplates.BacCreditOnlinePdfV1] = new(ImportTemplates.BacCreditOnlinePdfV1, "Estado de tarjeta", AccountKind.Liability, true)
+        [ImportTemplates.BacCreditOnlinePdfV1] = new(ImportTemplates.BacCreditOnlinePdfV1, "Estado de tarjeta", AccountKind.Liability, true),
+        [ImportTemplates.BacAccountStatementPdfV1] = new(ImportTemplates.BacAccountStatementPdfV1, "Estado de cuenta consolidado BAC", AccountKind.Liability, true)
     };
 
     public static ImportReviewTemplate? Get(string template) => Values.GetValueOrDefault(template);

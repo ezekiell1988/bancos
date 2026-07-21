@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-20 CR (TASK-EBC-INF-08 — fixes de parsers y concurrencia)
+> **Última actualización:** 2026-07-20 CR (TASK-EBC-BE-23 completada)
 
 
 
 ## Completado
+
+* **2026-07-20** — TASK-EBC-BE-23: Parser, entidad, migración y handler implementados. Se importaron correctamente 4 CardStatements del PDF consolidado BAC julio 2026. Template detectado automáticamente con firma content-based. Upsert por (AccountAuxiliaryId, CardNumberMasked, StatementDate) funcional. — EBC
 
 * **2026-07-20** — TASK-EBC-INF-08 (fixes de backend durante validación de importación masiva):
   * **`ClassificationModule.cs`**: `SingleOrDefaultAsync` → `FirstOrDefaultAsync` para la categoría "General". Causa: múltiples workers de Hangfire creaban duplicados de "General" en BD (el índice único `(Name, ParentId)` no los bloquea cuando `ParentId IS NULL`). El `SingleOrDefault` lanzaba al encontrar más de uno.

@@ -4,7 +4,7 @@ using ExcelDataReader;
 
 namespace Bancos.Api.Features.Parsing;
 
-public sealed record ParsedCreditFinancing(DateOnly FinancingDate, string Concept, string Installments, decimal InstallmentAmount, decimal InitialBalance, decimal OutstandingBalance);
+public sealed record ParsedCreditFinancing(DateOnly FinancingDate, string Concept, string Installments, decimal InstallmentAmount, decimal InitialBalance, decimal OutstandingBalance, string CurrencyCode);
 
 /// <summary>Parses the documented BAC financing XLS template from its cell values.</summary>
 public sealed class BacCreditFinancingXlsParser
@@ -39,7 +39,8 @@ public sealed class BacCreditFinancingXlsParser
                 values["cuotas"].Trim(),
                 ParseAmount(values["monto de cuota"], "monto de cuota"),
                 ParseAmount(values["saldo inicial"], "saldo inicial"),
-                ParseAmount(values["saldo faltante"], "saldo faltante")));
+                ParseAmount(values["saldo faltante"], "saldo faltante"),
+                ExtractCurrency(values["monto de cuota"])));
         }
         if (financings.Count == 0) throw new InvalidDataException("BAC financing XLS does not contain financing rows.");
         return financings;
@@ -77,5 +78,11 @@ public sealed class BacCreditFinancingXlsParser
     {
         if (MoneyParser.TryParse(value, out var result)) return result;
         throw new InvalidDataException($"Invalid BAC financing {field} '{value}'.");
+    }
+    private static string ExtractCurrency(string value)
+    {
+        var upper = value.ToUpperInvariant();
+        if (upper.Contains("USD") || upper.Contains("US$")) return "USD";
+        return "CRC";
     }
 }

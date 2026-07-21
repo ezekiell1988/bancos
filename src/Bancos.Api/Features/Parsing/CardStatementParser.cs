@@ -162,7 +162,7 @@ public sealed class CardStatementParser
         if (normalized.Contains("tarjeta de credito")
             && normalized.Contains("saldo en colones")
             && normalized.Contains("saldo en dolares")
-            && normalized.Contains("pago de tarjeta al dia"))
+            && (normalized.Contains("pago de tarjeta al dia") || normalized.Contains("fecha de pago de contado")))
             return new ParsedCardStatement(CardStatementContentKind.BalanceSnapshot, []);
 
         throw new InvalidDataException("El PDF de tarjeta no contiene una tabla de movimientos con fecha e importe.");
@@ -201,7 +201,7 @@ public sealed class CardStatementParser
         // Each record: dd/mm/yyyy + description (no spaces at join) + amount + CRC|USD
         // Use lookahead on next date to delimit each record
         var matches = Regex.Matches(body,
-            "(?<date>\\d{2}/\\d{2}/\\d{4})(?<description>.+?)(?<amount>[\\d,]+\\.\\d{2})\\s*(?<currency>CRC|USD)(?=\\d{2}/\\d{2}/\\d{4}|Los pagos|$)",
+            "(?<date>\\d{2}/\\d{2}/\\d{4})(?<description>.+?)(?<amount>[\\d,]+\\.\\d{2})\\s*(?<currency>CRC|USD)(?=\\d{2}/\\d{2}/\\d{4}|Los pagos|Movimientos|$)",
             RegexOptions.Singleline | RegexOptions.CultureInvariant);
         foreach (Match m in matches)
         {

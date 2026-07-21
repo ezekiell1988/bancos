@@ -4,6 +4,7 @@ using Bancos.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Bancos.Api.Migrations
 {
     [DbContext(typeof(BancosDbContext))]
-    partial class BancosDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260721004632_AddCreditFinancingCurrencyCode")]
+    partial class AddCreditFinancingCurrencyCode
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -189,68 +192,6 @@ namespace Bancos.Api.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("AuditLogs");
-                });
-
-            modelBuilder.Entity("Bancos.Api.Domain.CardStatement", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("AccountAuxiliaryId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("CardBrand")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("CardNumberMasked")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<decimal>("CashPaymentCrc")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("CashPaymentUsd")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("CreatedUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("ImportId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("LoyaltyPlan")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal>("MinimumPaymentCrc")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("MinimumPaymentUsd")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateOnly>("PaymentDueDate")
-                        .HasColumnType("date");
-
-                    b.Property<string>("SourceFingerprint")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateOnly>("StatementDate")
-                        .HasColumnType("date");
-
-                    b.Property<DateTime?>("UpdatedUtc")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ImportId");
-
-                    b.HasIndex("AccountAuxiliaryId", "CardNumberMasked", "StatementDate")
-                        .IsUnique();
-
-                    b.ToTable("CardStatements");
                 });
 
             modelBuilder.Entity("Bancos.Api.Domain.Category", b =>
@@ -985,25 +926,6 @@ namespace Bancos.Api.Migrations
                     b.Navigation("Account");
 
                     b.Navigation("Owner");
-                });
-
-            modelBuilder.Entity("Bancos.Api.Domain.CardStatement", b =>
-                {
-                    b.HasOne("Bancos.Api.Domain.AccountAuxiliary", "AccountAuxiliary")
-                        .WithMany()
-                        .HasForeignKey("AccountAuxiliaryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Bancos.Api.Domain.Import", "Import")
-                        .WithMany()
-                        .HasForeignKey("ImportId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("AccountAuxiliary");
-
-                    b.Navigation("Import");
                 });
 
             modelBuilder.Entity("Bancos.Api.Domain.Category", b =>

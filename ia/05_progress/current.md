@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-20 CR (TASK-EBC-INF-08 completada)
+> **Última actualización:** 2026-07-20 CR (TASK-EBC-BE-23 completada)
 
 ## En curso
 
@@ -21,6 +21,8 @@
 * Aprobar y ejecutar `TASK-EZ-BE-01` mediante `iaWorkflow`.
 
 ## Completado en sesiones recientes
+
+* **2026-07-20** — TASK-EBC-BE-23 cerrada: Parser, entidad, migración y handler implementados. Se importaron correctamente 4 CardStatements del PDF consolidado BAC julio 2026. Template detectado automáticamente con firma content-based. Upsert por (AccountAuxiliaryId, CardNumberMasked, StatementDate) funcional. — EBC
 
 * **2026-07-20** — TASK-EBC-INF-08 cerrada: SQL Server 2022 en Docker configurado y validado. Los 19 archivos de src/input.zip se importaron correctamente. Bugs corregidos: SingleOrDefaultAsync→FirstOrDefaultAsync en ClassificationModule, seed de categoría General, ChangeTracker.Clear()+Attach en catch blocks para fallo correcto, BalanceRegex con \\s para non-breaking spaces de PdfPig, race condition en LoanStatements con re-attach del Import. Nuevo endpoint POST /api/imports/{id}/retry. — EBC
 
