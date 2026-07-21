@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-20 CR (TASK-EBC-MCP-04 completada)
+> **Última actualización:** 2026-07-21 CR (TASK-EBC-INF-11 completada)
 
 
 
 ## Completado
+
+* **2026-07-21** — TASK-EBC-INF-11: Registrado Bancos.Mcp como servidor HTTP bancos_mcp en la configuración de Codex. — EBC
 
 * **2026-07-20** — TASK-EBC-MCP-04: Se poblaron McpImportTemplatePatterns con nueve reglas de contenido aprobadas y activas, una por cada plantilla conocida. Las horas del catálogo migraron a DateTimeOffset con offset -06:00 de Costa Rica. La migración incremental fue aplicada y verificada en la base local. — EBC
 
