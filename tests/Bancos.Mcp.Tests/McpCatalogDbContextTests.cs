@@ -1,6 +1,7 @@
 using Bancos.Mcp.Data;
 using Bancos.Mcp.Domain;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Xunit;
 
@@ -15,13 +16,14 @@ public sealed class McpCatalogDbContextTests
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
         using var db = new McpCatalogDbContext(options);
+        var model = db.GetService<IDesignTimeModel>().Model;
 
-        AssertColumn(db, typeof(Bank), "tbBanks", "Id", "idBanks", "Catálogo de entidades bancarias disponibles para cuentas y tipos de cambio.");
-        AssertColumn(db, typeof(BankAccount), "tbBankAccounts", "Id", "idBankAccounts", "Catálogo de cuentas, tarjetas y préstamos asociados a un banco.");
-        AssertColumn(db, typeof(ExchangeRate), "tbExchangeRates", "Id", "idExchangeRates", "Tipos de cambio de USD expresados en colones costarricenses por banco y fecha.");
-        AssertColumn(db, typeof(ImportTemplate), "tbImportTemplates", "Id", "idImportTemplates", "Catálogo de formatos de archivos de importación reconocidos.");
-        AssertColumn(db, typeof(ImportTemplatePattern), "tbImportTemplatePatterns", "Id", "idImportTemplatePatterns", "Patrones aprobados para detectar una plantilla de importación por contenido.");
-        AssertColumn(db, typeof(BankAccountImportTemplate), "tbBankAccountImportTemplates", "BankAccountId", "idBankAccounts", "Relación entre cuentas bancarias y formatos de importación admitidos.");
+        AssertColumn(model, typeof(Bank), "tbBanks", "Id", "idBanks", "Catálogo de entidades bancarias disponibles para cuentas y tipos de cambio.");
+        AssertColumn(model, typeof(BankAccount), "tbBankAccounts", "Id", "idBankAccounts", "Catálogo de cuentas, tarjetas y préstamos asociados a un banco.");
+        AssertColumn(model, typeof(ExchangeRate), "tbExchangeRates", "Id", "idExchangeRates", "Tipos de cambio de USD expresados en colones costarricenses por banco y fecha.");
+        AssertColumn(model, typeof(ImportTemplate), "tbImportTemplates", "Id", "idImportTemplates", "Catálogo de formatos de archivos de importación reconocidos.");
+        AssertColumn(model, typeof(ImportTemplatePattern), "tbImportTemplatePatterns", "Id", "idImportTemplatePatterns", "Patrones aprobados para detectar una plantilla de importación por contenido.");
+        AssertColumn(model, typeof(BankAccountImportTemplate), "tbBankAccountImportTemplates", "BankAccountId", "idBankAccounts", "Relación entre cuentas bancarias y formatos de importación admitidos.");
     }
 
     [Fact]
@@ -74,9 +76,9 @@ public sealed class McpCatalogDbContextTests
         Assert.Contains(templates, template => template.Code == "bn-card-statement-pdf-v1" && template.ContentKind == "pdf");
     }
 
-    private static void AssertColumn(McpCatalogDbContext db, Type entityType, string tableName, string propertyName, string columnName, string tableComment)
+    private static void AssertColumn(IModel model, Type entityType, string tableName, string propertyName, string columnName, string tableComment)
     {
-        var entity = Assert.IsAssignableFrom<IEntityType>(db.Model.FindEntityType(entityType));
+        var entity = Assert.IsAssignableFrom<IEntityType>(model.FindEntityType(entityType));
         var storeObject = StoreObjectIdentifier.Table(tableName, null);
         var property = Assert.IsAssignableFrom<IProperty>(entity.FindProperty(propertyName));
 

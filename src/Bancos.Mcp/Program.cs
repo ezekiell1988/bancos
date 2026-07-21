@@ -14,7 +14,13 @@ builder.Services.AddOptions<McpOptions>()
     .BindConfiguration(McpOptions.Section)
     .ValidateDataAnnotations()
     .ValidateOnStart();
+builder.Services.AddOptions<FileTemplateDetectionOptions>()
+    .BindConfiguration(FileTemplateDetectionOptions.Section)
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+builder.Services.AddSingleton<ImportTemplateDetectionService>();
 builder.Services.AddSingleton<IMcpTool, StatusTool>();
+builder.Services.AddSingleton<IMcpTool, DetectImportTemplateTool>();
 builder.Services.AddSingleton<ToolRegistry>();
 
 var app = builder.Build();

@@ -93,6 +93,14 @@ public static class McpHandler
         {
             return JsonRpcResult(id, await tool.ExecuteAsync(arguments, cancellationToken));
         }
+        catch (ArgumentException exception)
+        {
+            return JsonRpcError(id, -32602, exception.Message);
+        }
+        catch (InvalidDataException exception)
+        {
+            return JsonRpcError(id, -32602, exception.Message);
+        }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             throw;
