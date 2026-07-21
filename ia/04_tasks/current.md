@@ -1,6 +1,7 @@
 # 04 — Tareas activas
 
-> **Última actualización:** 2026-07-20 CR (TASK-EBC-BE-24 completada)
+> **Última actualización:** 2026-07-20 CR (TASK-EBC-DB-06 aprobada)
+
 
 
 
@@ -89,6 +90,7 @@ Sin tareas.
 
 | ID | Área | Título | Prioridad |
 |---|---|---|---|
+| `TASK-EBC-DB-06` | DB | Auditoría de formatos de carga: verificar IBAN, banco y responsable por plantilla | alta |
 | `TASK-EBC-DB-05` | DB | Reiniciar base de datos de desarrollo desde migraciones EF | crítica |
 
 ## Borradores

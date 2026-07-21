@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-20 CR (TASK-EBC-INF-08 — migración SeedGeneralCategory)
+> **Última actualización:** 2026-07-20 CR (progreso actualizado)
 
 
 
 ## Completado
+
+* **2026-07-20** — TASK-EBC-DB-06: Auditoría completada. Se identificaron 8 templates activos en Imports, todos apuntando a 2 auxiliares genéricos sin IBAN ni owner real. Se acordó con el usuario crear 13 AccountAuxiliaries (4 débito, 8 crédito BAC con 2 auxiliares por tarjeta CRC+USD, 1 préstamo Coopealianza) y 2 owners nuevos (Ezequiel Baltodano y Karen Soto para BCR Débito Compartida). Próximo paso: generar y aplicar SQL de inserción. — EBC
 
 * **2026-07-20** — TASK-EBC-INF-08 (cambios de BD durante validación de importación masiva):
   * **Migración `SeedGeneralCategory`**: Inserta la categoría "General" con ID fijo `00000000-0000-0000-0000-000000000301` como dato semilla. Razón: el índice único `(Name, ParentId)` en `Categories` solo aplica cuando `ParentId IS NOT NULL`. Múltiples workers concurrentes podían insertar duplicados de "General" (todos con `ParentId NULL`), causando fallo en `SingleOrDefaultAsync`. Con el seed, la categoría siempre existe desde el inicio.
