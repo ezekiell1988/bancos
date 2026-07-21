@@ -13,6 +13,7 @@ public static class ImportTemplates
     public const string BacCreditFinancingXlsV1 = "bac-credit-financing-xls-v1";
     public const string BacCreditOnlinePdfV1 = "bac-credit-online-pdf-v1";
     public const string CoopealianzaLoanPdfV1 = "coopealianza-loan-pdf-v1";
+    public const string BacAccountStatementPdfV1 = "bac-account-statement-pdf-v1";
     public const string Unknown = "unknown";
 }
 
@@ -38,16 +39,18 @@ public sealed class ImportTemplateDetector
             matches.Add((ImportTemplates.BcrDebitCsvV1, ["delimitador ;", "encabezados de movimientos BCR"]));
         if (contentKind == "csv" && IsCardPaymentSummary(normalized))
             matches.Add((ImportTemplates.BacCreditCsvV1, ["encabezados BAC", "campos de pago"]));
-        if (contentKind == "html" && ContainsAll(normalized, "banco de costa rica", "movimientos por rango de fechas"))
-            matches.Add((ImportTemplates.BcrDebitHtmlXlsV1, ["Banco de Costa Rica", "Movimientos por rango de fechas"]));
+        if (contentKind == "html" && ContainsAll(normalized, "banco de costa rica") && HasAny(normalized, "movimientos por rango de fechas", "movimientos de la cuenta", "movimientos del d"))
+            matches.Add((ImportTemplates.BcrDebitHtmlXlsV1, ["Banco de Costa Rica", "Movimientos BCR"]));
         if (contentKind == "xls" && ContainsAll(normalized, "consulta de financiamientos", "fecha", "concepto", "cuotas", "monto de cuota", "saldo inicial", "saldo faltante"))
             matches.Add((ImportTemplates.BacCreditFinancingXlsV1, ["encabezados de financiamientos BAC"]));
         if (contentKind == "xls" && HasAny(normalized, "descripcion", "detalle") && HasAny(normalized, "debito", "debitos") && HasAny(normalized, "credito", "creditos") && normalized.Contains("fecha"))
             matches.Add((ImportTemplates.BankAccountMovementsXlsV1, ["encabezados de movimientos en hoja binaria"]));
-        if (contentKind == "pdf" && ContainsAll(normalized, "tarjeta de credito", "saldo en colones", "saldo en dolares", "pago de tarjeta al dia"))
+        if (contentKind == "pdf" && ContainsAll(normalized, "tarjeta de credito", "saldo en colones", "saldo en dolares", "fecha de pago de contado") && !normalized.Contains("total pago de contado"))
             matches.Add((ImportTemplates.BacCreditOnlinePdfV1, ["snapshot de tarjeta BAC"]));
         if (contentKind == "pdf" && ContainsAll(normalized, "ver detalles del prestamo", "capital", "interes", "mora", "otros", "total", "saldo"))
             matches.Add((ImportTemplates.CoopealianzaLoanPdfV1, ["tabla de préstamo Coopealianza"]));
+        if (contentKind == "pdf" && ContainsAll(normalized, "numero de tarjeta", "marca de tarjeta", "plan de lealtad", "pagos vencidos", "pago de contado", "fecha de corte", "total pago de contado"))
+            matches.Add((ImportTemplates.BacAccountStatementPdfV1, ["estado de cuenta consolidado BAC"]));
 
         return matches.Count == 1
             ? new ImportTemplateDetection(matches[0].Template, contentKind, matches[0].Evidence)
