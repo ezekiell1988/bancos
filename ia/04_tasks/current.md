@@ -1,6 +1,6 @@
 # 04 — Tareas activas
 
-> **Última actualización:** 2026-07-20 CR (TASK-EBC-DOC-04 completada)
+> **Última actualización:** 2026-07-20 CR (TASK-EBC-MCP-03 completada)
 
 
 
@@ -129,4 +129,3 @@ Sin tareas.
 Sin tareas.
 | TASK-EBC-DB-06 | DB | Auditoría de formatos de carga: verificar IBAN, banco y responsable por plantilla | alta |
 | TASK-EBC-DB-05 | DB | Estrategia de dos entornos de base de datos (dev y prod) | crítica |
-| TASK-EBC-MCP-03 | MCP | Clasificar archivo local mediante Bancos.Mcp reutilizando el flujo de Bancos.Api | alta |

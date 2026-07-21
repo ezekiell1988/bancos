@@ -41,8 +41,8 @@ secretos.
 
 3. Recarga la ventana de VS Code después de incorporar el archivo o de modificar la
 	configuración MCP. En la vista de servidores MCP, `bancosMcp` debe aparecer
-	conectado y exponer `health_status`.
-4. Desde el chat en modo agente, invoca `health_status` sin argumentos. La respuesta
+	conectado y exponer `health_status` y `detect_import_template`.
+	4. Desde el chat en modo agente, invoca `health_status` sin argumentos. La respuesta
 	correcta tiene `content` con tipo `text` y estado `Estado: disponible`.
 
 ## Diagnóstico local
@@ -63,15 +63,33 @@ curl --silent --show-error --fail --insecure \
   https://localhost:7241/
 ```
 
-La primera respuesta debe listar `health_status`. La segunda debe devolver
-`result.content[0]` con `type` igual a `text`. Este servidor no tiene referencias a
-`Bancos.Api`, OAuth, archivos de entrada ni datos financieros. Su acceso a SQL
-Server se limita al catálogo MCP de su base de datos independiente.
+La primera respuesta debe listar las herramientas disponibles. La segunda debe devolver
+`result.content[0]` con `type` igual a `text`.
+
+## Detectar plantilla local
+
+`detect_import_template` recibe `relativePath`, una ruta relativa a
+`FileTemplateDetection:InputDirectory`. La configuración base usa `src/input` y
+limita cada archivo a 10 MiB. Acepta exclusivamente `pdf`, `csv`, `xls` y `xlsx`.
+
+```bash
+curl --silent --show-error --fail --insecure \
+	--header 'Content-Type: application/json' \
+	--data '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"detect_import_template","arguments":{"relativePath":"subcarpeta/archivo.csv"}}}' \
+	https://localhost:7241/
+```
+
+La respuesta exitosa contiene solo `idImportTemplates`. La herramienta rechaza rutas
+absolutas, traversal, enlaces simbólicos, extensiones no admitidas, archivos que
+superan el límite y contenido que no coincide con la extensión. No persiste el
+archivo, no consulta SQL Server y no incluye contenido financiero en la respuesta ni
+en los errores. La eliminación del archivo de entrada sigue siendo responsabilidad del
+usuario.
 
 ## Flujo compatible
 
 * `initialize` negocia `2024-11-05` o `2025-06-18`.
-* `tools/list` expone `health_status`, una tool estática sin acceso a datos.
+* `tools/list` expone `health_status` y `detect_import_template`.
 * `tools/call` devuelve siempre `content: [{ type: "text", text: "..." }]`.
 * `notifications/*` y respuestas enviadas por el cliente devuelven HTTP 202 sin cuerpo.
 * La variante de Copilot Studio `[{"jsonrpc":"2.0"}]` se normaliza a `initialize`.

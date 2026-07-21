@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-20 CR (progreso actualizado)
+> **Última actualización:** 2026-07-20 CR (TASK-EBC-MCP-03 completada)
 
 ## En curso
 
@@ -21,6 +21,8 @@
 * Aprobar y ejecutar `TASK-EZ-BE-01` mediante `iaWorkflow`.
 
 ## Completado en sesiones recientes
+
+* **2026-07-20** — TASK-EBC-MCP-03 cerrada: Se incorporó `detect_import_template` en Bancos.Mcp para identificar plantillas de importación mediante una ruta relativa confinada. La herramienta procesa PDF, CSV, XLS y XLSX, devuelve únicamente `idImportTemplates`, no persiste archivos ni consulta SQL Server. El catálogo MCP y la convención de esquema se consolidaron durante la tarea. — EBC
 
 * **2026-07-20** — MCP: se consolidó el catálogo de bancos, cuentas, plantillas y patrones de importación. Se añadieron 15 referencias de cuentas, 40 relaciones cuenta-plantilla y tipos de cambio USD para BAC y BN. El esquema MCP fue regenerado como una única migración inicial, con tablas `tb...`, columnas lower camel case, claves descriptivas y comentarios SQL en español para todas las tablas y columnas. Se validó la migración, la base local, las pruebas del catálogo y los diagnósticos. — EBC
 

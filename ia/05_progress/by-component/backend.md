@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-20 CR (TASK-EBC-BE-24 completada)
+> **Última actualización:** 2026-07-20 CR (TASK-EBC-MCP-03 completada)
 
 
 
 ## Completado
+
+* **2026-07-20** — TASK-EBC-MCP-03: Se incorporó `detect_import_template` en Bancos.Mcp para identificar plantillas de importación mediante una ruta relativa confinada. La herramienta procesa PDF, CSV, XLS y XLSX, devuelve únicamente `idImportTemplates`, no persiste archivos ni consulta SQL Server. El catálogo MCP y la convención de esquema se consolidaron durante la tarea. — EBC
 
 * **2026-07-20** — TASK-EBC-BE-24: Parser BN implementado. BnCardStatementPdfParser.cs maneja texto concatenado de PdfPig. Detecta automáticamente bn-card-statement-pdf-v1. Persiste CardStatement (corte ₡210,829 + $6.49 contado, pago mínimo ₡5,000 + $6.49, vence 03/08/2026), 19 Transactions (2 pagos + 17 compras) y 3 CreditFinancings activos (BN Marchamos 12M ₡32,334 y ₡46,324; Compras 6M ₡26,142). — EBC
 
