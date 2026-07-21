@@ -5,7 +5,13 @@ description: Configuración y diagnóstico del servidor MCP local de Bancos
 
 ## Bancos.Mcp
 
-Servidor MCP independiente para Copilot Studio. No tiene referencias a `Bancos.Api`, EF Core, SQL Server ni configuración de base de datos.
+Servidor MCP auxiliar independiente para Copilot Studio. No referencia ni hospeda
+`Bancos.Api`, pero usa EF Core y SQL Server para su catálogo local de plantillas de
+importación.
+
+El catálogo se administra mediante `McpCatalogDbContext`, sus migraciones propias y
+una base de datos distinta a la de `Bancos.Api`. Los dos proyectos no comparten
+tablas, historial `__EFMigrationsHistory` ni configuración de conexión.
 
 ## Ejecutar localmente
 
@@ -59,7 +65,8 @@ curl --silent --show-error --fail --insecure \
 
 La primera respuesta debe listar `health_status`. La segunda debe devolver
 `result.content[0]` con `type` igual a `text`. Este servidor no tiene referencias a
-`Bancos.Api`, SQL Server, OAuth, archivos de entrada ni datos financieros.
+`Bancos.Api`, OAuth, archivos de entrada ni datos financieros. Su acceso a SQL
+Server se limita al catálogo MCP de su base de datos independiente.
 
 ## Flujo compatible
 

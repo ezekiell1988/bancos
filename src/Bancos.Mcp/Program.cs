@@ -1,10 +1,15 @@
 using Bancos.Mcp.Protocol;
 using Bancos.Mcp.Tools;
+using Bancos.Mcp.Data;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddProblemDetails();
 builder.Services.AddHealthChecks();
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (!string.IsNullOrWhiteSpace(connectionString))
+    builder.Services.AddDbContext<McpCatalogDbContext>(options => options.UseSqlServer(connectionString));
 builder.Services.AddOptions<McpOptions>()
     .BindConfiguration(McpOptions.Section)
     .ValidateDataAnnotations()

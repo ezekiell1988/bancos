@@ -4,6 +4,10 @@ Esta carpeta conserva conocimiento verificable del proyecto. No incluye estados 
 
 > Interfaz futura: MCP `iaWorkflow`. Mientras no esté expuesto, leer solo los archivos indicados por intención.
 
+`Bancos.Api` y `Bancos.Mcp` son proyectos independientes. La API es el monolito
+funcional de Bancos; el MCP es un servidor auxiliar local con su propio catálogo,
+migraciones y base de datos. No comparten tablas ni historial de EF Core.
+
 ## Índice
 
 | Archivo | Propósito | Leer cuando |

@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-20 CR (TASK-EBC-MCP-02 completada)
+> **Última actualización:** 2026-07-20 CR (TASK-EBC-DOC-04 completada)
 
 ## En curso
 
@@ -21,6 +21,14 @@
 * Aprobar y ejecutar `TASK-EZ-BE-01` mediante `iaWorkflow`.
 
 ## Completado en sesiones recientes
+
+* **2026-07-20** — TASK-EBC-DOC-04 cerrada: Se actualizó la documentación para distinguir Bancos.Api como monolito funcional y Bancos.Mcp como servidor MCP auxiliar independiente, con catálogo, migraciones y base de datos propios. — EBC
+
+* **2026-07-20** — TASK-EBC-MCP-06 cerrada: Se consolidaron las tres migraciones del catálogo MCP en una única migración inicial que crea directamente las tablas tbImportTemplates y tbImportTemplatePatterns. La base local fue reconstruida con este historial limpio. — EBC
+
+* **2026-07-20** — TASK-EBC-MCP-05 cerrada: Se eliminó la base local vacía con el script reutilizable Reset-McpCatalogDatabase.ps1 y se reconstruyó mediante migraciones EF. El catálogo quedó en las tablas tbImportTemplates y tbImportTemplatePatterns con los nueve seeds y timestamps de Costa Rica. — EBC
+
+* **2026-07-20** — TASK-EBC-MCP-04 cerrada: Se poblaron McpImportTemplatePatterns con nueve reglas de contenido aprobadas y activas, una por cada plantilla conocida. Las horas del catálogo migraron a DateTimeOffset con offset -06:00 de Costa Rica. La migración incremental fue aplicada y verificada en la base local. — EBC
 
 * **2026-07-20** — TASK-EBC-MCP-02 cerrada: Se registró Bancos.Mcp como servidor MCP HTTP local de VS Code y se documentó el arranque HTTPS y el diagnóstico. El endpoint confirmó tools/list y tools/call para health_status. — EBC
 

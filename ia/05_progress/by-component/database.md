@@ -1,8 +1,12 @@
-> **Última actualización:** 2026-07-20 CR (progreso actualizado)
+> **Última actualización:** 2026-07-20 CR (TASK-EBC-MCP-06 completada)
 
 
 
 ## Completado
+
+* **2026-07-20** — TASK-EBC-MCP-06: Se consolidaron las tres migraciones del catálogo MCP en una única migración inicial que crea directamente las tablas tbImportTemplates y tbImportTemplatePatterns. La base local fue reconstruida con este historial limpio. — EBC
+
+* **2026-07-20** — TASK-EBC-MCP-05: Se eliminó la base local vacía con el script reutilizable Reset-McpCatalogDatabase.ps1 y se reconstruyó mediante migraciones EF. El catálogo quedó en las tablas tbImportTemplates y tbImportTemplatePatterns con los nueve seeds y timestamps de Costa Rica. — EBC
 
 * **2026-07-20** — TASK-EBC-DB-06: aplicada la migración de identidad bancaria; creados los dos responsables y los 13 auxiliares con IBAN, banco, moneda y responsable. Pendiente: reasignar imports históricos que aún apuntan a auxiliares genéricos y validar cobertura por formato. — EBC
 

@@ -23,6 +23,15 @@
 | Procesos | Hangfire SQL Server y Hangfire.Console |
 | Clasificación excepcional | Azure AI; solo descripción normalizada y catálogo de categorías |
 
+## Proyectos y persistencia
+
+| Proyecto | Responsabilidad | Persistencia |
+|---|---|---|
+| `Bancos.Api` | Monolito funcional: imports, contabilidad, clasificación y reportes | Base de datos propia con migraciones de `BancosDbContext` |
+| `Bancos.Mcp` | Servidor MCP auxiliar y catálogo de plantillas de importación | Base de datos propia con migraciones de `McpCatalogDbContext` |
+
+Los proyectos no comparten tablas, historial de EF Core ni cadenas de conexión.
+
 ## Límites y constantes críticas
 
 * Datos financieros y credenciales son sensibles: nunca copiarlos a `/ia`, logs o prompts de IA.

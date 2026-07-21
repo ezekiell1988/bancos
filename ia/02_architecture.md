@@ -4,7 +4,18 @@
 
 ## Resumen
 
-Monolito modular: Angular es UI; .NET recibe importaciones, ejecuta jobs, persiste MSSQL y sirve frontend compilado. No existen dos backends.
+`Bancos.Api` es el monolito modular funcional: Angular es UI; la API recibe
+importaciones, ejecuta jobs, persiste MSSQL y sirve frontend compilado.
+
+`Bancos.Mcp` es un servidor MCP auxiliar independiente del monolito. Mantiene el
+catálogo de plantillas de importación mediante `McpCatalogDbContext` y no participa
+en los flujos contables, los jobs ni la persistencia funcional de la API.
+
+## Límites de proyectos y datos
+
+`Bancos.Api` y `Bancos.Mcp` tienen bases de datos, cadenas de conexión, contextos y
+migraciones de EF Core distintos. No comparten tablas ni `__EFMigrationsHistory`.
+Las migraciones de un proyecto se aplican únicamente contra su propia base de datos.
 
 ## Features
 
