@@ -1,6 +1,6 @@
 # TASK-EBC-DB-05 — Estrategia de dos entornos de base de datos (dev y prod)
 
-**Estado:** Lista
+**Estado:** En revisión
 **Autor:** Ezequiel Baltodano Cubillo `<ezekiell1988@hotmail.com>`
 **Rama:** `dev`
 **Fecha inicio:** 2026-07-18 20:30 CR
@@ -173,6 +173,8 @@ Definir, documentar e implementar la estrategia dual de entornos de BD, entregan
 * [ ] Progreso/documentación actualizado
 
 ## Notas / contexto adicional
+
+* Pendiente de revisión: Se eliminó la base de datos local de desarrollo mediante EF Core, removiendo todas las tablas de dbo y Hangfire. Se omitió su recreación por solicitud del usuario.
 
 * Aprobada por Ezequiel Baltodano Cubillo el 2026-07-18 20:30 CR.
 * Ampliada el 2026-07-20 para cubrir estrategia dual de entornos.

@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-18 CR (TASK-EBC-DOC-03 completada)
+> **Última actualización:** 2026-07-20 CR (TASK-EBC-MCP-01 completada)
 
 
 
 ## Completado
+
+* **2026-07-20** — TASK-EBC-MCP-01: Se creó el servidor MCP independiente para Copilot Studio con transporte JSON-RPC, tool diagnóstica segura, HTTPS local, pruebas y documentación. — EBC
 
 * **2026-07-18** — TASK-EBC-DOC-03: Se sincronizaron las skills canónicas desde .agents hacia .claude y .codex; el reporte final confirma 56 skills idénticas. — EBC
 

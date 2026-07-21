@@ -1,6 +1,8 @@
 # 04 — Tareas activas
 
-> **Última actualización:** 2026-07-20 CR (TASK-EBC-INF-10 aprobada)
+> **Última actualización:** 2026-07-20 CR (TASK-EBC-MCP-01 completada)
+
+
 
 
 
@@ -96,7 +98,6 @@ Sin tareas.
 | ID | Área | Título | Prioridad |
 |---|---|---|---|
 | `TASK-EBC-INF-10` | INF | Reiniciar API local antes del launch de VS Code | baja |
-| `TASK-EBC-DB-05` | DB | Reiniciar base de datos de desarrollo desde migraciones EF | crítica |
 
 ## Borradores
 
@@ -115,3 +116,4 @@ Sin tareas.
 
 Sin tareas.
 | TASK-EBC-DB-06 | DB | Auditoría de formatos de carga: verificar IBAN, banco y responsable por plantilla | alta |
+| TASK-EBC-DB-05 | DB | Estrategia de dos entornos de base de datos (dev y prod) | crítica |
