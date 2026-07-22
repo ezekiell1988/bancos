@@ -135,9 +135,11 @@ public static class McpHandler
         return first;
     }
 
+    private static readonly JsonSerializerOptions CamelCase = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
     private static IResult JsonRpcResult(JsonElement id, object result) =>
-        TypedResults.Json(new { jsonrpc = "2.0", id, result });
+        TypedResults.Json(new { jsonrpc = "2.0", id, result }, CamelCase);
 
     private static IResult JsonRpcError(JsonElement? id, int code, string message) =>
-        TypedResults.Json(new { jsonrpc = "2.0", id, error = new JsonRpcError(code, message) });
+        TypedResults.Json(new { jsonrpc = "2.0", id, error = new JsonRpcError(code, message) }, CamelCase);
 }

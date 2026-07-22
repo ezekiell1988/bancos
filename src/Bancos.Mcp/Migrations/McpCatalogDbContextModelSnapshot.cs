@@ -1387,6 +1387,29 @@ namespace Bancos.Mcp.Migrations
                         .IsFixedLength()
                         .HasComment("Moneda del préstamo.");
 
+                    b.Property<decimal?>("InterestRate")
+                        .HasPrecision(8, 4)
+                        .HasColumnType("decimal(8,4)")
+                        .HasColumnName("interestRate")
+                        .HasComment("Tasa de interés anual del préstamo.");
+
+                    b.Property<string>("LoanNumber")
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("loanNumber")
+                        .HasComment("Número de operación del préstamo.");
+
+                    b.Property<DateOnly?>("MaturityDate")
+                        .HasColumnType("date")
+                        .HasColumnName("maturityDate")
+                        .HasComment("Fecha de vencimiento del préstamo.");
+
+                    b.Property<decimal?>("OriginalLoanAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("originalLoanAmount")
+                        .HasComment("Monto original de la deuda al momento de la formalización.");
+
                     b.Property<decimal>("OutstandingBalance")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)")
@@ -1401,10 +1424,20 @@ namespace Bancos.Mcp.Migrations
                         .IsFixedLength()
                         .HasComment("SHA-256 para deduplicación.");
 
+                    b.Property<DateOnly?>("StartDate")
+                        .HasColumnType("date")
+                        .HasColumnName("startDate")
+                        .HasComment("Fecha de inicio o formalización del préstamo.");
+
                     b.Property<DateOnly>("StatementDate")
                         .HasColumnType("date")
                         .HasColumnName("statementDate")
                         .HasComment("Fecha del extracto.");
+
+                    b.Property<int?>("TermMonths")
+                        .HasColumnType("int")
+                        .HasColumnName("termMonths")
+                        .HasComment("Plazo total en meses.");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("datetimeoffset")

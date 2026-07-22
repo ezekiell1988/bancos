@@ -1,0 +1,8 @@
+{
+  "/api": {
+    "target": "https://localhost:<PORT_API>",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "info"
+  }
+}

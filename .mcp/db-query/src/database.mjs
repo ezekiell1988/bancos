@@ -122,4 +122,40 @@ function sanitizeValue(value) {
 function identifier(value, name) { const result = requiredString(value, name); if (!/^[A-Za-z_][A-Za-z0-9_$#@]*$/.test(result)) throw new ToolError(`${name} inválido`); return result; }
 function parseServer(value) { const server = requiredString(value, "Server"); const comma = server.match(/^(.+?),(\d+)$/); if (comma) return { host: comma[1], port: Number(comma[2]) }; const instance = server.match(/^(.+?)\\(.+)$/); if (instance) return { host: instance[1], instanceName: instance[2] }; return { host: server, port: 1433 }; }
 function safeSqlMessage(error) { const code = error?.code ?? error?.originalError?.info?.number; return code ? `código ${code}` : "verifica red y credenciales locales"; }
+export async function resetSchemas(args) {
+  if (args.confirm !== true) throw new ToolError("confirm debe ser true para ejecutar esta operación destructiva");
+  const pool = await getPool();
+
+  // 1. Listar y eliminar FKs de ambos schemas una por una
+  for (const schema of ["HangFire", "dbo"]) {
+    const fks = await pool.request().query(
+      `SELECT OBJECT_SCHEMA_NAME(parent_object_id) AS s, OBJECT_NAME(parent_object_id) AS t, name AS fk
+       FROM sys.foreign_keys WHERE schema_id = SCHEMA_ID('${schema}')`);
+    for (const row of fks.recordset) {
+      await pool.request().batch(`ALTER TABLE [${row.s}].[${row.t}] DROP CONSTRAINT [${row.fk}]`);
+    }
+  }
+
+  // 2. Listar y eliminar tablas una por una
+  for (const schema of ["HangFire", "dbo"]) {
+    const tables = await pool.request().query(
+      `SELECT TABLE_NAME AS name FROM INFORMATION_SCHEMA.TABLES
+       WHERE TABLE_SCHEMA = '${schema}' AND TABLE_TYPE = 'BASE TABLE'`);
+    for (const row of tables.recordset) {
+      await pool.request().batch(`DROP TABLE [${schema}].[${row.name}]`);
+    }
+  }
+
+  // 3. Eliminar schema HangFire
+  const schemaExists = await pool.request().query("SELECT 1 AS ok FROM sys.schemas WHERE name = 'HangFire'");
+  if (schemaExists.recordset.length > 0) {
+    await pool.request().batch("DROP SCHEMA [HangFire]");
+  }
+
+  // 4. Verificar que quedó limpio
+  const remaining = await pool.request().query(
+    "SELECT TABLE_SCHEMA AS [schema], TABLE_NAME AS [name] FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' ORDER BY TABLE_SCHEMA, TABLE_NAME");
+  return { dropped: true, remainingTables: remaining.recordset };
+}
+
 function resolveProjectRoot(argv) { const index = argv.findIndex((arg) => arg === "--project-root"); const direct = index >= 0 ? argv[index + 1] : argv.find((arg) => arg.startsWith("--project-root="))?.slice(15); return path.resolve(direct ?? process.env.DB_MCP_PROJECT_ROOT ?? process.cwd()); }

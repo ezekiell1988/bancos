@@ -42,6 +42,8 @@ public sealed class ImportTemplateDetectionService
         return DetectTemplateId(contentKind, text);
     }
 
+    public string ResolveFullPath(string relativePath) => ResolveInputFile(relativePath).FullName;
+
     private FileInfo ResolveInputFile(string relativePath)
     {
         if (string.IsNullOrWhiteSpace(relativePath))
