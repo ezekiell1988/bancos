@@ -289,6 +289,12 @@ public sealed class McpCatalogDbContext(DbContextOptions<McpCatalogDbContext> op
             entity.Property(ls => ls.BankAccountId).HasColumnName("idBankAccounts").HasComment("Cuenta de préstamo asociada.");
             entity.Property(ls => ls.StatementDate).HasColumnName("statementDate").HasComment("Fecha del extracto.");
             entity.Property(ls => ls.CurrencyCode).HasColumnName("currencyCode").HasMaxLength(3).IsFixedLength().HasComment("Moneda del préstamo.");
+            entity.Property(ls => ls.LoanNumber).HasColumnName("loanNumber").HasMaxLength(40).HasComment("Número de operación del préstamo.");
+            entity.Property(ls => ls.OriginalLoanAmount).HasColumnName("originalLoanAmount").HasPrecision(18, 2).HasComment("Monto original de la deuda al momento de la formalización.");
+            entity.Property(ls => ls.InterestRate).HasColumnName("interestRate").HasPrecision(8, 4).HasComment("Tasa de interés anual del préstamo.");
+            entity.Property(ls => ls.TermMonths).HasColumnName("termMonths").HasComment("Plazo total en meses.");
+            entity.Property(ls => ls.StartDate).HasColumnName("startDate").HasComment("Fecha de inicio o formalización del préstamo.");
+            entity.Property(ls => ls.MaturityDate).HasColumnName("maturityDate").HasComment("Fecha de vencimiento del préstamo.");
             entity.Property(ls => ls.OutstandingBalance).HasColumnName("outstandingBalance").HasPrecision(18, 2).HasComment("Saldo pendiente total.");
             entity.Property(ls => ls.SourceFingerprint).HasColumnName("sourceFingerprint").HasMaxLength(64).IsFixedLength().HasComment("SHA-256 para deduplicación.");
             entity.Property(ls => ls.CreatedAt).HasColumnName("createdAt").HasComment("Fecha y hora de creación del registro.");

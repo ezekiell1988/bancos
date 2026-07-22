@@ -4,9 +4,6 @@ bin/
 obj/
 .vs/
 .DS_Store
-.agents/
-.claude/
-.codex/
 .local-output/
 src/Bancos.Api/wwwroot/
 src/Bancos.Web/node_modules/

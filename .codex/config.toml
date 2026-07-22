@@ -1,0 +1,24 @@
+[mcp_servers.dbQuery]
+command = "node"
+args = [
+    "/Users/ezequielbaltodanocubillo/Documents/Bancos/.mcp/db-query/server.mjs",
+    "--project-root",
+    "/Users/ezequielbaltodanocubillo/Documents/Bancos",
+]
+enabled = true
+startup_timeout_sec = 30
+tool_timeout_sec = 90
+default_tools_approval_mode = "prompt"
+
+[mcp_servers.iaWorkflow]
+command = "node"
+cwd = "/Users/ezequielbaltodanocubillo/Documents/Bancos"
+args = [
+    ".mcp/ia-workflow/server.mjs",
+    "--project-root",
+    ".",
+]
+
+[mcp_servers.bancosMcp]
+url = "http://127.0.0.1:8000/mcp"
+startup_timeout_sec = 30

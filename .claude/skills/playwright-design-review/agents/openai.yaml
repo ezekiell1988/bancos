@@ -1,0 +1,4 @@
+interface:
+  display_name: "Playwright Design Review"
+  short_description: "Audit responsive UI with Playwright"
+  default_prompt: "Use $playwright-design-review to inspect this UI for overflow, screenshots, and responsive layout issues."

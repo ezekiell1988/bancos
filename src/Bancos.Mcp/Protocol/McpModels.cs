@@ -9,7 +9,10 @@ public sealed record McpContent(string Type, string Text)
     public static McpContent FromText(string text) => new("text", text);
 }
 
-public sealed record McpToolResult(IReadOnlyList<McpContent> Content);
+public sealed record McpToolResult(IReadOnlyList<McpContent> Content)
+{
+    public static McpToolResult Error(string message) => new([McpContent.FromText(message)]);
+}
 
 public sealed record JsonRpcError(int Code, string Message);
 

@@ -1,0 +1,17 @@
+{
+  "servers": {
+    "miServidor": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "${workspaceFolder}/.mcp/mi-servidor/server.mjs",
+        "--project-root",
+        "${workspaceFolder}"
+      ],
+      "dev": {
+        "watch": ".mcp/mi-servidor/**/*.mjs",
+        "debug": { "type": "node" }
+      }
+    }
+  }
+}

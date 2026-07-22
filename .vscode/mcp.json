@@ -28,7 +28,7 @@
     },
     "bancosMcp": {
       "type": "http",
-      "url": "https://localhost:7241"
+      "url": "http://127.0.0.1:8000/mcp"
     }
   }
 }

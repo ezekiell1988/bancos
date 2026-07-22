@@ -1,0 +1,11 @@
+# Entorno reutilizable de desarrollo local para Bancos.
+version = "1"
+name = "Bancos"
+
+[setup]
+script = "npm --prefix src/Bancos.Web install"
+
+[[actions]]
+name = "Iniciar API + Web (HTTPS)"
+icon = "play"
+command = "pwsh -ExecutionPolicy Bypass -File ./.codex/start-dev.ps1"

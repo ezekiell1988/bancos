@@ -1,0 +1,51 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "API (.NET) — localhost:<PORT_API>",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-dotnet",
+      "program": "${workspaceFolder}/src/<ApiProject>/bin/Debug/<TargetFramework>/<ApiProject>.dll",
+      "args": ["--urls", "https://localhost:<PORT_API>"],
+      "cwd": "${workspaceFolder}/src/<ApiProject>",
+      "stopAtEntry": false,
+      "console": "integratedTerminal",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "sourceFileMap": {
+        "/Views": "${workspaceFolder}/Views"
+      }
+    },
+    {
+      "name": "Angular — ng serve :<PORT_ANGULAR> (proxy → :<PORT_API>)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "ng",
+        "serve",
+        "--port", "<PORT_ANGULAR>",
+        "--proxy-config", "proxy.conf.json",
+        "--ssl", "false"
+      ],
+      "cwd": "${workspaceFolder}/src/<AngularProject>",
+      "console": "integratedTerminal",
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "Local:.*http://localhost:([0-9]+)"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Stack (API + Angular)",
+      "configurations": [
+        "API (.NET) — localhost:<PORT_API>",
+        "Angular — ng serve :<PORT_ANGULAR> (proxy → :<PORT_API>)"
+      ],
+      "stopAll": true
+    }
+  ]
+}

@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Avance del proyecto — {{FECHA_LARGA}}</title>
+  <style>
+    /* ═══════════════════════════════════════════════════
+       MOBILE FIRST — base styles target phones (≥320px)
+       Breakpoint tablet: @media (min-width: 600px)
+       ═══════════════════════════════════════════════════ */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f7f8fa;
+      color: #1a1a2e;
+      padding: 12px 12px;
+    }
+    @media (min-width: 600px) {
+      body { padding: 32px 16px; }
+    }
+
+    .container {
+      max-width: 780px;
+      margin: 0 auto;
+    }
+
+    /* ─── HEADER ─────────────────────────────── */
+    .report-header {
+      background: linear-gradient(135deg, #D32F2F 0%, #b71c1c 100%);
+      border-radius: 12px;
+      padding: 20px 16px;
+      color: #fff;
+      margin-bottom: 16px;
+    }
+    @media (min-width: 600px) {
+      .report-header { border-radius: 16px; padding: 32px; margin-bottom: 32px; }
+    }
+    .report-header .logo {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      opacity: 0.8;
+      margin-bottom: 6px;
+    }
+    @media (min-width: 600px) {
+      .report-header .logo { font-size: 13px; letter-spacing: 2px; margin-bottom: 8px; }
+    }
+    .report-header h1 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      line-height: 1.3;
+    }
+    @media (min-width: 600px) {
+      .report-header h1 { font-size: 26px; margin-bottom: 6px; }
+    }
+    .report-header .subtitle {
+      font-size: 13px;
+      opacity: 0.85;
+    }
+    .report-header .to-from {
+      margin-top: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 13px;
+    }
+    @media (min-width: 600px) {
+      .report-header .to-from { flex-direction: row; flex-wrap: wrap; gap: 24px; margin-top: 20px; }
+    }
+    .report-header .to-from span { opacity: 0.75; margin-right: 4px; }
+
+    /* ─── SECTIONS ───────────────────────────── */
+    .section {
+      background: #fff;
+      border-radius: 10px;
+      padding: 16px 14px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    @media (min-width: 600px) {
+      .section { border-radius: 14px; padding: 28px; margin-bottom: 20px; }
+    }
+    .section h2 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #D32F2F;
+      border-bottom: 2px solid #fee2e2;
+      padding-bottom: 8px;
+      margin-bottom: 14px;
+    }
+    @media (min-width: 600px) {
+      .section h2 { font-size: 16px; padding-bottom: 10px; margin-bottom: 18px; }
+    }
+    .section h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #333;
+      margin: 14px 0 6px;
+    }
+    @media (min-width: 600px) {
+      .section h3 { margin: 18px 0 8px; }
+    }
+    .section p {
+      font-size: 14px;
+      line-height: 1.65;
+      color: #444;
+      margin-bottom: 10px;
+    }
+
+    /* ─── STATUS PILLS ───────────────────────── */
+    .pill {
+      display: inline-block;
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-left: 6px;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+    @media (min-width: 600px) {
+      .pill { padding: 3px 12px; font-size: 12px; margin-left: 8px; }
+    }
+    .pill-done   { background: #d1fae5; color: #065f46; }
+    .pill-wip    { background: #fef9c3; color: #854d0e; }
+    .pill-todo   { background: #e0e7ff; color: #3730a3; }
+    .pill-bug    { background: #fee2e2; color: #9b1c1c; }
+
+    /* ─── FEATURE LIST ───────────────────────── */
+    .feature-list { list-style: none; padding: 0; }
+    .feature-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 14px;
+      color: #444;
+      line-height: 1.55;
+      padding: 8px 0;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .feature-list li:last-child { border-bottom: none; }
+    .feature-list .icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+    .feature-list .desc strong { color: #1a1a2e; }
+    .feature-list .desc em {
+      font-size: 12px;
+      color: #777;
+      font-style: normal;
+      display: block;
+      margin-top: 2px;
+    }
+
+    /* ─── PROGRESS BARS ──────────────────────── */
+    .progress-wrap { margin: 12px 0 6px; }
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 2px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 6px;
+    }
+    .progress-label span:last-child {
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .progress-bar {
+      height: 10px;
+      border-radius: 99px;
+      background: #f3f4f6;
+      overflow: hidden;
+    }
+    .progress-bar .fill {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, #D32F2F, #ef5350);
+    }
+
+    /* ─── TIMELINE ───────────────────────────── */
+    .timeline { border-left: 3px solid #fee2e2; padding-left: 16px; margin: 0; }
+    @media (min-width: 600px) {
+      .timeline { padding-left: 20px; }
+    }
+    .timeline li {
+      list-style: none;
+      position: relative;
+      padding: 0 0 14px;
+      font-size: 14px;
+      color: #444;
+      line-height: 1.55;
+    }
+    .timeline li::before {
+      content: '';
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #D32F2F;
+      position: absolute;
+      left: -22px; top: 4px;
+    }
+    @media (min-width: 600px) {
+      .timeline li::before { width: 11px; height: 11px; left: -27px; }
+      .timeline li { padding: 0 0 18px; }
+    }
+    .timeline li strong { color: #1a1a2e; }
+
+    /* ─── CHAT EXAMPLE ───────────────────────── */
+    .chat-example {
+      background: #fdf4f4;
+      border: 1px solid #fecaca;
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 12px;
+      line-height: 1.7;
+      color: #444;
+      font-family: monospace;
+      white-space: pre-wrap;
+      overflow-x: auto;
+    }
+    @media (min-width: 600px) {
+      .chat-example { border-radius: 12px; padding: 16px; font-size: 13px; }
+    }
+    .chat-example .cleo { color: #b91c1c; font-weight: bold; }
+    .chat-example .user { color: #1d4ed8; font-weight: bold; }
+
+    /* ─── SUMMARY BOX ────────────────────────── */
+    .summary-box {
+      background: #fef9c3;
+      border-left: 4px solid #facc15;
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-size: 14px;
+      color: #444;
+      line-height: 1.65;
+      margin-top: 8px;
+    }
+    @media (min-width: 600px) {
+      .summary-box { padding: 16px 20px; }
+    }
+    .summary-box strong { color: #1a1a2e; }
+
+    /* ─── INFO BOX ───────────────────────────── */
+    .info-box {
+      background: #eff6ff;
+      border-left: 4px solid #3b82f6;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: #1e40af;
+      line-height: 1.6;
+      margin-top: 8px;
+    }
+    @media (min-width: 600px) {
+      .info-box { padding: 14px 18px; }
+    }
+
+    /* ─── FOOTER ─────────────────────────────── */
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      color: #aaa;
+      padding: 8px 0 16px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ══════════════════════════════════════════
+       ENCABEZADO
+       ══════════════════════════════════════════ -->
+  <div class="report-header">
+    <div class="logo">ClickEat · Voice Bot — Reporte de avance</div>
+    <h1>Avance del proyecto al {{FECHA_LARGA}}</h1>
+    <div class="subtitle">Resumen ejecutivo para revisión de gerencia</div>
+    <div class="to-from">
+      <div><span>Para:</span> Yafit Ohaya Beladel</div>
+      <div><span>De:</span> Equipo de Desarrollo</div>
+      <div><span>Fecha:</span> {{FECHA_LARGA}}</div>
+      <div><span>Sesión iniciada a las:</span> {{HORA_INICIO}}</div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       SECCIÓN 1 — QUÉ ES EL PROYECTO
+       Mantener estática o actualizar solo si cambia el alcance del proyecto.
+       ══════════════════════════════════════════ -->
+  <div class="section">
+    <h2>¿De qué trata este proyecto?</h2>
+    <p>
+      <strong>ClickEat Voice Bot</strong> es una plataforma que permite a los clientes de Pizza Hut
+      Costa Rica hacer pedidos y consultas de dos maneras:
+    </p>
+    <ul class="feature-list">
+      <li>
+        <div class="icon">🎙️</div>
+        <div class="desc">
+          <strong>Voice Bot</strong> — El cliente habla por teléfono o micrófono y un agente virtual
+          lo atiende en tiempo real, entiende lo que dice y responde con voz.
+        </div>
+      </li>
+      <li>
+        <div class="icon">💬</div>
+        <div class="desc">
+          <strong>Cleo Chat</strong> — Un chat interactivo con una mascota animada llamada Cleo.
+          El cliente escribe o toca botones, y Cleo le ayuda a armar su pedido paso a paso.
+          <em>{{FOCO_ACTUAL}}</em>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       SECCIÓN 2 — ESTADO ANTERIOR (ÚLTIMA SESIÓN REPORTADA)
+       Fuente: ia/05_progress.md (sesiones anteriores) + ia/03_plan.md
+       Mostrar qué estaba listo y qué estaba pendiente antes de esta jornada.
+       ══════════════════════════════════════════ -->
+  <div class="section">
+    <h2>¿Cómo estaba el proyecto hasta la última sesión reportada ({{FECHA_ULTIMA_SESION}})?</h2>
+    <p>
+      {{INTRO_ESTADO_AYER}}
+    </p>
+    <ul class="feature-list">
+      {{ESTADO_AYER_ITEMS}}
+      <!-- EJEMPLO de ítem completado:
+      <li>
+        <div class="icon">✅</div>
+        <div class="desc">
+          <strong>Nombre de la funcionalidad</strong> — descripción en lenguaje no técnico.
+        </div>
+      </li>
+      -->
+      <!-- EJEMPLO de ítem en progreso:
+      <li>
+        <div class="icon">🟡</div>
+        <div class="desc">
+          <strong>Nombre</strong> — estado + qué faltaba.
+          <em>Descripción adicional si es necesaria.</em>
+        </div>
+      </li>
+      -->
+    </ul>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       SECCIÓN 3 — LO QUE SE HIZO EN ESTA JORNADA
+       Fuente: sesiones del día en ia/05_progress.md + tareas ✅ de ia/04_tasks.md
+       Puede tener múltiples <h3> (uno por bloque de trabajo).
+       Usar .pill para indicar estado.
+       Usar .timeline para desglosar sub-puntos técnicos en lenguaje simple.
+       Usar .chat-example para mostrar ejemplos de mensajes de Cleo.
+       ══════════════════════════════════════════ -->
+  <div class="section">
+    <h2>¿Qué se realizó a partir de las {{HORA_INICIO}}?</h2>
+
+    {{LO_NUEVO_HOY_SECTIONS}}
+
+    <!-- EJEMPLO de una sección de trabajo:
+
+    <h3>1. Nombre de la mejora <span class="pill pill-done">✅ Listo</span></h3>
+    <p>Descripción en lenguaje no técnico de qué se resolvió o entregó.</p>
+    <ul class="timeline">
+      <li><strong>Sub-punto:</strong> explicación simple del problema o causa.</li>
+      <li><strong>Sub-punto:</strong> qué se hizo para resolverlo.</li>
+    </ul>
+
+    <h3>2. Corrección de error: descripción <span class="pill pill-bug">🐛 Error resuelto</span></h3>
+    <p>Descripción del error y su impacto para el usuario.</p>
+
+    <h3>3. Ejemplo de mensaje de Cleo</h3>
+    <div class="chat-example"><span class="cleo">Cleo:</span> ¡Tu pedido #XXXX quedó registrado! 🎉
+  • Producto A
+  • Producto B
+  Total: ₡XX.XXX
+  Pago: tarjeta
+
+  Completá tu pago con tarjeta usando el botón de abajo ⬇️</div>
+
+    -->
+
+    {{BUGS_RESUELTOS}}
+    <!-- EJEMPLO de bug resuelto (si aplica):
+
+    <h3>Corrección de error: nombre del error <span class="pill pill-bug">🐛 Error resuelto</span></h3>
+    <p>
+      <strong>Qué pasaba:</strong> descripción del síntoma visible para el usuario.<br>
+      <strong>Causa:</strong> explicación simple de por qué ocurría.<br>
+      <strong>Solución:</strong> qué se cambió para que no vuelva a pasar.
+    </p>
+
+    -->
+
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       SECCIÓN 4 — PROGRESO GENERAL
+       Fuente: ia/03_plan.md + estado de tareas en ia/04_tasks.md
+       Áreas típicas del proyecto ClickEat Voice Bot.
+       Ajustar % honestamente según avance real.
+       ══════════════════════════════════════════ -->
+  <div class="section">
+    <h2>Progreso general del proyecto</h2>
+
+    {{PROGRESO_BARS}}
+
+    <!-- EJEMPLO de barras de progreso:
+
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Voice Bot (canal de voz)</span><span>100%</span></div>
+      <div class="progress-bar"><div class="fill" style="width:100%"></div></div>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Cleo Chat — Flujo de consultas</span><span>100%</span></div>
+      <div class="progress-bar"><div class="fill" style="width:100%"></div></div>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Cleo Chat — Flujo de compra (lógica)</span><span>100%</span></div>
+      <div class="progress-bar"><div class="fill" style="width:100%"></div></div>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Cleo Chat — Pago con tarjeta (lógica)</span><span>100%</span></div>
+      <div class="progress-bar"><div class="fill" style="width:100%"></div></div>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Cleo Chat — Pantallas de pago (diseño visual)</span><span>0%</span></div>
+      <div class="progress-bar"><div class="fill" style="width:0%"></div></div>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Publicación en producción</span><span>0%</span></div>
+      <div class="progress-bar"><div class="fill" style="width:0%"></div></div>
+    </div>
+
+    -->
+
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       SECCIÓN 5 — QUÉ FALTA
+       Fuente: tareas ⬜ y 🔄 en ia/04_tasks.md + próximo foco en ia/05_progress.md
+       Explicar en términos de impacto para el usuario/negocio, no de tareas técnicas.
+       Cerrar con .summary-box de resumen ejecutivo.
+       ══════════════════════════════════════════ -->
+  <div class="section">
+    <h2>¿Qué falta por completar?</h2>
+    <ul class="feature-list">
+      {{PENDIENTE_ITEMS}}
+      <!-- EJEMPLO de ítem pendiente:
+      <li>
+        <div class="icon">📱</div>
+        <div class="desc">
+          <strong>Nombre de la funcionalidad pendiente</strong>
+          <span class="pill pill-todo">Pendiente</span>
+          <em>Descripción del impacto y por qué importa.</em>
+        </div>
+      </li>
+      -->
+      <!-- EJEMPLO de ítem en progreso:
+      <li>
+        <div class="icon">🔌</div>
+        <div class="desc">
+          <strong>Nombre</strong>
+          <span class="pill pill-wip">En progreso</span>
+          <em>Descripción del bloqueante o siguiente paso.</em>
+        </div>
+      </li>
+      -->
+    </ul>
+
+    <div class="summary-box" style="margin-top:16px;">
+      {{RESUMEN_EJECUTIVO}}
+      <!-- EJEMPLO:
+      <strong>En resumen:</strong> La parte lógica del pago con tarjeta ya funciona correctamente.
+      Lo que falta es la parte visual (lo que el cliente ve en pantalla durante el pago)
+      y las pruebas finales antes de salir a producción.
+      -->
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       FOOTER
+       ══════════════════════════════════════════ -->
+  <div class="footer">
+    Reporte generado el {{FECHA_LARGA}} a las {{HORA_INICIO}} · ClickEat Voice Bot v2 · Equipo de Desarrollo
+  </div>
+
+</div>
+</body>
+</html>

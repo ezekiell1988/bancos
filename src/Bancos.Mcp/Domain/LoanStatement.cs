@@ -6,6 +6,12 @@ public sealed class LoanStatement
     public Guid BankAccountId { get; set; }
     public DateOnly StatementDate { get; set; }
     public required string CurrencyCode { get; set; }
+    public string? LoanNumber { get; set; }
+    public decimal? OriginalLoanAmount { get; set; }
+    public decimal? InterestRate { get; set; }
+    public int? TermMonths { get; set; }
+    public DateOnly? StartDate { get; set; }
+    public DateOnly? MaturityDate { get; set; }
     public decimal OutstandingBalance { get; set; }
     public required string SourceFingerprint { get; set; }
     public DateTimeOffset CreatedAt { get; set; } = CostaRicaTime.Now;

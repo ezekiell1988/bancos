@@ -47,7 +47,24 @@ Los proyectos no comparten tablas, historial de EF Core ni cadenas de conexión.
 | `src/input/` | Muestra histórica inicial; no se modifica durante análisis. |
 | `src/output/` | Aplicación final compilada/servida. |
 | `.local-secrets/` | Configuración local ignorada; nunca versionar ni leer valores en respuestas. |
+| `.mcp/bancos-mcp.ps1` | Script que levanta SQL Server (Docker) y el servidor MCP en modo watch. |
 | `ia/` | Contexto y trazabilidad de trabajo. |
+
+## Desarrollo local
+
+### Levantar BD y MCP
+
+El script `.mcp/bancos-mcp.ps1` arranca el contenedor Docker de SQL Server (si no está corriendo) y ejecuta `dotnet watch run` del proyecto `Bancos.Mcp` en el puerto 8000.
+
+```bash
+# macOS / Linux
+pwsh .mcp/bancos-mcp.ps1
+
+# Windows (PowerShell)
+.\.mcp\bancos-mcp.ps1
+```
+
+Requisitos: Docker Desktop corriendo y PowerShell (`pwsh`) instalado.
 
 ## Validación esperada
 
@@ -55,4 +72,5 @@ Los proyectos no comparten tablas, historial de EF Core ni cadenas de conexión.
 |---|---|
 | API | `dotnet build` y `dotnet test` |
 | Frontend | `npm run build` y pruebas configuradas |
+| MCP | `pwsh .mcp/bancos-mcp.ps1` → `tools/list` responde con tools disponibles |
 | Datos | Consultas de conciliación vía MCP `dbquery` cuando esté disponible |
