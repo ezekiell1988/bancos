@@ -240,7 +240,29 @@ public sealed class ImportFileJob(
             });
             inserted++;
         }
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var cutoff12 = today.AddMonths(12);
+        var vigentes = loan.Cuotas.Where(c => c.Status == "Vigente").ToArray();
+
+        var nextCuota = vigentes.Where(c => c.DueDate >= today).OrderBy(c => c.DueDate).FirstOrDefault();
+        existing.NextMonthCapital = nextCuota?.Capital;
+        existing.NextMonthInterest = nextCuota?.Interest;
+        existing.NextMonthTotal = nextCuota?.Total;
+
+        var currentPortion = vigentes.Where(c => c.DueDate >= today && c.DueDate <= cutoff12).ToArray();
+        existing.CurrentPortionCapital = currentPortion.Sum(c => c.Capital);
+        existing.CurrentPortionInterest = currentPortion.Sum(c => c.Interest);
+        existing.CurrentPortionTotal = currentPortion.Sum(c => c.Total);
+
+        var longTerm = vigentes.Where(c => c.DueDate > cutoff12).ToArray();
+        existing.LongTermCapital = longTerm.Sum(c => c.Capital);
+        existing.LongTermInterest = longTerm.Sum(c => c.Interest);
+        existing.LongTermTotal = longTerm.Sum(c => c.Total);
+
         context?.WriteLine("Préstamo: ₡{0:N2} original, saldo ₡{1:N2}, {2} cuotas en archivo, {3} nuevas insertadas.", loan.OriginalAmount, loan.OutstandingBalance, loan.Cuotas.Count, inserted);
+        context?.WriteLine("Porción corriente: ₡{0:N2} capital + ₡{1:N2} interés = ₡{2:N2}. Largo plazo: ₡{3:N2} capital + ₡{4:N2} interés = ₡{5:N2}.",
+            existing.CurrentPortionCapital, existing.CurrentPortionInterest, existing.CurrentPortionTotal,
+            existing.LongTermCapital, existing.LongTermInterest, existing.LongTermTotal);
     }
 
     private async Task ProcessBacAccountStatements(Guid bankAccountId, IReadOnlyList<ParsedBacAccountStatement> statements, PerformContext? context)

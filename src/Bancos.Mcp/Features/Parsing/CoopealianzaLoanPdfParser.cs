@@ -98,13 +98,13 @@ public sealed partial class CoopealianzaLoanPdfParser
     [GeneratedRegex(@"(?i)Monto original\s*₡\s*(?<value>[\d][\d.,\s]*)")]
     private static partial Regex OriginalAmountRegex();
 
-    [GeneratedRegex(@"(?i)Tasa\s+(?<value>[\d]+[.,]?\d*)\s*%")]
+    [GeneratedRegex(@"(?i)Tasa\s*(?<value>[\d]+[.,]?\d*)\s*%")]
     private static partial Regex InterestRateRegex();
 
     [GeneratedRegex(@"(?i)(?:Cuota actual|En)\s*[:\s]*\d+\s*/\s*(?<total>\d+)")]
     private static partial Regex TermRegex();
 
-    [GeneratedRegex(@"(?i)(?:Inicio|FECHA\s+TASA)\s+(?<date>\d{2}/\d{2}/\d{4})\s+\d+[.,]\d+\s*%")]
+    [GeneratedRegex(@"(?i)(?:Inicio|FECHA\s*TASA)\s*(?<date>\d{2}/\d{2}/\d{4})\s*\d+[.,]\d+\s*%")]
     private static partial Regex StartDateRegex();
 
     [GeneratedRegex(@"(?i)Saldo actual:?\s*₡\s*(?<value>[\d][\d.,\s]*)")]
@@ -113,6 +113,6 @@ public sealed partial class CoopealianzaLoanPdfParser
     [GeneratedRegex(@"(?<date>\d{2}/\d{2}/\d{4})Pago(?<capital>₡[^₡]*)(?<interest>₡[^₡]*)(?<lateFee>₡[^₡]*)(?<other>₡[^₡]*)(?<total>₡[^₡]*)₡")]
     private static partial Regex PaymentRegex();
 
-    [GeneratedRegex(@"(?<num>\d{1,2})\s+(?<date>\d{2}/\d{2}/\d{4})\s+(?<balance>₡[^₡]*)(?<capital>₡[^₡]*)(?<interest>₡[^₡]*)(?<lateFee>₡[^₡]*)(?<other>₡[^₡]*)(?<total>₡[^₡]*?)\s+(?<status>Pagada|Vigente)")]
+    [GeneratedRegex(@"(?<num>\d{1,2})\s*(?<date>\d{2}/\d{2}/\d{4})\s*(?<balance>₡[^₡]*)(?<capital>₡[^₡]*)(?<interest>₡[^₡]*)(?<lateFee>₡[^₡]*)(?<other>₡[^₡]*)(?<total>₡[^₡]*?)(?<status>Pagada|Vigente)")]
     private static partial Regex CuotaRegex();
 }

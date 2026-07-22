@@ -13,6 +13,15 @@ public sealed class LoanStatement
     public DateOnly? StartDate { get; set; }
     public DateOnly? MaturityDate { get; set; }
     public decimal OutstandingBalance { get; set; }
+    public decimal? NextMonthCapital { get; set; }
+    public decimal? NextMonthInterest { get; set; }
+    public decimal? NextMonthTotal { get; set; }
+    public decimal? CurrentPortionCapital { get; set; }
+    public decimal? CurrentPortionInterest { get; set; }
+    public decimal? CurrentPortionTotal { get; set; }
+    public decimal? LongTermCapital { get; set; }
+    public decimal? LongTermInterest { get; set; }
+    public decimal? LongTermTotal { get; set; }
     public required string SourceFingerprint { get; set; }
     public DateTimeOffset CreatedAt { get; set; } = CostaRicaTime.Now;
     public DateTimeOffset? UpdatedAt { get; set; }

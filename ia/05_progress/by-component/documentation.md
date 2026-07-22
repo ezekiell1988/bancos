@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-21 CR (TASK-EBC-DOC-05 completada)
+> **Última actualización:** 2026-07-22 CR (TASK-EBC-MCP-09 completada)
 
 
 
 ## Completado
+
+* **2026-07-22** — TASK-EBC-MCP-09: Implementado endpoint SSE en /mcp/sse para Claude Code. Descubierto que la spec MCP requiere camelCase en tools/list — PascalCase de .NET impedía el descubrimiento. Corregidos regexes del parser Coopealianza (espacios opcionales en texto PDF sin separadores). Verificado: 4 PDFs paginados → 36 cuotas en tbLoanPayments, LoanStatement con datos de header completos. Documentado en references/10-sse-claude-code.md. — EBC
 
 * **2026-07-21** — TASK-EBC-DOC-05: Documentada en ia/README.md la convención para ubicar tools MCP por feature. — EBC
 

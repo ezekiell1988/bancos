@@ -296,6 +296,15 @@ public sealed class McpCatalogDbContext(DbContextOptions<McpCatalogDbContext> op
             entity.Property(ls => ls.StartDate).HasColumnName("startDate").HasComment("Fecha de inicio o formalización del préstamo.");
             entity.Property(ls => ls.MaturityDate).HasColumnName("maturityDate").HasComment("Fecha de vencimiento del préstamo.");
             entity.Property(ls => ls.OutstandingBalance).HasColumnName("outstandingBalance").HasPrecision(18, 2).HasComment("Saldo pendiente total.");
+            entity.Property(ls => ls.NextMonthCapital).HasColumnName("nextMonthCapital").HasPrecision(18, 2).HasComment("Capital de la próxima cuota vigente.");
+            entity.Property(ls => ls.NextMonthInterest).HasColumnName("nextMonthInterest").HasPrecision(18, 2).HasComment("Interés de la próxima cuota vigente.");
+            entity.Property(ls => ls.NextMonthTotal).HasColumnName("nextMonthTotal").HasPrecision(18, 2).HasComment("Total de la próxima cuota vigente.");
+            entity.Property(ls => ls.CurrentPortionCapital).HasColumnName("currentPortionCapital").HasPrecision(18, 2).HasComment("Capital porción corriente (≤12 meses).");
+            entity.Property(ls => ls.CurrentPortionInterest).HasColumnName("currentPortionInterest").HasPrecision(18, 2).HasComment("Interés porción corriente (≤12 meses).");
+            entity.Property(ls => ls.CurrentPortionTotal).HasColumnName("currentPortionTotal").HasPrecision(18, 2).HasComment("Total porción corriente (≤12 meses).");
+            entity.Property(ls => ls.LongTermCapital).HasColumnName("longTermCapital").HasPrecision(18, 2).HasComment("Capital largo plazo (>12 meses).");
+            entity.Property(ls => ls.LongTermInterest).HasColumnName("longTermInterest").HasPrecision(18, 2).HasComment("Interés largo plazo (>12 meses).");
+            entity.Property(ls => ls.LongTermTotal).HasColumnName("longTermTotal").HasPrecision(18, 2).HasComment("Total largo plazo (>12 meses).");
             entity.Property(ls => ls.SourceFingerprint).HasColumnName("sourceFingerprint").HasMaxLength(64).IsFixedLength().HasComment("SHA-256 para deduplicación.");
             entity.Property(ls => ls.CreatedAt).HasColumnName("createdAt").HasComment("Fecha y hora de creación del registro.");
             entity.Property(ls => ls.UpdatedAt).HasColumnName("updatedAt").HasComment("Fecha y hora de la última actualización del registro.");

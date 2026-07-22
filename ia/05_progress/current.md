@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-21 CR (TASK-EBC-INF-11 completada)
+> **Última actualización:** 2026-07-22 CR (TASK-EBC-MCP-09 completada)
 
 ## En curso
 
@@ -21,6 +21,8 @@
 * Aprobar y ejecutar `TASK-EZ-BE-01` mediante `iaWorkflow`.
 
 ## Completado en sesiones recientes
+
+* **2026-07-22** — TASK-EBC-MCP-09 cerrada: Implementado endpoint SSE en /mcp/sse para Claude Code. Descubierto que la spec MCP requiere camelCase en tools/list — PascalCase de .NET impedía el descubrimiento. Corregidos regexes del parser Coopealianza (espacios opcionales en texto PDF sin separadores). Verificado: 4 PDFs paginados → 36 cuotas en tbLoanPayments, LoanStatement con datos de header completos. Documentado en references/10-sse-claude-code.md. — EBC
 
 * **2026-07-21** — TASK-EBC-INF-11 cerrada: Registrado Bancos.Mcp como servidor HTTP bancos_mcp en la configuración de Codex. — EBC
 
