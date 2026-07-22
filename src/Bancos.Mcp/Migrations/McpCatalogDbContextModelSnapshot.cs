@@ -563,6 +563,316 @@ namespace Bancos.Mcp.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Bancos.Mcp.Domain.CardFinancing", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("idCardFinancings")
+                        .HasComment("Identificador único del financiamiento.");
+
+                    b.Property<decimal?>("AnnualInterestRate")
+                        .HasPrecision(8, 4)
+                        .HasColumnType("decimal(8,4)")
+                        .HasColumnName("annualInterestRate")
+                        .HasComment("Tasa de interés anual; null si tasa cero.");
+
+                    b.Property<Guid>("BankAccountId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("idBankAccounts")
+                        .HasComment("Tarjeta de crédito asociada.");
+
+                    b.Property<string>("Concept")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("concept")
+                        .HasComment("Descripción del plan.");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("createdAt")
+                        .HasComment("Fecha y hora de creación del registro.");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nchar(3)")
+                        .HasColumnName("currencyCode")
+                        .IsFixedLength()
+                        .HasComment("Moneda del financiamiento.");
+
+                    b.Property<DateOnly?>("DueDate")
+                        .HasColumnType("date")
+                        .HasColumnName("dueDate")
+                        .HasComment("Fecha de vencimiento del plan.");
+
+                    b.Property<DateOnly>("FinancingDate")
+                        .HasColumnType("date")
+                        .HasColumnName("financingDate")
+                        .HasComment("Fecha del financiamiento.");
+
+                    b.Property<decimal>("InitialBalance")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("initialBalance")
+                        .HasComment("Saldo inicial del plan.");
+
+                    b.Property<decimal>("InstallmentAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("installmentAmount")
+                        .HasComment("Monto de cada cuota.");
+
+                    b.Property<string>("Installments")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("installments")
+                        .HasComment("Cuotas en formato texto, ej. 3/12.");
+
+                    b.Property<decimal>("OutstandingBalance")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("outstandingBalance")
+                        .HasComment("Saldo faltante a la fecha del corte.");
+
+                    b.Property<string>("ReferenceNumber")
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("referenceNumber")
+                        .HasComment("Número de referencia del financiamiento.");
+
+                    b.Property<string>("SourceFingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nchar(64)")
+                        .HasColumnName("sourceFingerprint")
+                        .IsFixedLength()
+                        .HasComment("SHA-256 para deduplicación.");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)")
+                        .HasColumnName("status")
+                        .HasComment("Estado del financiamiento.");
+
+                    b.Property<short?>("TermMonths")
+                        .HasColumnType("smallint")
+                        .HasColumnName("termMonths")
+                        .HasComment("Plazo total en meses.");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("updatedAt")
+                        .HasComment("Fecha y hora de la última actualización del registro.");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BankAccountId", "SourceFingerprint")
+                        .IsUnique();
+
+                    b.ToTable("tbCardFinancings", null, t =>
+                        {
+                            t.HasComment("Planes de cuotas y financiamientos activos en tarjeta (snapshot del estado actual).");
+
+                            t.HasCheckConstraint("CK_tbCardFinancings_currencyCode", "[currencyCode] IN ('CRC', 'USD')");
+
+                            t.HasCheckConstraint("CK_tbCardFinancings_status", "[status] IN ('active', 'cancelled', 'settled')");
+                        });
+                });
+
+            modelBuilder.Entity("Bancos.Mcp.Domain.CardStatement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("idCardStatements")
+                        .HasComment("Identificador único del corte.");
+
+                    b.Property<decimal>("AvailableBalanceCrc")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("availableBalanceCrc");
+
+                    b.Property<decimal>("AvailableBalanceUsd")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("availableBalanceUsd");
+
+                    b.Property<Guid>("BankAccountId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("idBankAccounts")
+                        .HasComment("Tarjeta de crédito asociada al corte.");
+
+                    b.Property<decimal>("CashPaymentCrc")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("cashPaymentCrc");
+
+                    b.Property<DateOnly?>("CashPaymentDueDate")
+                        .HasColumnType("date")
+                        .HasColumnName("cashPaymentDueDate")
+                        .HasComment("Fecha límite pago de contado.");
+
+                    b.Property<decimal>("CashPaymentUsd")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("cashPaymentUsd");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("createdAt")
+                        .HasComment("Fecha y hora de creación del registro.");
+
+                    b.Property<decimal>("CreditLimitCrc")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("creditLimitCrc");
+
+                    b.Property<decimal>("CreditLimitUsd")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("creditLimitUsd");
+
+                    b.Property<decimal>("CurrentBalanceCrc")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("currentBalanceCrc");
+
+                    b.Property<decimal>("CurrentBalanceUsd")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("currentBalanceUsd");
+
+                    b.Property<decimal>("InterestTotalCrc")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("interestTotalCrc");
+
+                    b.Property<decimal>("InterestTotalUsd")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("interestTotalUsd");
+
+                    b.Property<decimal>("MinimumPaymentCrc")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("minimumPaymentCrc");
+
+                    b.Property<DateOnly?>("MinimumPaymentDueDate")
+                        .HasColumnType("date")
+                        .HasColumnName("minimumPaymentDueDate")
+                        .HasComment("Fecha límite pago mínimo.");
+
+                    b.Property<decimal>("MinimumPaymentUsd")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("minimumPaymentUsd");
+
+                    b.Property<decimal>("PaymentsTotalCrc")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("paymentsTotalCrc");
+
+                    b.Property<decimal>("PaymentsTotalUsd")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("paymentsTotalUsd");
+
+                    b.Property<string>("PeriodLabel")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("periodLabel")
+                        .HasComment("Período informativo del header, ej. JUL-2026.");
+
+                    b.Property<decimal>("PreviousBalanceCrc")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("previousBalanceCrc");
+
+                    b.Property<decimal>("PreviousBalanceUsd")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("previousBalanceUsd");
+
+                    b.Property<decimal>("PurchasesTotalCrc")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("purchasesTotalCrc");
+
+                    b.Property<decimal>("PurchasesTotalUsd")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("purchasesTotalUsd");
+
+                    b.Property<string>("SourceFingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nchar(64)")
+                        .HasColumnName("sourceFingerprint")
+                        .IsFixedLength()
+                        .HasComment("SHA-256 para deduplicación.");
+
+                    b.Property<DateOnly>("StatementDate")
+                        .HasColumnType("date")
+                        .HasColumnName("statementDate")
+                        .HasComment("Fecha de corte.");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("updatedAt")
+                        .HasComment("Fecha y hora de la última actualización del registro.");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BankAccountId", "StatementDate")
+                        .IsUnique();
+
+                    b.ToTable("tbCardStatements", null, t =>
+                        {
+                            t.HasComment("Header del corte mensual de tarjeta de crédito con totales del período.");
+                        });
+                });
+
+            modelBuilder.Entity("Bancos.Mcp.Domain.CardStatementLine", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("idCardStatementLines")
+                        .HasComment("Identificador único de la línea.");
+
+                    b.Property<Guid>("CardStatementId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("idCardStatements")
+                        .HasComment("Corte al que pertenece el movimiento.");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("createdAt")
+                        .HasComment("Fecha y hora de creación del registro.");
+
+                    b.Property<Guid>("TransactionId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("idTransactions")
+                        .HasComment("Movimiento incluido en el corte.");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TransactionId");
+
+                    b.HasIndex("CardStatementId", "TransactionId")
+                        .IsUnique();
+
+                    b.ToTable("tbCardStatementLines", null, t =>
+                        {
+                            t.HasComment("Auxiliar que asocia movimientos a un corte de tarjeta. Surrogate PK + UNIQUE constraint per ADR-03.");
+                        });
+                });
+
             modelBuilder.Entity("Bancos.Mcp.Domain.ExchangeRate", b =>
                 {
                     b.Property<Guid>("Id")
@@ -973,6 +1283,412 @@ namespace Bancos.Mcp.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Bancos.Mcp.Domain.LoanPayment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("idLoanPayments")
+                        .HasComment("Identificador único de la cuota.");
+
+                    b.Property<decimal>("Balance")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("balance")
+                        .HasComment("Saldo después del pago.");
+
+                    b.Property<decimal>("Capital")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("capital")
+                        .HasComment("Abono a capital.");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("createdAt")
+                        .HasComment("Fecha y hora de creación del registro.");
+
+                    b.Property<decimal>("Interest")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("interest")
+                        .HasComment("Interés de la cuota.");
+
+                    b.Property<decimal>("LateFee")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("lateFee")
+                        .HasComment("Mora.");
+
+                    b.Property<Guid>("LoanStatementId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("idLoanStatements")
+                        .HasComment("Extracto padre al que pertenece la cuota.");
+
+                    b.Property<decimal>("OtherCharges")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("otherCharges")
+                        .HasComment("Otros cargos.");
+
+                    b.Property<DateOnly>("PaymentDate")
+                        .HasColumnType("date")
+                        .HasColumnName("paymentDate")
+                        .HasComment("Fecha de la cuota.");
+
+                    b.Property<string>("SourceFingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nchar(64)")
+                        .HasColumnName("sourceFingerprint")
+                        .IsFixedLength()
+                        .HasComment("SHA-256 para deduplicación.");
+
+                    b.Property<decimal>("Total")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("total")
+                        .HasComment("Total de la cuota.");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LoanStatementId", "SourceFingerprint")
+                        .IsUnique();
+
+                    b.ToTable("tbLoanPayments", null, t =>
+                        {
+                            t.HasComment("Cuotas del calendario de amortización de un préstamo.");
+                        });
+                });
+
+            modelBuilder.Entity("Bancos.Mcp.Domain.LoanStatement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("idLoanStatements")
+                        .HasComment("Identificador único del extracto.");
+
+                    b.Property<Guid>("BankAccountId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("idBankAccounts")
+                        .HasComment("Cuenta de préstamo asociada.");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("createdAt")
+                        .HasComment("Fecha y hora de creación del registro.");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nchar(3)")
+                        .HasColumnName("currencyCode")
+                        .IsFixedLength()
+                        .HasComment("Moneda del préstamo.");
+
+                    b.Property<decimal>("OutstandingBalance")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("outstandingBalance")
+                        .HasComment("Saldo pendiente total.");
+
+                    b.Property<string>("SourceFingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nchar(64)")
+                        .HasColumnName("sourceFingerprint")
+                        .IsFixedLength()
+                        .HasComment("SHA-256 para deduplicación.");
+
+                    b.Property<DateOnly>("StatementDate")
+                        .HasColumnType("date")
+                        .HasColumnName("statementDate")
+                        .HasComment("Fecha del extracto.");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("updatedAt")
+                        .HasComment("Fecha y hora de la última actualización del registro.");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BankAccountId", "SourceFingerprint")
+                        .IsUnique();
+
+                    b.ToTable("tbLoanStatements", null, t =>
+                        {
+                            t.HasComment("Encabezado del extracto de préstamo. Padre de tbLoanPayments.");
+
+                            t.HasCheckConstraint("CK_tbLoanStatements_currencyCode", "[currencyCode] IN ('CRC', 'USD')");
+                        });
+                });
+
+            modelBuilder.Entity("Bancos.Mcp.Domain.Period", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("idPeriods")
+                        .HasComment("Identificador único del período.");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("createdAt")
+                        .HasComment("Fecha y hora de creación del registro.");
+
+                    b.Property<DateOnly>("EndDate")
+                        .HasColumnType("date")
+                        .HasColumnName("endDate")
+                        .HasComment("Fecha de cierre del período (día 18 del mes en curso).");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("label")
+                        .HasComment("Nombre visible del período, ej. JUL-2026.");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date")
+                        .HasColumnName("startDate")
+                        .HasComment("Fecha de inicio del período (día 19 del mes anterior).");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("updatedAt")
+                        .HasComment("Fecha y hora de la última actualización del registro.");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EndDate")
+                        .IsUnique();
+
+                    b.HasIndex("Label")
+                        .IsUnique();
+
+                    b.HasIndex("StartDate")
+                        .IsUnique();
+
+                    b.ToTable("tbPeriods", null, t =>
+                        {
+                            t.HasComment("Períodos de reporte financiero. Cada período corre del 19 de un mes al 18 del siguiente.");
+                        });
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("60000000-0000-0000-0000-000000000001"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
+                            EndDate = new DateOnly(2026, 1, 18),
+                            Label = "ENE-2026",
+                            StartDate = new DateOnly(2025, 12, 19)
+                        },
+                        new
+                        {
+                            Id = new Guid("60000000-0000-0000-0000-000000000002"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
+                            EndDate = new DateOnly(2026, 2, 18),
+                            Label = "FEB-2026",
+                            StartDate = new DateOnly(2026, 1, 19)
+                        },
+                        new
+                        {
+                            Id = new Guid("60000000-0000-0000-0000-000000000003"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
+                            EndDate = new DateOnly(2026, 3, 18),
+                            Label = "MAR-2026",
+                            StartDate = new DateOnly(2026, 2, 19)
+                        },
+                        new
+                        {
+                            Id = new Guid("60000000-0000-0000-0000-000000000004"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
+                            EndDate = new DateOnly(2026, 4, 18),
+                            Label = "ABR-2026",
+                            StartDate = new DateOnly(2026, 3, 19)
+                        },
+                        new
+                        {
+                            Id = new Guid("60000000-0000-0000-0000-000000000005"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
+                            EndDate = new DateOnly(2026, 5, 18),
+                            Label = "MAY-2026",
+                            StartDate = new DateOnly(2026, 4, 19)
+                        },
+                        new
+                        {
+                            Id = new Guid("60000000-0000-0000-0000-000000000006"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
+                            EndDate = new DateOnly(2026, 6, 18),
+                            Label = "JUN-2026",
+                            StartDate = new DateOnly(2026, 5, 19)
+                        },
+                        new
+                        {
+                            Id = new Guid("60000000-0000-0000-0000-000000000007"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
+                            EndDate = new DateOnly(2026, 7, 18),
+                            Label = "JUL-2026",
+                            StartDate = new DateOnly(2026, 6, 19)
+                        },
+                        new
+                        {
+                            Id = new Guid("60000000-0000-0000-0000-000000000008"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
+                            EndDate = new DateOnly(2026, 8, 18),
+                            Label = "AGO-2026",
+                            StartDate = new DateOnly(2026, 7, 19)
+                        },
+                        new
+                        {
+                            Id = new Guid("60000000-0000-0000-0000-000000000009"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
+                            EndDate = new DateOnly(2026, 9, 18),
+                            Label = "SEP-2026",
+                            StartDate = new DateOnly(2026, 8, 19)
+                        },
+                        new
+                        {
+                            Id = new Guid("60000000-0000-0000-0000-000000000010"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
+                            EndDate = new DateOnly(2026, 10, 18),
+                            Label = "OCT-2026",
+                            StartDate = new DateOnly(2026, 9, 19)
+                        },
+                        new
+                        {
+                            Id = new Guid("60000000-0000-0000-0000-000000000011"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
+                            EndDate = new DateOnly(2026, 11, 18),
+                            Label = "NOV-2026",
+                            StartDate = new DateOnly(2026, 10, 19)
+                        },
+                        new
+                        {
+                            Id = new Guid("60000000-0000-0000-0000-000000000012"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
+                            EndDate = new DateOnly(2026, 12, 18),
+                            Label = "DIC-2026",
+                            StartDate = new DateOnly(2026, 11, 19)
+                        });
+                });
+
+            modelBuilder.Entity("Bancos.Mcp.Domain.Transaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("idTransactions")
+                        .HasComment("Identificador único del movimiento.");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("amount")
+                        .HasComment("Monto original; positivo=cargo, negativo=abono.");
+
+                    b.Property<decimal>("AmountCrc")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("amountCrc")
+                        .HasComment("Monto convertido a colones.");
+
+                    b.Property<Guid>("BankAccountId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("idBankAccounts")
+                        .HasComment("Cuenta bancaria origen del movimiento.");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("createdAt")
+                        .HasComment("Fecha y hora de creación del registro.");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nchar(3)")
+                        .HasColumnName("currencyCode")
+                        .IsFixedLength()
+                        .HasComment("Moneda de la transacción.");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("description")
+                        .HasComment("Concepto o descripción del movimiento.");
+
+                    b.Property<decimal?>("ExchangeRate")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("decimal(18,6)")
+                        .HasColumnName("exchangeRate")
+                        .HasComment("Tipo de cambio usado para la conversión.");
+
+                    b.Property<string>("OperationType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)")
+                        .HasColumnName("operationType")
+                        .HasComment("Tipo de operación.");
+
+                    b.Property<DateOnly?>("PaymentDate")
+                        .HasColumnType("date")
+                        .HasColumnName("paymentDate")
+                        .HasComment("Fecha de pago, si aplica.");
+
+                    b.Property<Guid?>("PeriodId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("idPeriods")
+                        .HasComment("Período de reporte; null si aún no se ha creado el período.");
+
+                    b.Property<string>("Place")
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)")
+                        .HasColumnName("place")
+                        .HasComment("Lugar o comercio donde se realizó la transacción.");
+
+                    b.Property<string>("ReferenceNumber")
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("referenceNumber")
+                        .HasComment("N. Referencia del extracto.");
+
+                    b.Property<string>("SourceFingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nchar(64)")
+                        .HasColumnName("sourceFingerprint")
+                        .IsFixedLength()
+                        .HasComment("SHA-256 para deduplicación.");
+
+                    b.Property<DateOnly>("TransactionDate")
+                        .HasColumnType("date")
+                        .HasColumnName("transactionDate")
+                        .HasComment("Fecha de la transacción.");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("updatedAt")
+                        .HasComment("Fecha y hora de la última actualización del registro.");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PeriodId");
+
+                    b.HasIndex("BankAccountId", "SourceFingerprint")
+                        .IsUnique();
+
+                    b.ToTable("tbTransactions", null, t =>
+                        {
+                            t.HasComment("Movimientos individuales extraídos de estados de cuenta.");
+
+                            t.HasCheckConstraint("CK_tbTransactions_currencyCode", "[currencyCode] IN ('CRC', 'USD')");
+
+                            t.HasCheckConstraint("CK_tbTransactions_operationType", "[operationType] IN ('purchase', 'payment', 'interest', 'other-charge', 'interest-reversal')");
+                        });
+                });
+
             modelBuilder.Entity("Bancos.Mcp.Domain.BankAccount", b =>
                 {
                     b.HasOne("Bancos.Mcp.Domain.Bank", "Bank")
@@ -1003,6 +1719,47 @@ namespace Bancos.Mcp.Migrations
                     b.Navigation("ImportTemplate");
                 });
 
+            modelBuilder.Entity("Bancos.Mcp.Domain.CardFinancing", b =>
+                {
+                    b.HasOne("Bancos.Mcp.Domain.BankAccount", "BankAccount")
+                        .WithMany("CardFinancings")
+                        .HasForeignKey("BankAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("BankAccount");
+                });
+
+            modelBuilder.Entity("Bancos.Mcp.Domain.CardStatement", b =>
+                {
+                    b.HasOne("Bancos.Mcp.Domain.BankAccount", "BankAccount")
+                        .WithMany("CardStatements")
+                        .HasForeignKey("BankAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("BankAccount");
+                });
+
+            modelBuilder.Entity("Bancos.Mcp.Domain.CardStatementLine", b =>
+                {
+                    b.HasOne("Bancos.Mcp.Domain.CardStatement", "CardStatement")
+                        .WithMany("Lines")
+                        .HasForeignKey("CardStatementId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Bancos.Mcp.Domain.Transaction", "Transaction")
+                        .WithMany("CardStatementLines")
+                        .HasForeignKey("TransactionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CardStatement");
+
+                    b.Navigation("Transaction");
+                });
+
             modelBuilder.Entity("Bancos.Mcp.Domain.ExchangeRate", b =>
                 {
                     b.HasOne("Bancos.Mcp.Domain.Bank", "Bank")
@@ -1025,6 +1782,46 @@ namespace Bancos.Mcp.Migrations
                     b.Navigation("ImportTemplate");
                 });
 
+            modelBuilder.Entity("Bancos.Mcp.Domain.LoanPayment", b =>
+                {
+                    b.HasOne("Bancos.Mcp.Domain.LoanStatement", "LoanStatement")
+                        .WithMany("Payments")
+                        .HasForeignKey("LoanStatementId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LoanStatement");
+                });
+
+            modelBuilder.Entity("Bancos.Mcp.Domain.LoanStatement", b =>
+                {
+                    b.HasOne("Bancos.Mcp.Domain.BankAccount", "BankAccount")
+                        .WithMany("LoanStatements")
+                        .HasForeignKey("BankAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("BankAccount");
+                });
+
+            modelBuilder.Entity("Bancos.Mcp.Domain.Transaction", b =>
+                {
+                    b.HasOne("Bancos.Mcp.Domain.BankAccount", "BankAccount")
+                        .WithMany("Transactions")
+                        .HasForeignKey("BankAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Bancos.Mcp.Domain.Period", "Period")
+                        .WithMany("Transactions")
+                        .HasForeignKey("PeriodId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("BankAccount");
+
+                    b.Navigation("Period");
+                });
+
             modelBuilder.Entity("Bancos.Mcp.Domain.Bank", b =>
                 {
                     b.Navigation("Accounts");
@@ -1034,7 +1831,20 @@ namespace Bancos.Mcp.Migrations
 
             modelBuilder.Entity("Bancos.Mcp.Domain.BankAccount", b =>
                 {
+                    b.Navigation("CardFinancings");
+
+                    b.Navigation("CardStatements");
+
                     b.Navigation("ImportTemplates");
+
+                    b.Navigation("LoanStatements");
+
+                    b.Navigation("Transactions");
+                });
+
+            modelBuilder.Entity("Bancos.Mcp.Domain.CardStatement", b =>
+                {
+                    b.Navigation("Lines");
                 });
 
             modelBuilder.Entity("Bancos.Mcp.Domain.ImportTemplate", b =>
@@ -1042,6 +1852,21 @@ namespace Bancos.Mcp.Migrations
                     b.Navigation("BankAccounts");
 
                     b.Navigation("Patterns");
+                });
+
+            modelBuilder.Entity("Bancos.Mcp.Domain.LoanStatement", b =>
+                {
+                    b.Navigation("Payments");
+                });
+
+            modelBuilder.Entity("Bancos.Mcp.Domain.Period", b =>
+                {
+                    b.Navigation("Transactions");
+                });
+
+            modelBuilder.Entity("Bancos.Mcp.Domain.Transaction", b =>
+                {
+                    b.Navigation("CardStatementLines");
                 });
 #pragma warning restore 612, 618
         }

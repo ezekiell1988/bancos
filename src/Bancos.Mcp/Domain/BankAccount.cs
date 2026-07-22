@@ -26,6 +26,10 @@ public sealed class BankAccount
     public DateTimeOffset? UpdatedAt { get; set; }
     public Bank? Bank { get; set; }
     public ICollection<BankAccountImportTemplate> ImportTemplates { get; set; } = [];
+    public ICollection<Transaction> Transactions { get; set; } = [];
+    public ICollection<CardStatement> CardStatements { get; set; } = [];
+    public ICollection<CardFinancing> CardFinancings { get; set; } = [];
+    public ICollection<LoanStatement> LoanStatements { get; set; } = [];
 }
 
 public sealed class BankAccountImportTemplate
