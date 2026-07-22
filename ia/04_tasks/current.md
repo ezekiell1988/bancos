@@ -1,6 +1,9 @@
 # 04 — Tareas activas
 
-> **Última actualización:** 2026-07-21 CR (TASK-EBC-DB-07 creada)
+> **Última actualización:** 2026-07-22 CR (TASK-EBC-BE-25 aprobada)
+
+
+
 
 
 
@@ -117,6 +120,7 @@ Sin tareas.
 
 | ID | Área | Título | Prioridad |
 |---|---|---|---|
+| `TASK-EBC-BE-25` | BE | Calcular porción corriente y largo plazo del préstamo desde cuotas | alta |
 | `TASK-EBC-INF-10` | INF | Reiniciar API local antes del launch de VS Code | baja |
 
 ## Borradores
