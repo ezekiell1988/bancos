@@ -51,6 +51,23 @@ namespace Bancos.Mcp.Migrations
                 comment: "Catálogo de formatos de archivos de importación reconocidos.");
 
             migrationBuilder.CreateTable(
+                name: "tbPeriods",
+                columns: table => new
+                {
+                    idPeriods = table.Column<Guid>(type: "uniqueidentifier", nullable: false, comment: "Identificador único del período."),
+                    label = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false, comment: "Nombre visible del período, ej. JUL-2026."),
+                    startDate = table.Column<DateOnly>(type: "date", nullable: false, comment: "Fecha de inicio del período (día 19 del mes anterior)."),
+                    endDate = table.Column<DateOnly>(type: "date", nullable: false, comment: "Fecha de cierre del período (día 18 del mes en curso)."),
+                    createdAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false, comment: "Fecha y hora de creación del registro."),
+                    updatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true, comment: "Fecha y hora de la última actualización del registro.")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_tbPeriods", x => x.idPeriods);
+                },
+                comment: "Períodos de reporte financiero. Cada período corre del 19 de un mes al 18 del siguiente.");
+
+            migrationBuilder.CreateTable(
                 name: "tbBankAccounts",
                 columns: table => new
                 {
@@ -158,6 +175,208 @@ namespace Bancos.Mcp.Migrations
                 },
                 comment: "Relación entre cuentas bancarias y formatos de importación admitidos.");
 
+            migrationBuilder.CreateTable(
+                name: "tbCardFinancings",
+                columns: table => new
+                {
+                    idCardFinancings = table.Column<Guid>(type: "uniqueidentifier", nullable: false, comment: "Identificador único del financiamiento."),
+                    idBankAccounts = table.Column<Guid>(type: "uniqueidentifier", nullable: false, comment: "Tarjeta de crédito asociada."),
+                    referenceNumber = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: true, comment: "Número de referencia del financiamiento."),
+                    financingDate = table.Column<DateOnly>(type: "date", nullable: false, comment: "Fecha del financiamiento."),
+                    concept = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false, comment: "Descripción del plan."),
+                    currencyCode = table.Column<string>(type: "nchar(3)", fixedLength: true, maxLength: 3, nullable: false, comment: "Moneda del financiamiento."),
+                    initialBalance = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false, comment: "Saldo inicial del plan."),
+                    outstandingBalance = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false, comment: "Saldo faltante a la fecha del corte."),
+                    installments = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false, comment: "Cuotas en formato texto, ej. 3/12."),
+                    installmentAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false, comment: "Monto de cada cuota."),
+                    termMonths = table.Column<short>(type: "smallint", nullable: true, comment: "Plazo total en meses."),
+                    annualInterestRate = table.Column<decimal>(type: "decimal(8,4)", precision: 8, scale: 4, nullable: true, comment: "Tasa de interés anual; null si tasa cero."),
+                    dueDate = table.Column<DateOnly>(type: "date", nullable: true, comment: "Fecha de vencimiento del plan."),
+                    status = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false, comment: "Estado del financiamiento."),
+                    sourceFingerprint = table.Column<string>(type: "nchar(64)", fixedLength: true, maxLength: 64, nullable: false, comment: "SHA-256 para deduplicación."),
+                    createdAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false, comment: "Fecha y hora de creación del registro."),
+                    updatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true, comment: "Fecha y hora de la última actualización del registro.")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_tbCardFinancings", x => x.idCardFinancings);
+                    table.CheckConstraint("CK_tbCardFinancings_currencyCode", "[currencyCode] IN ('CRC', 'USD')");
+                    table.CheckConstraint("CK_tbCardFinancings_status", "[status] IN ('active', 'cancelled', 'settled')");
+                    table.ForeignKey(
+                        name: "FK_tbCardFinancings_tbBankAccounts_idBankAccounts",
+                        column: x => x.idBankAccounts,
+                        principalTable: "tbBankAccounts",
+                        principalColumn: "idBankAccounts",
+                        onDelete: ReferentialAction.Restrict);
+                },
+                comment: "Planes de cuotas y financiamientos activos en tarjeta (snapshot del estado actual).");
+
+            migrationBuilder.CreateTable(
+                name: "tbCardStatements",
+                columns: table => new
+                {
+                    idCardStatements = table.Column<Guid>(type: "uniqueidentifier", nullable: false, comment: "Identificador único del corte."),
+                    idBankAccounts = table.Column<Guid>(type: "uniqueidentifier", nullable: false, comment: "Tarjeta de crédito asociada al corte."),
+                    statementDate = table.Column<DateOnly>(type: "date", nullable: false, comment: "Fecha de corte."),
+                    periodLabel = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false, comment: "Período informativo del header, ej. JUL-2026."),
+                    minimumPaymentDueDate = table.Column<DateOnly>(type: "date", nullable: true, comment: "Fecha límite pago mínimo."),
+                    cashPaymentDueDate = table.Column<DateOnly>(type: "date", nullable: true, comment: "Fecha límite pago de contado."),
+                    previousBalanceCrc = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    previousBalanceUsd = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    purchasesTotalCrc = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    purchasesTotalUsd = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    paymentsTotalCrc = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    paymentsTotalUsd = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    interestTotalCrc = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    interestTotalUsd = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    currentBalanceCrc = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    currentBalanceUsd = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    minimumPaymentCrc = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    minimumPaymentUsd = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    cashPaymentCrc = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    cashPaymentUsd = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    creditLimitCrc = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    creditLimitUsd = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    availableBalanceCrc = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    availableBalanceUsd = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    sourceFingerprint = table.Column<string>(type: "nchar(64)", fixedLength: true, maxLength: 64, nullable: false, comment: "SHA-256 para deduplicación."),
+                    createdAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false, comment: "Fecha y hora de creación del registro."),
+                    updatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true, comment: "Fecha y hora de la última actualización del registro.")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_tbCardStatements", x => x.idCardStatements);
+                    table.ForeignKey(
+                        name: "FK_tbCardStatements_tbBankAccounts_idBankAccounts",
+                        column: x => x.idBankAccounts,
+                        principalTable: "tbBankAccounts",
+                        principalColumn: "idBankAccounts",
+                        onDelete: ReferentialAction.Restrict);
+                },
+                comment: "Header del corte mensual de tarjeta de crédito con totales del período.");
+
+            migrationBuilder.CreateTable(
+                name: "tbLoanStatements",
+                columns: table => new
+                {
+                    idLoanStatements = table.Column<Guid>(type: "uniqueidentifier", nullable: false, comment: "Identificador único del extracto."),
+                    idBankAccounts = table.Column<Guid>(type: "uniqueidentifier", nullable: false, comment: "Cuenta de préstamo asociada."),
+                    statementDate = table.Column<DateOnly>(type: "date", nullable: false, comment: "Fecha del extracto."),
+                    currencyCode = table.Column<string>(type: "nchar(3)", fixedLength: true, maxLength: 3, nullable: false, comment: "Moneda del préstamo."),
+                    outstandingBalance = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false, comment: "Saldo pendiente total."),
+                    sourceFingerprint = table.Column<string>(type: "nchar(64)", fixedLength: true, maxLength: 64, nullable: false, comment: "SHA-256 para deduplicación."),
+                    createdAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false, comment: "Fecha y hora de creación del registro."),
+                    updatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true, comment: "Fecha y hora de la última actualización del registro.")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_tbLoanStatements", x => x.idLoanStatements);
+                    table.CheckConstraint("CK_tbLoanStatements_currencyCode", "[currencyCode] IN ('CRC', 'USD')");
+                    table.ForeignKey(
+                        name: "FK_tbLoanStatements_tbBankAccounts_idBankAccounts",
+                        column: x => x.idBankAccounts,
+                        principalTable: "tbBankAccounts",
+                        principalColumn: "idBankAccounts",
+                        onDelete: ReferentialAction.Restrict);
+                },
+                comment: "Encabezado del extracto de préstamo. Padre de tbLoanPayments.");
+
+            migrationBuilder.CreateTable(
+                name: "tbTransactions",
+                columns: table => new
+                {
+                    idTransactions = table.Column<Guid>(type: "uniqueidentifier", nullable: false, comment: "Identificador único del movimiento."),
+                    idBankAccounts = table.Column<Guid>(type: "uniqueidentifier", nullable: false, comment: "Cuenta bancaria origen del movimiento."),
+                    idPeriods = table.Column<Guid>(type: "uniqueidentifier", nullable: true, comment: "Período de reporte; null si aún no se ha creado el período."),
+                    referenceNumber = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: true, comment: "N. Referencia del extracto."),
+                    transactionDate = table.Column<DateOnly>(type: "date", nullable: false, comment: "Fecha de la transacción."),
+                    paymentDate = table.Column<DateOnly>(type: "date", nullable: true, comment: "Fecha de pago, si aplica."),
+                    description = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false, comment: "Concepto o descripción del movimiento."),
+                    place = table.Column<string>(type: "nvarchar(120)", maxLength: 120, nullable: true, comment: "Lugar o comercio donde se realizó la transacción."),
+                    currencyCode = table.Column<string>(type: "nchar(3)", fixedLength: true, maxLength: 3, nullable: false, comment: "Moneda de la transacción."),
+                    amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false, comment: "Monto original; positivo=cargo, negativo=abono."),
+                    amountCrc = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false, comment: "Monto convertido a colones."),
+                    exchangeRate = table.Column<decimal>(type: "decimal(18,6)", precision: 18, scale: 6, nullable: true, comment: "Tipo de cambio usado para la conversión."),
+                    operationType = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false, comment: "Tipo de operación."),
+                    sourceFingerprint = table.Column<string>(type: "nchar(64)", fixedLength: true, maxLength: 64, nullable: false, comment: "SHA-256 para deduplicación."),
+                    createdAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false, comment: "Fecha y hora de creación del registro."),
+                    updatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true, comment: "Fecha y hora de la última actualización del registro.")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_tbTransactions", x => x.idTransactions);
+                    table.CheckConstraint("CK_tbTransactions_currencyCode", "[currencyCode] IN ('CRC', 'USD')");
+                    table.CheckConstraint("CK_tbTransactions_operationType", "[operationType] IN ('purchase', 'payment', 'interest', 'other-charge', 'interest-reversal')");
+                    table.ForeignKey(
+                        name: "FK_tbTransactions_tbBankAccounts_idBankAccounts",
+                        column: x => x.idBankAccounts,
+                        principalTable: "tbBankAccounts",
+                        principalColumn: "idBankAccounts",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_tbTransactions_tbPeriods_idPeriods",
+                        column: x => x.idPeriods,
+                        principalTable: "tbPeriods",
+                        principalColumn: "idPeriods",
+                        onDelete: ReferentialAction.SetNull);
+                },
+                comment: "Movimientos individuales extraídos de estados de cuenta.");
+
+            migrationBuilder.CreateTable(
+                name: "tbLoanPayments",
+                columns: table => new
+                {
+                    idLoanPayments = table.Column<Guid>(type: "uniqueidentifier", nullable: false, comment: "Identificador único de la cuota."),
+                    idLoanStatements = table.Column<Guid>(type: "uniqueidentifier", nullable: false, comment: "Extracto padre al que pertenece la cuota."),
+                    paymentDate = table.Column<DateOnly>(type: "date", nullable: false, comment: "Fecha de la cuota."),
+                    capital = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false, comment: "Abono a capital."),
+                    interest = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false, comment: "Interés de la cuota."),
+                    lateFee = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false, comment: "Mora."),
+                    otherCharges = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false, comment: "Otros cargos."),
+                    total = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false, comment: "Total de la cuota."),
+                    balance = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false, comment: "Saldo después del pago."),
+                    sourceFingerprint = table.Column<string>(type: "nchar(64)", fixedLength: true, maxLength: 64, nullable: false, comment: "SHA-256 para deduplicación."),
+                    createdAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false, comment: "Fecha y hora de creación del registro.")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_tbLoanPayments", x => x.idLoanPayments);
+                    table.ForeignKey(
+                        name: "FK_tbLoanPayments_tbLoanStatements_idLoanStatements",
+                        column: x => x.idLoanStatements,
+                        principalTable: "tbLoanStatements",
+                        principalColumn: "idLoanStatements",
+                        onDelete: ReferentialAction.Cascade);
+                },
+                comment: "Cuotas del calendario de amortización de un préstamo.");
+
+            migrationBuilder.CreateTable(
+                name: "tbCardStatementLines",
+                columns: table => new
+                {
+                    idCardStatementLines = table.Column<Guid>(type: "uniqueidentifier", nullable: false, comment: "Identificador único de la línea."),
+                    idCardStatements = table.Column<Guid>(type: "uniqueidentifier", nullable: false, comment: "Corte al que pertenece el movimiento."),
+                    idTransactions = table.Column<Guid>(type: "uniqueidentifier", nullable: false, comment: "Movimiento incluido en el corte."),
+                    createdAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false, comment: "Fecha y hora de creación del registro.")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_tbCardStatementLines", x => x.idCardStatementLines);
+                    table.ForeignKey(
+                        name: "FK_tbCardStatementLines_tbCardStatements_idCardStatements",
+                        column: x => x.idCardStatements,
+                        principalTable: "tbCardStatements",
+                        principalColumn: "idCardStatements",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_tbCardStatementLines_tbTransactions_idTransactions",
+                        column: x => x.idTransactions,
+                        principalTable: "tbTransactions",
+                        principalColumn: "idTransactions",
+                        onDelete: ReferentialAction.Restrict);
+                },
+                comment: "Auxiliar que asocia movimientos a un corte de tarjeta. Surrogate PK + UNIQUE constraint per ADR-03.");
+
             migrationBuilder.InsertData(
                 table: "tbBanks",
                 columns: new[] { "idBanks", "code", "createdAt", "isEnabled", "name", "updatedAt" },
@@ -183,6 +402,25 @@ namespace Bancos.Mcp.Migrations
                     { new Guid("10000000-0000-0000-0000-000000000007"), "coopealianza-loan-pdf-v1", "pdf", new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), true, "Prestamo Coopealianza", "coopealianza-loan-pdf", null },
                     { new Guid("10000000-0000-0000-0000-000000000008"), "bac-account-statement-pdf-v1", "pdf", new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), true, "Estado de cuenta consolidado BAC", "bac-account-statement-pdf", null },
                     { new Guid("10000000-0000-0000-0000-000000000009"), "bn-card-statement-pdf-v1", "pdf", new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), true, "Estado de cuenta de tarjeta Banco Nacional", "bn-card-statement-pdf", null }
+                });
+
+            migrationBuilder.InsertData(
+                table: "tbPeriods",
+                columns: new[] { "idPeriods", "createdAt", "endDate", "label", "startDate", "updatedAt" },
+                values: new object[,]
+                {
+                    { new Guid("60000000-0000-0000-0000-000000000001"), new DateTimeOffset(new DateTime(2026, 7, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), new DateOnly(2026, 1, 18), "ENE-2026", new DateOnly(2025, 12, 19), null },
+                    { new Guid("60000000-0000-0000-0000-000000000002"), new DateTimeOffset(new DateTime(2026, 7, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), new DateOnly(2026, 2, 18), "FEB-2026", new DateOnly(2026, 1, 19), null },
+                    { new Guid("60000000-0000-0000-0000-000000000003"), new DateTimeOffset(new DateTime(2026, 7, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), new DateOnly(2026, 3, 18), "MAR-2026", new DateOnly(2026, 2, 19), null },
+                    { new Guid("60000000-0000-0000-0000-000000000004"), new DateTimeOffset(new DateTime(2026, 7, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), new DateOnly(2026, 4, 18), "ABR-2026", new DateOnly(2026, 3, 19), null },
+                    { new Guid("60000000-0000-0000-0000-000000000005"), new DateTimeOffset(new DateTime(2026, 7, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), new DateOnly(2026, 5, 18), "MAY-2026", new DateOnly(2026, 4, 19), null },
+                    { new Guid("60000000-0000-0000-0000-000000000006"), new DateTimeOffset(new DateTime(2026, 7, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), new DateOnly(2026, 6, 18), "JUN-2026", new DateOnly(2026, 5, 19), null },
+                    { new Guid("60000000-0000-0000-0000-000000000007"), new DateTimeOffset(new DateTime(2026, 7, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), new DateOnly(2026, 7, 18), "JUL-2026", new DateOnly(2026, 6, 19), null },
+                    { new Guid("60000000-0000-0000-0000-000000000008"), new DateTimeOffset(new DateTime(2026, 7, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), new DateOnly(2026, 8, 18), "AGO-2026", new DateOnly(2026, 7, 19), null },
+                    { new Guid("60000000-0000-0000-0000-000000000009"), new DateTimeOffset(new DateTime(2026, 7, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), new DateOnly(2026, 9, 18), "SEP-2026", new DateOnly(2026, 8, 19), null },
+                    { new Guid("60000000-0000-0000-0000-000000000010"), new DateTimeOffset(new DateTime(2026, 7, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), new DateOnly(2026, 10, 18), "OCT-2026", new DateOnly(2026, 9, 19), null },
+                    { new Guid("60000000-0000-0000-0000-000000000011"), new DateTimeOffset(new DateTime(2026, 7, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), new DateOnly(2026, 11, 18), "NOV-2026", new DateOnly(2026, 10, 19), null },
+                    { new Guid("60000000-0000-0000-0000-000000000012"), new DateTimeOffset(new DateTime(2026, 7, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), new DateOnly(2026, 12, 18), "DIC-2026", new DateOnly(2026, 11, 19), null }
                 });
 
             migrationBuilder.InsertData(
@@ -304,6 +542,29 @@ namespace Bancos.Mcp.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_tbCardFinancings_idBankAccounts_sourceFingerprint",
+                table: "tbCardFinancings",
+                columns: new[] { "idBankAccounts", "sourceFingerprint" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_tbCardStatementLines_idCardStatements_idTransactions",
+                table: "tbCardStatementLines",
+                columns: new[] { "idCardStatements", "idTransactions" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_tbCardStatementLines_idTransactions",
+                table: "tbCardStatementLines",
+                column: "idTransactions");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_tbCardStatements_idBankAccounts_statementDate",
+                table: "tbCardStatements",
+                columns: new[] { "idBankAccounts", "statementDate" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_tbExchangeRates_idBanks_rateDate_currencyCode",
                 table: "tbExchangeRates",
                 columns: new[] { "idBanks", "rateDate", "currencyCode" },
@@ -326,6 +587,47 @@ namespace Bancos.Mcp.Migrations
                 table: "tbImportTemplates",
                 column: "code",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_tbLoanPayments_idLoanStatements_sourceFingerprint",
+                table: "tbLoanPayments",
+                columns: new[] { "idLoanStatements", "sourceFingerprint" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_tbLoanStatements_idBankAccounts_sourceFingerprint",
+                table: "tbLoanStatements",
+                columns: new[] { "idBankAccounts", "sourceFingerprint" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_tbPeriods_endDate",
+                table: "tbPeriods",
+                column: "endDate",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_tbPeriods_label",
+                table: "tbPeriods",
+                column: "label",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_tbPeriods_startDate",
+                table: "tbPeriods",
+                column: "startDate",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_tbTransactions_idBankAccounts_sourceFingerprint",
+                table: "tbTransactions",
+                columns: new[] { "idBankAccounts", "sourceFingerprint" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_tbTransactions_idPeriods",
+                table: "tbTransactions",
+                column: "idPeriods");
         }
 
         /// <inheritdoc />
@@ -335,16 +637,37 @@ namespace Bancos.Mcp.Migrations
                 name: "tbBankAccountImportTemplates");
 
             migrationBuilder.DropTable(
+                name: "tbCardFinancings");
+
+            migrationBuilder.DropTable(
+                name: "tbCardStatementLines");
+
+            migrationBuilder.DropTable(
                 name: "tbExchangeRates");
 
             migrationBuilder.DropTable(
                 name: "tbImportTemplatePatterns");
 
             migrationBuilder.DropTable(
-                name: "tbBankAccounts");
+                name: "tbLoanPayments");
+
+            migrationBuilder.DropTable(
+                name: "tbCardStatements");
+
+            migrationBuilder.DropTable(
+                name: "tbTransactions");
 
             migrationBuilder.DropTable(
                 name: "tbImportTemplates");
+
+            migrationBuilder.DropTable(
+                name: "tbLoanStatements");
+
+            migrationBuilder.DropTable(
+                name: "tbPeriods");
+
+            migrationBuilder.DropTable(
+                name: "tbBankAccounts");
 
             migrationBuilder.DropTable(
                 name: "tbBanks");

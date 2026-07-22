@@ -12,6 +12,13 @@ public sealed class McpCatalogDbContext(DbContextOptions<McpCatalogDbContext> op
     public DbSet<ExchangeRate> ExchangeRates => Set<ExchangeRate>();
     public DbSet<ImportTemplate> ImportTemplates => Set<ImportTemplate>();
     public DbSet<ImportTemplatePattern> ImportTemplatePatterns => Set<ImportTemplatePattern>();
+    public DbSet<Period> Periods => Set<Period>();
+    public DbSet<Transaction> Transactions => Set<Transaction>();
+    public DbSet<CardStatement> CardStatements => Set<CardStatement>();
+    public DbSet<CardStatementLine> CardStatementLines => Set<CardStatementLine>();
+    public DbSet<CardFinancing> CardFinancings => Set<CardFinancing>();
+    public DbSet<LoanStatement> LoanStatements => Set<LoanStatement>();
+    public DbSet<LoanPayment> LoanPayments => Set<LoanPayment>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -133,12 +140,193 @@ public sealed class McpCatalogDbContext(DbContextOptions<McpCatalogDbContext> op
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
+        builder.Entity<Period>(entity =>
+        {
+            entity.ToTable("tbPeriods", table => table.HasComment("Períodos de reporte financiero. Cada período corre del 19 de un mes al 18 del siguiente."));
+            entity.HasIndex(p => p.Label).IsUnique();
+            entity.HasIndex(p => p.StartDate).IsUnique();
+            entity.HasIndex(p => p.EndDate).IsUnique();
+            entity.Property(p => p.Id).HasColumnName("idPeriods").HasComment("Identificador único del período.");
+            entity.Property(p => p.Label).HasColumnName("label").HasMaxLength(20).HasComment("Nombre visible del período, ej. JUL-2026.");
+            entity.Property(p => p.StartDate).HasColumnName("startDate").HasComment("Fecha de inicio del período (día 19 del mes anterior).");
+            entity.Property(p => p.EndDate).HasColumnName("endDate").HasComment("Fecha de cierre del período (día 18 del mes en curso).");
+            entity.Property(p => p.CreatedAt).HasColumnName("createdAt").HasComment("Fecha y hora de creación del registro.");
+            entity.Property(p => p.UpdatedAt).HasColumnName("updatedAt").HasComment("Fecha y hora de la última actualización del registro.");
+        });
+
+        builder.Entity<Transaction>(entity =>
+        {
+            entity.ToTable("tbTransactions", table =>
+            {
+                table.HasComment("Movimientos individuales extraídos de estados de cuenta.");
+                table.HasCheckConstraint("CK_tbTransactions_currencyCode", "[currencyCode] IN ('CRC', 'USD')");
+                table.HasCheckConstraint("CK_tbTransactions_operationType", "[operationType] IN ('purchase', 'payment', 'interest', 'other-charge', 'interest-reversal')");
+            });
+            entity.HasIndex(t => new { t.BankAccountId, t.SourceFingerprint }).IsUnique();
+            entity.Property(t => t.Id).HasColumnName("idTransactions").HasComment("Identificador único del movimiento.");
+            entity.Property(t => t.BankAccountId).HasColumnName("idBankAccounts").HasComment("Cuenta bancaria origen del movimiento.");
+            entity.Property(t => t.PeriodId).HasColumnName("idPeriods").HasComment("Período de reporte; null si aún no se ha creado el período.");
+            entity.Property(t => t.ReferenceNumber).HasColumnName("referenceNumber").HasMaxLength(40).HasComment("N. Referencia del extracto.");
+            entity.Property(t => t.TransactionDate).HasColumnName("transactionDate").HasComment("Fecha de la transacción.");
+            entity.Property(t => t.PaymentDate).HasColumnName("paymentDate").HasComment("Fecha de pago, si aplica.");
+            entity.Property(t => t.Description).HasColumnName("description").HasMaxLength(200).HasComment("Concepto o descripción del movimiento.");
+            entity.Property(t => t.Place).HasColumnName("place").HasMaxLength(120).HasComment("Lugar o comercio donde se realizó la transacción.");
+            entity.Property(t => t.CurrencyCode).HasColumnName("currencyCode").HasMaxLength(3).IsFixedLength().HasComment("Moneda de la transacción.");
+            entity.Property(t => t.Amount).HasColumnName("amount").HasPrecision(18, 2).HasComment("Monto original; positivo=cargo, negativo=abono.");
+            entity.Property(t => t.AmountCrc).HasColumnName("amountCrc").HasPrecision(18, 2).HasComment("Monto convertido a colones.");
+            entity.Property(t => t.ExchangeRate).HasColumnName("exchangeRate").HasPrecision(18, 6).HasComment("Tipo de cambio usado para la conversión.");
+            entity.Property(t => t.OperationType).HasColumnName("operationType").HasMaxLength(32).HasComment("Tipo de operación.");
+            entity.Property(t => t.SourceFingerprint).HasColumnName("sourceFingerprint").HasMaxLength(64).IsFixedLength().HasComment("SHA-256 para deduplicación.");
+            entity.Property(t => t.CreatedAt).HasColumnName("createdAt").HasComment("Fecha y hora de creación del registro.");
+            entity.Property(t => t.UpdatedAt).HasColumnName("updatedAt").HasComment("Fecha y hora de la última actualización del registro.");
+            entity.HasOne(t => t.BankAccount)
+                .WithMany(a => a.Transactions)
+                .HasForeignKey(t => t.BankAccountId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(t => t.Period)
+                .WithMany(p => p.Transactions)
+                .HasForeignKey(t => t.PeriodId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        builder.Entity<CardStatement>(entity =>
+        {
+            entity.ToTable("tbCardStatements", table => table.HasComment("Header del corte mensual de tarjeta de crédito con totales del período."));
+            entity.HasIndex(cs => new { cs.BankAccountId, cs.StatementDate }).IsUnique();
+            entity.Property(cs => cs.Id).HasColumnName("idCardStatements").HasComment("Identificador único del corte.");
+            entity.Property(cs => cs.BankAccountId).HasColumnName("idBankAccounts").HasComment("Tarjeta de crédito asociada al corte.");
+            entity.Property(cs => cs.StatementDate).HasColumnName("statementDate").HasComment("Fecha de corte.");
+            entity.Property(cs => cs.PeriodLabel).HasColumnName("periodLabel").HasMaxLength(20).HasComment("Período informativo del header, ej. JUL-2026.");
+            entity.Property(cs => cs.MinimumPaymentDueDate).HasColumnName("minimumPaymentDueDate").HasComment("Fecha límite pago mínimo.");
+            entity.Property(cs => cs.CashPaymentDueDate).HasColumnName("cashPaymentDueDate").HasComment("Fecha límite pago de contado.");
+            entity.Property(cs => cs.PreviousBalanceCrc).HasColumnName("previousBalanceCrc").HasPrecision(18, 2);
+            entity.Property(cs => cs.PreviousBalanceUsd).HasColumnName("previousBalanceUsd").HasPrecision(18, 2);
+            entity.Property(cs => cs.PurchasesTotalCrc).HasColumnName("purchasesTotalCrc").HasPrecision(18, 2);
+            entity.Property(cs => cs.PurchasesTotalUsd).HasColumnName("purchasesTotalUsd").HasPrecision(18, 2);
+            entity.Property(cs => cs.PaymentsTotalCrc).HasColumnName("paymentsTotalCrc").HasPrecision(18, 2);
+            entity.Property(cs => cs.PaymentsTotalUsd).HasColumnName("paymentsTotalUsd").HasPrecision(18, 2);
+            entity.Property(cs => cs.InterestTotalCrc).HasColumnName("interestTotalCrc").HasPrecision(18, 2);
+            entity.Property(cs => cs.InterestTotalUsd).HasColumnName("interestTotalUsd").HasPrecision(18, 2);
+            entity.Property(cs => cs.CurrentBalanceCrc).HasColumnName("currentBalanceCrc").HasPrecision(18, 2);
+            entity.Property(cs => cs.CurrentBalanceUsd).HasColumnName("currentBalanceUsd").HasPrecision(18, 2);
+            entity.Property(cs => cs.MinimumPaymentCrc).HasColumnName("minimumPaymentCrc").HasPrecision(18, 2);
+            entity.Property(cs => cs.MinimumPaymentUsd).HasColumnName("minimumPaymentUsd").HasPrecision(18, 2);
+            entity.Property(cs => cs.CashPaymentCrc).HasColumnName("cashPaymentCrc").HasPrecision(18, 2);
+            entity.Property(cs => cs.CashPaymentUsd).HasColumnName("cashPaymentUsd").HasPrecision(18, 2);
+            entity.Property(cs => cs.CreditLimitCrc).HasColumnName("creditLimitCrc").HasPrecision(18, 2);
+            entity.Property(cs => cs.CreditLimitUsd).HasColumnName("creditLimitUsd").HasPrecision(18, 2);
+            entity.Property(cs => cs.AvailableBalanceCrc).HasColumnName("availableBalanceCrc").HasPrecision(18, 2);
+            entity.Property(cs => cs.AvailableBalanceUsd).HasColumnName("availableBalanceUsd").HasPrecision(18, 2);
+            entity.Property(cs => cs.SourceFingerprint).HasColumnName("sourceFingerprint").HasMaxLength(64).IsFixedLength().HasComment("SHA-256 para deduplicación.");
+            entity.Property(cs => cs.CreatedAt).HasColumnName("createdAt").HasComment("Fecha y hora de creación del registro.");
+            entity.Property(cs => cs.UpdatedAt).HasColumnName("updatedAt").HasComment("Fecha y hora de la última actualización del registro.");
+            entity.HasOne(cs => cs.BankAccount)
+                .WithMany(a => a.CardStatements)
+                .HasForeignKey(cs => cs.BankAccountId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<CardStatementLine>(entity =>
+        {
+            entity.ToTable("tbCardStatementLines", table => table.HasComment("Auxiliar que asocia movimientos a un corte de tarjeta. Surrogate PK + UNIQUE constraint per ADR-03."));
+            entity.HasIndex(l => new { l.CardStatementId, l.TransactionId }).IsUnique();
+            entity.HasIndex(l => l.TransactionId);
+            entity.Property(l => l.Id).HasColumnName("idCardStatementLines").HasComment("Identificador único de la línea.");
+            entity.Property(l => l.CardStatementId).HasColumnName("idCardStatements").HasComment("Corte al que pertenece el movimiento.");
+            entity.Property(l => l.TransactionId).HasColumnName("idTransactions").HasComment("Movimiento incluido en el corte.");
+            entity.Property(l => l.CreatedAt).HasColumnName("createdAt").HasComment("Fecha y hora de creación del registro.");
+            entity.HasOne(l => l.CardStatement)
+                .WithMany(cs => cs.Lines)
+                .HasForeignKey(l => l.CardStatementId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(l => l.Transaction)
+                .WithMany(t => t.CardStatementLines)
+                .HasForeignKey(l => l.TransactionId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<CardFinancing>(entity =>
+        {
+            entity.ToTable("tbCardFinancings", table =>
+            {
+                table.HasComment("Planes de cuotas y financiamientos activos en tarjeta (snapshot del estado actual).");
+                table.HasCheckConstraint("CK_tbCardFinancings_currencyCode", "[currencyCode] IN ('CRC', 'USD')");
+                table.HasCheckConstraint("CK_tbCardFinancings_status", "[status] IN ('active', 'cancelled', 'settled')");
+            });
+            entity.HasIndex(cf => new { cf.BankAccountId, cf.SourceFingerprint }).IsUnique();
+            entity.Property(cf => cf.Id).HasColumnName("idCardFinancings").HasComment("Identificador único del financiamiento.");
+            entity.Property(cf => cf.BankAccountId).HasColumnName("idBankAccounts").HasComment("Tarjeta de crédito asociada.");
+            entity.Property(cf => cf.ReferenceNumber).HasColumnName("referenceNumber").HasMaxLength(40).HasComment("Número de referencia del financiamiento.");
+            entity.Property(cf => cf.FinancingDate).HasColumnName("financingDate").HasComment("Fecha del financiamiento.");
+            entity.Property(cf => cf.Concept).HasColumnName("concept").HasMaxLength(200).HasComment("Descripción del plan.");
+            entity.Property(cf => cf.CurrencyCode).HasColumnName("currencyCode").HasMaxLength(3).IsFixedLength().HasComment("Moneda del financiamiento.");
+            entity.Property(cf => cf.InitialBalance).HasColumnName("initialBalance").HasPrecision(18, 2).HasComment("Saldo inicial del plan.");
+            entity.Property(cf => cf.OutstandingBalance).HasColumnName("outstandingBalance").HasPrecision(18, 2).HasComment("Saldo faltante a la fecha del corte.");
+            entity.Property(cf => cf.Installments).HasColumnName("installments").HasMaxLength(20).HasComment("Cuotas en formato texto, ej. 3/12.");
+            entity.Property(cf => cf.InstallmentAmount).HasColumnName("installmentAmount").HasPrecision(18, 2).HasComment("Monto de cada cuota.");
+            entity.Property(cf => cf.TermMonths).HasColumnName("termMonths").HasComment("Plazo total en meses.");
+            entity.Property(cf => cf.AnnualInterestRate).HasColumnName("annualInterestRate").HasPrecision(8, 4).HasComment("Tasa de interés anual; null si tasa cero.");
+            entity.Property(cf => cf.DueDate).HasColumnName("dueDate").HasComment("Fecha de vencimiento del plan.");
+            entity.Property(cf => cf.Status).HasColumnName("status").HasMaxLength(16).HasComment("Estado del financiamiento.");
+            entity.Property(cf => cf.SourceFingerprint).HasColumnName("sourceFingerprint").HasMaxLength(64).IsFixedLength().HasComment("SHA-256 para deduplicación.");
+            entity.Property(cf => cf.CreatedAt).HasColumnName("createdAt").HasComment("Fecha y hora de creación del registro.");
+            entity.Property(cf => cf.UpdatedAt).HasColumnName("updatedAt").HasComment("Fecha y hora de la última actualización del registro.");
+            entity.HasOne(cf => cf.BankAccount)
+                .WithMany(a => a.CardFinancings)
+                .HasForeignKey(cf => cf.BankAccountId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<LoanStatement>(entity =>
+        {
+            entity.ToTable("tbLoanStatements", table =>
+            {
+                table.HasComment("Encabezado del extracto de préstamo. Padre de tbLoanPayments.");
+                table.HasCheckConstraint("CK_tbLoanStatements_currencyCode", "[currencyCode] IN ('CRC', 'USD')");
+            });
+            entity.HasIndex(ls => new { ls.BankAccountId, ls.SourceFingerprint }).IsUnique();
+            entity.Property(ls => ls.Id).HasColumnName("idLoanStatements").HasComment("Identificador único del extracto.");
+            entity.Property(ls => ls.BankAccountId).HasColumnName("idBankAccounts").HasComment("Cuenta de préstamo asociada.");
+            entity.Property(ls => ls.StatementDate).HasColumnName("statementDate").HasComment("Fecha del extracto.");
+            entity.Property(ls => ls.CurrencyCode).HasColumnName("currencyCode").HasMaxLength(3).IsFixedLength().HasComment("Moneda del préstamo.");
+            entity.Property(ls => ls.OutstandingBalance).HasColumnName("outstandingBalance").HasPrecision(18, 2).HasComment("Saldo pendiente total.");
+            entity.Property(ls => ls.SourceFingerprint).HasColumnName("sourceFingerprint").HasMaxLength(64).IsFixedLength().HasComment("SHA-256 para deduplicación.");
+            entity.Property(ls => ls.CreatedAt).HasColumnName("createdAt").HasComment("Fecha y hora de creación del registro.");
+            entity.Property(ls => ls.UpdatedAt).HasColumnName("updatedAt").HasComment("Fecha y hora de la última actualización del registro.");
+            entity.HasOne(ls => ls.BankAccount)
+                .WithMany(a => a.LoanStatements)
+                .HasForeignKey(ls => ls.BankAccountId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<LoanPayment>(entity =>
+        {
+            entity.ToTable("tbLoanPayments", table => table.HasComment("Cuotas del calendario de amortización de un préstamo."));
+            entity.HasIndex(lp => new { lp.LoanStatementId, lp.SourceFingerprint }).IsUnique();
+            entity.Property(lp => lp.Id).HasColumnName("idLoanPayments").HasComment("Identificador único de la cuota.");
+            entity.Property(lp => lp.LoanStatementId).HasColumnName("idLoanStatements").HasComment("Extracto padre al que pertenece la cuota.");
+            entity.Property(lp => lp.PaymentDate).HasColumnName("paymentDate").HasComment("Fecha de la cuota.");
+            entity.Property(lp => lp.Capital).HasColumnName("capital").HasPrecision(18, 2).HasComment("Abono a capital.");
+            entity.Property(lp => lp.Interest).HasColumnName("interest").HasPrecision(18, 2).HasComment("Interés de la cuota.");
+            entity.Property(lp => lp.LateFee).HasColumnName("lateFee").HasPrecision(18, 2).HasComment("Mora.");
+            entity.Property(lp => lp.OtherCharges).HasColumnName("otherCharges").HasPrecision(18, 2).HasComment("Otros cargos.");
+            entity.Property(lp => lp.Total).HasColumnName("total").HasPrecision(18, 2).HasComment("Total de la cuota.");
+            entity.Property(lp => lp.Balance).HasColumnName("balance").HasPrecision(18, 2).HasComment("Saldo después del pago.");
+            entity.Property(lp => lp.SourceFingerprint).HasColumnName("sourceFingerprint").HasMaxLength(64).IsFixedLength().HasComment("SHA-256 para deduplicación.");
+            entity.Property(lp => lp.CreatedAt).HasColumnName("createdAt").HasComment("Fecha y hora de creación del registro.");
+            entity.HasOne(lp => lp.LoanStatement)
+                .WithMany(ls => ls.Payments)
+                .HasForeignKey(lp => lp.LoanStatementId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
         SeedBanks(builder);
         SeedBankAccounts(builder);
         SeedExchangeRates(builder);
         SeedImportTemplates(builder);
         SeedBankAccountImportTemplates(builder);
         SeedImportTemplatePatterns(builder);
+        SeedPeriods(builder);
     }
 
     private static void SeedBanks(ModelBuilder builder)
@@ -249,5 +437,34 @@ public sealed class McpCatalogDbContext(DbContextOptions<McpCatalogDbContext> op
     private static void SeedImportTemplatePatterns(ModelBuilder builder)
     {
         builder.Entity<ImportTemplatePattern>().HasData(ImportTemplateCatalog.SeedPatterns());
+    }
+
+    private static void SeedPeriods(ModelBuilder builder)
+    {
+        var createdAt = new DateTimeOffset(2026, 7, 21, 0, 0, 0, TimeSpan.FromHours(-6));
+        var months = new[]
+        {
+            ("ENE-2026", new DateOnly(2025, 12, 19), new DateOnly(2026,  1, 18)),
+            ("FEB-2026", new DateOnly(2026,  1, 19), new DateOnly(2026,  2, 18)),
+            ("MAR-2026", new DateOnly(2026,  2, 19), new DateOnly(2026,  3, 18)),
+            ("ABR-2026", new DateOnly(2026,  3, 19), new DateOnly(2026,  4, 18)),
+            ("MAY-2026", new DateOnly(2026,  4, 19), new DateOnly(2026,  5, 18)),
+            ("JUN-2026", new DateOnly(2026,  5, 19), new DateOnly(2026,  6, 18)),
+            ("JUL-2026", new DateOnly(2026,  6, 19), new DateOnly(2026,  7, 18)),
+            ("AGO-2026", new DateOnly(2026,  7, 19), new DateOnly(2026,  8, 18)),
+            ("SEP-2026", new DateOnly(2026,  8, 19), new DateOnly(2026,  9, 18)),
+            ("OCT-2026", new DateOnly(2026,  9, 19), new DateOnly(2026, 10, 18)),
+            ("NOV-2026", new DateOnly(2026, 10, 19), new DateOnly(2026, 11, 18)),
+            ("DIC-2026", new DateOnly(2026, 11, 19), new DateOnly(2026, 12, 18)),
+        };
+
+        builder.Entity<Period>().HasData(months.Select((m, i) => new Period
+        {
+            Id = Guid.Parse($"60000000-0000-0000-0000-{i + 1:D12}"),
+            Label = m.Item1,
+            StartDate = m.Item2,
+            EndDate = m.Item3,
+            CreatedAt = createdAt
+        }));
     }
 }

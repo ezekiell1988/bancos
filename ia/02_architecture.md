@@ -1,6 +1,6 @@
 # 02 — Arquitectura del Sistema
 
-> Última actualización: 2026-07-18
+> Última actualización: 2026-07-21
 
 ## Resumen
 
@@ -61,6 +61,49 @@ Job recibe solo `ImportId`; bytes no viajan en argumentos Hangfire. Console regi
 `AccountAuxiliaries.Iban` es llave de negocio única cuando existe: identificador `CR...` normalizado, no número de tarjeta. `OwnerId` se resuelve desde documento; el fallback acordado es Ezequiel Baltodano.
 
 Los períodos contables parten del 2025-12-31. `CardStatements` mantiene ciclos del banco y sus movimientos vinculados; el cierre de tarjeta informa pago y liquidez, mientras el libro mayor registra compras/pagos por fecha contable.
+
+## Tablas transaccionales del MCP
+
+El catálogo MCP incluye, además de las tablas de catálogo base (`tbBanks`, `tbBankAccounts`, `tbImportTemplates`, `tbImportTemplatePatterns`, `tbBankAccountImportTemplates`, `tbExchangeRates`), las siguientes tablas transaccionales creadas en `TASK-EBC-DB-07`:
+
+### Períodos (`tbPeriods`)
+
+Tabla global de períodos de reporte. Un período corre del día **19 del mes anterior** al **18 del mes en curso**, siguiendo el ciclo de corte BAC. No está vinculada a ninguna cuenta ni a los cortes de tarjeta — es exclusivamente el eje de tiempo para agrupar movimientos antes del pago. Sembrados: ENE-2026 a DIC-2026.
+
+### Movimientos (`tbTransactions`)
+
+Un registro por movimiento extraído de cualquier formato de importación. `idPeriods` es nullable: el período se asigna cuando existe; si se importa antes de crear el período queda null. No tiene FK directa hacia `tbCardStatements` — la asociación se gestiona por `tbCardStatementLines`.
+
+### Corte de tarjeta (`tbCardStatements` + `tbCardStatementLines`)
+
+`tbCardStatements` guarda el header con todos los totales del período (saldo anterior, compras, pagos, intereses, saldo actual, pago mínimo y de contado, límite y disponible, en CRC y USD). `periodLabel` es un campo informativo extraído del PDF; no es FK.
+
+`tbCardStatementLines` es la tabla auxiliar que asocia movimientos a un corte: surrogate PK (`idCardStatementLines`) + UNIQUE `(idCardStatements, idTransactions)`. Ver **ADR-03** para la decisión de diseño.
+
+**Flujo de carga:** primero se insertan los movimientos en `tbTransactions`, luego se crea el registro en `tbCardStatements` y se pobla `tbCardStatementLines`.
+
+### Financiamientos de tarjeta (`tbCardFinancings`)
+
+Snapshot de los planes de cuotas/tasa cero activos en una tarjeta BAC. Una fila por plan; no tiene tabla de amortización porque el extracto BAC no la incluye.
+
+### Préstamos (`tbLoanStatements` + `tbLoanPayments`)
+
+`tbLoanStatements` es el encabezado del extracto de préstamo (Coopealianza y futuros). `tbLoanPayments` contiene las filas del calendario de amortización: capital, interés, mora, otros, total y saldo por cuota. FK con CASCADE desde cuota hacia encabezado.
+
+### Diagrama de relaciones
+
+```
+tbBanks ──< tbBankAccounts >──< tbBankAccountImportTemplates >── tbImportTemplates
+                │                                                       │
+                │                                            tbImportTemplatePatterns
+                ├──< tbTransactions >──< tbCardStatementLines >── tbCardStatements
+                │         │
+                │    tbPeriods (nullable)
+                │
+                ├──< tbCardFinancings
+                │
+                └──< tbLoanStatements ──< tbLoanPayments
+```
 
 ## Formatos de importación
 
