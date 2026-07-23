@@ -11,4 +11,6 @@ public sealed class McpOptions
 
     [Required, MinLength(1)]
     public string ServerVersion { get; init; } = "1.0.0";
+
+    public string[] AllowedOrigins { get; init; } = ["https://chatgpt.com"];
 }

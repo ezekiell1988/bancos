@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-22 CR (TASK-EBC-BE-26 completada)
+> **Última actualización:** 2026-07-22 CR (TASK-EBC-MCP-19 completada)
 
 
 
 ## Completado
+
+* **2026-07-22** — TASK-EBC-MCP-19: Actualizado Bancos.Mcp para Streamable HTTP de ChatGPT: endpoint /mcp con sesiones, validación de versión y origen, cierre DELETE, outputSchema y structuredContent. Se difirió la autenticación de producción porque el proyecto continúa local y el despliegue queda fuera de alcance. — EBC
 
 * **2026-07-22** — TASK-EBC-BE-26: Se agregó número y estado de cuota, con upsert por préstamo y número de cuota. La migración inicial se regeneró y la carga de PDFs confirmó actualizaciones sin duplicados. — EBC
 

@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-22 CR (TASK-EBC-DB-09 completada)
+> **Última actualización:** 2026-07-22 CR (TASK-EBC-MCP-19 completada)
 
 ## En curso
 
@@ -21,6 +21,8 @@
 * Aprobar y ejecutar `TASK-EZ-BE-01` mediante `iaWorkflow`.
 
 ## Completado en sesiones recientes
+
+* **2026-07-22** — TASK-EBC-MCP-19 cerrada: Actualizado Bancos.Mcp para Streamable HTTP de ChatGPT: endpoint /mcp con sesiones, validación de versión y origen, cierre DELETE, outputSchema y structuredContent. Se difirió la autenticación de producción porque el proyecto continúa local y el despliegue queda fuera de alcance. — EBC
 
 * **2026-07-22** — TASK-EBC-DB-09 cerrada: Se agregó y aplicó el índice no único IX_tbLoanPayments_installmentNumber. — EBC
 
