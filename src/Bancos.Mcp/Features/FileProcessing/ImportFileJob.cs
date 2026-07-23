@@ -21,6 +21,7 @@ public sealed class ImportFileJob(
     BnCardStatementPdfParser bnParser,
     ILogger<ImportFileJob> logger)
 {
+    [DisableConcurrentExecution(timeoutInSeconds: 600)]
     public async Task ExecuteAsync(string filePath, string parserKey, Guid bankAccountId, PerformContext? context)
     {
         context?.WriteLine("Iniciando procesamiento: {0} con parser {1}", Path.GetFileName(filePath), parserKey);
@@ -220,46 +221,68 @@ public sealed class ImportFileJob(
             existing.UpdatedAt = CostaRicaTime.Now;
         }
 
-        var existingFingerprints = existing.Payments.Select(p => p.SourceFingerprint).ToHashSet();
+        var paymentsByInstallment = existing.Payments.ToDictionary(p => p.InstallmentNumber);
         var inserted = 0;
+        var updated = 0;
 
         foreach (var c in loan.Cuotas)
         {
             var fp = FingerprintHelper.ForLoanCuota(bankAccountId, c);
-            if (existingFingerprints.Contains(fp)) continue;
-            existing.Payments.Add(new LoanPayment
+            if (paymentsByInstallment.TryGetValue(c.CuotaNumber, out var payment))
             {
-                PaymentDate = c.DueDate,
-                Capital = c.Capital,
-                Interest = c.Interest,
-                LateFee = c.LateFee,
-                OtherCharges = c.OtherCharges,
-                Total = c.Total,
-                Balance = c.Balance,
-                SourceFingerprint = fp
-            });
-            inserted++;
+                payment.PaymentDate = c.DueDate;
+                payment.Capital = c.Capital;
+                payment.Interest = c.Interest;
+                payment.LateFee = c.LateFee;
+                payment.OtherCharges = c.OtherCharges;
+                payment.Total = c.Total;
+                payment.Balance = c.Balance;
+                payment.Status = c.Status;
+                payment.SourceFingerprint = fp;
+                payment.UpdatedAt = CostaRicaTime.Now;
+                updated++;
+            }
+            else
+            {
+                existing.Payments.Add(new LoanPayment
+                {
+                    InstallmentNumber = c.CuotaNumber,
+                    PaymentDate = c.DueDate,
+                    Capital = c.Capital,
+                    Interest = c.Interest,
+                    LateFee = c.LateFee,
+                    OtherCharges = c.OtherCharges,
+                    Total = c.Total,
+                    Balance = c.Balance,
+                    Status = c.Status,
+                    SourceFingerprint = fp
+                });
+                inserted++;
+            }
         }
         var today = DateOnly.FromDateTime(DateTime.Today);
         var cutoff12 = today.AddMonths(12);
-        var vigentes = loan.Cuotas.Where(c => c.Status == "Vigente").ToArray();
+        var pendingPayments = existing.Payments
+            .Where(p => p.Status == "Vigente" && p.PaymentDate >= today)
+            .OrderBy(p => p.PaymentDate)
+            .ToArray();
 
-        var nextCuota = vigentes.Where(c => c.DueDate >= today).OrderBy(c => c.DueDate).FirstOrDefault();
+        var nextCuota = pendingPayments.FirstOrDefault();
         existing.NextMonthCapital = nextCuota?.Capital;
         existing.NextMonthInterest = nextCuota?.Interest;
         existing.NextMonthTotal = nextCuota?.Total;
 
-        var currentPortion = vigentes.Where(c => c.DueDate >= today && c.DueDate <= cutoff12).ToArray();
+        var currentPortion = pendingPayments.Where(p => p.PaymentDate <= cutoff12).ToArray();
         existing.CurrentPortionCapital = currentPortion.Sum(c => c.Capital);
         existing.CurrentPortionInterest = currentPortion.Sum(c => c.Interest);
         existing.CurrentPortionTotal = currentPortion.Sum(c => c.Total);
 
-        var longTerm = vigentes.Where(c => c.DueDate > cutoff12).ToArray();
+        var longTerm = pendingPayments.Where(p => p.PaymentDate > cutoff12).ToArray();
         existing.LongTermCapital = longTerm.Sum(c => c.Capital);
         existing.LongTermInterest = longTerm.Sum(c => c.Interest);
         existing.LongTermTotal = longTerm.Sum(c => c.Total);
 
-        context?.WriteLine("Préstamo: ₡{0:N2} original, saldo ₡{1:N2}, {2} cuotas en archivo, {3} nuevas insertadas.", loan.OriginalAmount, loan.OutstandingBalance, loan.Cuotas.Count, inserted);
+        context?.WriteLine("Préstamo procesado: {0} cuotas en archivo, {1} nuevas y {2} actualizadas.", loan.Cuotas.Count, inserted, updated);
         context?.WriteLine("Porción corriente: ₡{0:N2} capital + ₡{1:N2} interés = ₡{2:N2}. Largo plazo: ₡{3:N2} capital + ₡{4:N2} interés = ₡{5:N2}.",
             existing.CurrentPortionCapital, existing.CurrentPortionInterest, existing.CurrentPortionTotal,
             existing.LongTermCapital, existing.LongTermInterest, existing.LongTermTotal);

@@ -316,10 +316,17 @@ public sealed class McpCatalogDbContext(DbContextOptions<McpCatalogDbContext> op
 
         builder.Entity<LoanPayment>(entity =>
         {
-            entity.ToTable("tbLoanPayments", table => table.HasComment("Cuotas del calendario de amortización de un préstamo."));
-            entity.HasIndex(lp => new { lp.LoanStatementId, lp.SourceFingerprint }).IsUnique();
+            entity.ToTable("tbLoanPayments", table =>
+            {
+                table.HasComment("Cuotas del calendario de amortización de un préstamo.");
+                table.HasCheckConstraint("CK_tbLoanPayments_installmentNumber", "[installmentNumber] > 0");
+                table.HasCheckConstraint("CK_tbLoanPayments_status", "[status] IN ('Pagada', 'Vigente')");
+            });
+            entity.HasIndex(lp => new { lp.LoanStatementId, lp.InstallmentNumber }).IsUnique();
+            entity.HasIndex(lp => lp.InstallmentNumber);
             entity.Property(lp => lp.Id).HasColumnName("idLoanPayments").HasComment("Identificador único de la cuota.");
             entity.Property(lp => lp.LoanStatementId).HasColumnName("idLoanStatements").HasComment("Extracto padre al que pertenece la cuota.");
+            entity.Property(lp => lp.InstallmentNumber).HasColumnName("installmentNumber").HasComment("Número consecutivo de cuota dentro del préstamo.");
             entity.Property(lp => lp.PaymentDate).HasColumnName("paymentDate").HasComment("Fecha de la cuota.");
             entity.Property(lp => lp.Capital).HasColumnName("capital").HasPrecision(18, 2).HasComment("Abono a capital.");
             entity.Property(lp => lp.Interest).HasColumnName("interest").HasPrecision(18, 2).HasComment("Interés de la cuota.");
@@ -327,8 +334,10 @@ public sealed class McpCatalogDbContext(DbContextOptions<McpCatalogDbContext> op
             entity.Property(lp => lp.OtherCharges).HasColumnName("otherCharges").HasPrecision(18, 2).HasComment("Otros cargos.");
             entity.Property(lp => lp.Total).HasColumnName("total").HasPrecision(18, 2).HasComment("Total de la cuota.");
             entity.Property(lp => lp.Balance).HasColumnName("balance").HasPrecision(18, 2).HasComment("Saldo después del pago.");
+            entity.Property(lp => lp.Status).HasColumnName("status").HasMaxLength(16).HasComment("Estado actual de la cuota en el extracto.");
             entity.Property(lp => lp.SourceFingerprint).HasColumnName("sourceFingerprint").HasMaxLength(64).IsFixedLength().HasComment("SHA-256 para deduplicación.");
             entity.Property(lp => lp.CreatedAt).HasColumnName("createdAt").HasComment("Fecha y hora de creación del registro.");
+            entity.Property(lp => lp.UpdatedAt).HasColumnName("updatedAt").HasComment("Fecha y hora de la última actualización del registro.");
             entity.HasOne(lp => lp.LoanStatement)
                 .WithMany(ls => ls.Payments)
                 .HasForeignKey(lp => lp.LoanStatementId)

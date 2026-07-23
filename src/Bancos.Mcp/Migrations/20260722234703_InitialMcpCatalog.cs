@@ -270,6 +270,15 @@ namespace Bancos.Mcp.Migrations
                     startDate = table.Column<DateOnly>(type: "date", nullable: true, comment: "Fecha de inicio o formalización del préstamo."),
                     maturityDate = table.Column<DateOnly>(type: "date", nullable: true, comment: "Fecha de vencimiento del préstamo."),
                     outstandingBalance = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false, comment: "Saldo pendiente total."),
+                    nextMonthCapital = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true, comment: "Capital de la próxima cuota vigente."),
+                    nextMonthInterest = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true, comment: "Interés de la próxima cuota vigente."),
+                    nextMonthTotal = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true, comment: "Total de la próxima cuota vigente."),
+                    currentPortionCapital = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true, comment: "Capital porción corriente (≤12 meses)."),
+                    currentPortionInterest = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true, comment: "Interés porción corriente (≤12 meses)."),
+                    currentPortionTotal = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true, comment: "Total porción corriente (≤12 meses)."),
+                    longTermCapital = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true, comment: "Capital largo plazo (>12 meses)."),
+                    longTermInterest = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true, comment: "Interés largo plazo (>12 meses)."),
+                    longTermTotal = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true, comment: "Total largo plazo (>12 meses)."),
                     sourceFingerprint = table.Column<string>(type: "nchar(64)", fixedLength: true, maxLength: 64, nullable: false, comment: "SHA-256 para deduplicación."),
                     createdAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false, comment: "Fecha y hora de creación del registro."),
                     updatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true, comment: "Fecha y hora de la última actualización del registro.")
@@ -334,6 +343,7 @@ namespace Bancos.Mcp.Migrations
                 {
                     idLoanPayments = table.Column<Guid>(type: "uniqueidentifier", nullable: false, comment: "Identificador único de la cuota."),
                     idLoanStatements = table.Column<Guid>(type: "uniqueidentifier", nullable: false, comment: "Extracto padre al que pertenece la cuota."),
+                    installmentNumber = table.Column<int>(type: "int", nullable: false, comment: "Número consecutivo de cuota dentro del préstamo."),
                     paymentDate = table.Column<DateOnly>(type: "date", nullable: false, comment: "Fecha de la cuota."),
                     capital = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false, comment: "Abono a capital."),
                     interest = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false, comment: "Interés de la cuota."),
@@ -341,12 +351,16 @@ namespace Bancos.Mcp.Migrations
                     otherCharges = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false, comment: "Otros cargos."),
                     total = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false, comment: "Total de la cuota."),
                     balance = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false, comment: "Saldo después del pago."),
+                    status = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false, comment: "Estado actual de la cuota en el extracto."),
                     sourceFingerprint = table.Column<string>(type: "nchar(64)", fixedLength: true, maxLength: 64, nullable: false, comment: "SHA-256 para deduplicación."),
-                    createdAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false, comment: "Fecha y hora de creación del registro.")
+                    createdAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false, comment: "Fecha y hora de creación del registro."),
+                    updatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true, comment: "Fecha y hora de la última actualización del registro.")
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_tbLoanPayments", x => x.idLoanPayments);
+                    table.CheckConstraint("CK_tbLoanPayments_installmentNumber", "[installmentNumber] > 0");
+                    table.CheckConstraint("CK_tbLoanPayments_status", "[status] IN ('Pagada', 'Vigente')");
                     table.ForeignKey(
                         name: "FK_tbLoanPayments_tbLoanStatements_idLoanStatements",
                         column: x => x.idLoanStatements,
@@ -595,9 +609,9 @@ namespace Bancos.Mcp.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_tbLoanPayments_idLoanStatements_sourceFingerprint",
+                name: "IX_tbLoanPayments_idLoanStatements_installmentNumber",
                 table: "tbLoanPayments",
-                columns: new[] { "idLoanStatements", "sourceFingerprint" },
+                columns: new[] { "idLoanStatements", "installmentNumber" },
                 unique: true);
 
             migrationBuilder.CreateIndex(

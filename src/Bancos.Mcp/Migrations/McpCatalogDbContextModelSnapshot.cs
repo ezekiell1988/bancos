@@ -1308,6 +1308,11 @@ namespace Bancos.Mcp.Migrations
                         .HasColumnName("createdAt")
                         .HasComment("Fecha y hora de creación del registro.");
 
+                    b.Property<int>("InstallmentNumber")
+                        .HasColumnType("int")
+                        .HasColumnName("installmentNumber")
+                        .HasComment("Número consecutivo de cuota dentro del préstamo.");
+
                     b.Property<decimal>("Interest")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)")
@@ -1344,20 +1349,38 @@ namespace Bancos.Mcp.Migrations
                         .IsFixedLength()
                         .HasComment("SHA-256 para deduplicación.");
 
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)")
+                        .HasColumnName("status")
+                        .HasComment("Estado actual de la cuota en el extracto.");
+
                     b.Property<decimal>("Total")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("total")
                         .HasComment("Total de la cuota.");
 
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("updatedAt")
+                        .HasComment("Fecha y hora de la última actualización del registro.");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("LoanStatementId", "SourceFingerprint")
+                    b.HasIndex("InstallmentNumber");
+
+                    b.HasIndex("LoanStatementId", "InstallmentNumber")
                         .IsUnique();
 
                     b.ToTable("tbLoanPayments", null, t =>
                         {
                             t.HasComment("Cuotas del calendario de amortización de un préstamo.");
+
+                            t.HasCheckConstraint("CK_tbLoanPayments_installmentNumber", "[installmentNumber] > 0");
+
+                            t.HasCheckConstraint("CK_tbLoanPayments_status", "[status] IN ('Pagada', 'Vigente')");
                         });
                 });
 
@@ -1387,6 +1410,24 @@ namespace Bancos.Mcp.Migrations
                         .IsFixedLength()
                         .HasComment("Moneda del préstamo.");
 
+                    b.Property<decimal?>("CurrentPortionCapital")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("currentPortionCapital")
+                        .HasComment("Capital porción corriente (≤12 meses).");
+
+                    b.Property<decimal?>("CurrentPortionInterest")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("currentPortionInterest")
+                        .HasComment("Interés porción corriente (≤12 meses).");
+
+                    b.Property<decimal?>("CurrentPortionTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("currentPortionTotal")
+                        .HasComment("Total porción corriente (≤12 meses).");
+
                     b.Property<decimal?>("InterestRate")
                         .HasPrecision(8, 4)
                         .HasColumnType("decimal(8,4)")
@@ -1399,10 +1440,46 @@ namespace Bancos.Mcp.Migrations
                         .HasColumnName("loanNumber")
                         .HasComment("Número de operación del préstamo.");
 
+                    b.Property<decimal?>("LongTermCapital")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("longTermCapital")
+                        .HasComment("Capital largo plazo (>12 meses).");
+
+                    b.Property<decimal?>("LongTermInterest")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("longTermInterest")
+                        .HasComment("Interés largo plazo (>12 meses).");
+
+                    b.Property<decimal?>("LongTermTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("longTermTotal")
+                        .HasComment("Total largo plazo (>12 meses).");
+
                     b.Property<DateOnly?>("MaturityDate")
                         .HasColumnType("date")
                         .HasColumnName("maturityDate")
                         .HasComment("Fecha de vencimiento del préstamo.");
+
+                    b.Property<decimal?>("NextMonthCapital")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("nextMonthCapital")
+                        .HasComment("Capital de la próxima cuota vigente.");
+
+                    b.Property<decimal?>("NextMonthInterest")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("nextMonthInterest")
+                        .HasComment("Interés de la próxima cuota vigente.");
+
+                    b.Property<decimal?>("NextMonthTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("nextMonthTotal")
+                        .HasComment("Total de la próxima cuota vigente.");
 
                     b.Property<decimal?>("OriginalLoanAmount")
                         .HasPrecision(18, 2)

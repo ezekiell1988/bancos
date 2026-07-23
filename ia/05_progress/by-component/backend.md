@@ -1,8 +1,12 @@
-> **Última actualización:** 2026-07-21 CR (TASK-EBC-MCP-08 completada)
+> **Última actualización:** 2026-07-22 CR (TASK-EBC-BE-26 completada)
 
 
 
 ## Completado
+
+* **2026-07-22** — TASK-EBC-BE-26: Se agregó número y estado de cuota, con upsert por préstamo y número de cuota. La migración inicial se regeneró y la carga de PDFs confirmó actualizaciones sin duplicados. — EBC
+
+* **2026-07-22** — TASK-EBC-BE-25: Migración inicial consolidada, arranque local aplica migraciones y el procesamiento de préstamos calcula porción inmediata, corriente y largo plazo desde el calendario persistido. Se evitó la pérdida de cuotas al serializar jobs de importación. — EBC
 
 * **2026-07-21** — TASK-EBC-MCP-08: Reubicados los componentes propios de TemplateDetection dentro de su feature, conservando las abstractions transversales en Tools. — EBC
 
