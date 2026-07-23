@@ -33,6 +33,7 @@ public sealed class LoanPayment
 {
     public Guid Id { get; set; }
     public Guid LoanStatementId { get; set; }
+    public int InstallmentNumber { get; set; }
     public DateOnly PaymentDate { get; set; }
     public decimal Capital { get; set; }
     public decimal Interest { get; set; }
@@ -40,7 +41,9 @@ public sealed class LoanPayment
     public decimal OtherCharges { get; set; }
     public decimal Total { get; set; }
     public decimal Balance { get; set; }
+    public required string Status { get; set; }
     public required string SourceFingerprint { get; set; }
     public DateTimeOffset CreatedAt { get; set; } = CostaRicaTime.Now;
+    public DateTimeOffset? UpdatedAt { get; set; }
     public LoanStatement? LoanStatement { get; set; }
 }

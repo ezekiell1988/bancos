@@ -1,8 +1,12 @@
-> **Última actualización:** 2026-07-20 CR (progreso actualizado)
+> **Última actualización:** 2026-07-22 CR (TASK-EBC-DB-09 completada)
 
 
 
 ## Completado
+
+* **2026-07-22** — TASK-EBC-DB-09: Se agregó y aplicó el índice no único IX_tbLoanPayments_installmentNumber. — EBC
+
+* **2026-07-22** — TASK-EBC-DB-08: BD local reiniciada y recreada mediante el script. La carga paralela de cuatro PDFs Coopealianza se procesó de forma serializada sin omisiones ni duplicados. — EBC
 
 * **2026-07-20** — MCP: se consolidó el catálogo de bancos, cuentas, plantillas y patrones de importación. Se añadieron 15 referencias de cuentas, 40 relaciones cuenta-plantilla y tipos de cambio USD para BAC y BN. El esquema MCP fue regenerado como una única migración inicial, con tablas `tb...`, columnas lower camel case, claves descriptivas y comentarios SQL en español para todas las tablas y columnas. Se validó la migración, la base local, las pruebas del catálogo y los diagnósticos. — EBC
 

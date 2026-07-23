@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-22 CR (TASK-EBC-MCP-09 completada)
+> **Última actualización:** 2026-07-22 CR (TASK-EBC-DB-09 completada)
 
 ## En curso
 
@@ -21,6 +21,14 @@
 * Aprobar y ejecutar `TASK-EZ-BE-01` mediante `iaWorkflow`.
 
 ## Completado en sesiones recientes
+
+* **2026-07-22** — TASK-EBC-DB-09 cerrada: Se agregó y aplicó el índice no único IX_tbLoanPayments_installmentNumber. — EBC
+
+* **2026-07-22** — TASK-EBC-BE-26 cerrada: Se agregó número y estado de cuota, con upsert por préstamo y número de cuota. La migración inicial se regeneró y la carga de PDFs confirmó actualizaciones sin duplicados. — EBC
+
+* **2026-07-22** — TASK-EBC-DB-08 cerrada: BD local reiniciada y recreada mediante el script. La carga paralela de cuatro PDFs Coopealianza se procesó de forma serializada sin omisiones ni duplicados. — EBC
+
+* **2026-07-22** — TASK-EBC-BE-25 cerrada: Migración inicial consolidada, arranque local aplica migraciones y el procesamiento de préstamos calcula porción inmediata, corriente y largo plazo desde el calendario persistido. Se evitó la pérdida de cuotas al serializar jobs de importación. — EBC
 
 * **2026-07-22** — TASK-EBC-MCP-09 cerrada: Implementado endpoint SSE en /mcp/sse para Claude Code. Descubierto que la spec MCP requiere camelCase en tools/list — PascalCase de .NET impedía el descubrimiento. Corregidos regexes del parser Coopealianza (espacios opcionales en texto PDF sin separadores). Verificado: 4 PDFs paginados → 36 cuotas en tbLoanPayments, LoanStatement con datos de header completos. Documentado en references/10-sse-claude-code.md. — EBC
 
