@@ -23,6 +23,13 @@ public sealed class DetectImportTemplateTool(ImportTemplateDetectionService dete
             },
             required = new[] { "relativePath" },
             additionalProperties = false
+        },
+        OutputSchema: new
+        {
+            type = "object",
+            properties = new { idImportTemplates = new { type = "string", format = "uuid" } },
+            required = new[] { "idImportTemplates" },
+            additionalProperties = false
         });
 
     public async ValueTask<McpToolResult> ExecuteAsync(JsonElement arguments, CancellationToken cancellationToken)
@@ -31,6 +38,8 @@ public sealed class DetectImportTemplateTool(ImportTemplateDetectionService dete
             throw new ArgumentException("relativePath es requerido.");
 
         var templateId = await detectionService.DetectAsync(pathElement.GetString()!, cancellationToken);
-        return new McpToolResult([McpContent.FromText($"idImportTemplates: {templateId}")]);
+        return new McpToolResult(
+            [McpContent.FromText($"idImportTemplates: {templateId}")],
+            new { idImportTemplates = templateId });
     }
 }

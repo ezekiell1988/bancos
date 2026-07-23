@@ -2,14 +2,19 @@ using System.Text.Json;
 
 namespace Bancos.Mcp.Protocol;
 
-public sealed record McpToolDefinition(string Name, string Title, string Description, object InputSchema);
+public sealed record McpToolDefinition(
+    string Name,
+    string Title,
+    string Description,
+    object InputSchema,
+    object? OutputSchema = null);
 
 public sealed record McpContent(string Type, string Text)
 {
     public static McpContent FromText(string text) => new("text", text);
 }
 
-public sealed record McpToolResult(IReadOnlyList<McpContent> Content)
+public sealed record McpToolResult(IReadOnlyList<McpContent> Content, object? StructuredContent = null)
 {
     public static McpToolResult Error(string message) => new([McpContent.FromText(message)]);
 }

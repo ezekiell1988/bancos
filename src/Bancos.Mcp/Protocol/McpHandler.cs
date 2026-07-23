@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Bancos.Mcp.Tools;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 
 namespace Bancos.Mcp.Protocol;
@@ -12,24 +13,24 @@ public static class McpHandler
     public static IResult GetHealth() => TypedResults.Ok(new { status = "ready" });
 
     public static async Task<IResult> HandleAsync(
-        HttpRequest request,
+        HttpContext context,
         ToolRegistry registry,
+        IMemoryCache cache,
         IOptions<McpOptions> options,
         CancellationToken cancellationToken)
     {
+        if (!IsOriginAllowed(context.Request, options.Value))
+            return TypedResults.StatusCode(StatusCodes.Status403Forbidden);
+
         JsonElement body;
         try
         {
-            using var document = await JsonDocument.ParseAsync(request.Body, cancellationToken: cancellationToken);
-            body = NormalizeBatch(document.RootElement).Clone();
+            using var document = await JsonDocument.ParseAsync(context.Request.Body, cancellationToken: cancellationToken);
+            body = document.RootElement.Clone();
         }
         catch (JsonException)
         {
             return JsonRpcError(null, -32700, "Parse error");
-        }
-        catch (InvalidOperationException exception)
-        {
-            return JsonRpcError(null, -32600, exception.Message);
         }
 
         if (body.ValueKind != JsonValueKind.Object ||
@@ -41,10 +42,10 @@ public static class McpHandler
             return TypedResults.StatusCode(StatusCodes.Status202Accepted);
 
         var method = methodElement.GetString()!;
-        if (method.StartsWith("notifications/", StringComparison.Ordinal))
-            return TypedResults.StatusCode(StatusCodes.Status202Accepted);
+        if (method != "initialize" && !HasValidSessionAndVersion(context.Request, cache))
+            return TypedResults.StatusCode(StatusCodes.Status400BadRequest);
 
-        if (!hasId)
+        if (method.StartsWith("notifications/", StringComparison.Ordinal) || !hasId)
             return TypedResults.StatusCode(StatusCodes.Status202Accepted);
 
         var parameters = body.TryGetProperty("params", out var paramsElement)
@@ -53,14 +54,43 @@ public static class McpHandler
 
         return method switch
         {
-            "initialize" => Initialize(id, parameters, options.Value),
+            "initialize" => Initialize(context.Response, id, parameters, options.Value, cache),
             "tools/list" => JsonRpcResult(id, new { tools = registry.List() }),
             "tools/call" => await CallToolAsync(id, parameters, registry, cancellationToken),
             _ => JsonRpcError(id, -32601, "Method not found")
         };
     }
 
-    private static IResult Initialize(JsonElement id, JsonElement parameters, McpOptions options)
+    public static Task<IResult> HandleDeleteAsync(HttpRequest request, IMemoryCache cache, IOptions<McpOptions> options)
+    {
+        if (!IsOriginAllowed(request, options.Value))
+            return Task.FromResult<IResult>(TypedResults.StatusCode(StatusCodes.Status403Forbidden));
+
+        var sessionId = request.Headers["Mcp-Session-Id"].FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(sessionId) || !cache.TryGetValue(SessionKey(sessionId), out _))
+            return Task.FromResult<IResult>(TypedResults.NotFound());
+
+        cache.Remove(SessionKey(sessionId));
+        return Task.FromResult<IResult>(TypedResults.Ok());
+    }
+
+    private static bool IsOriginAllowed(HttpRequest request, McpOptions options)
+    {
+        var origin = request.Headers.Origin.FirstOrDefault();
+        return string.IsNullOrWhiteSpace(origin) || options.AllowedOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static bool HasValidSessionAndVersion(HttpRequest request, IMemoryCache cache)
+    {
+        var sessionId = request.Headers["Mcp-Session-Id"].FirstOrDefault();
+        var protocolVersion = request.Headers["MCP-Protocol-Version"].FirstOrDefault();
+        return !string.IsNullOrWhiteSpace(sessionId)
+            && cache.TryGetValue(SessionKey(sessionId), out _)
+            && !string.IsNullOrWhiteSpace(protocolVersion)
+            && CompatibleProtocolVersions.Contains(protocolVersion);
+    }
+
+    private static IResult Initialize(HttpResponse response, JsonElement id, JsonElement parameters, McpOptions options, IMemoryCache cache)
     {
         var requestedVersion = parameters.TryGetProperty("protocolVersion", out var protocolVersion)
             ? protocolVersion.GetString()
@@ -68,6 +98,10 @@ public static class McpHandler
         var negotiatedVersion = requestedVersion is not null && CompatibleProtocolVersions.Contains(requestedVersion)
             ? requestedVersion
             : DefaultProtocolVersion;
+        var sessionId = Guid.NewGuid().ToString("N");
+
+        cache.Set(SessionKey(sessionId), true, TimeSpan.FromMinutes(30));
+        response.Headers["Mcp-Session-Id"] = sessionId;
 
         return JsonRpcResult(id, new
         {
@@ -91,7 +125,8 @@ public static class McpHandler
 
         try
         {
-            return JsonRpcResult(id, await tool.ExecuteAsync(arguments, cancellationToken));
+            var toolResult = await tool.ExecuteAsync(arguments, cancellationToken);
+            return JsonRpcResult(id, new { content = toolResult.Content, structuredContent = toolResult.StructuredContent });
         }
         catch (ArgumentException exception)
         {
@@ -111,29 +146,7 @@ public static class McpHandler
         }
     }
 
-    private static JsonElement NormalizeBatch(JsonElement root)
-    {
-        if (root.ValueKind != JsonValueKind.Array)
-            return root;
-
-        if (root.GetArrayLength() != 1)
-            throw new InvalidOperationException("Only a single JSON-RPC message is supported per batch.");
-
-        var first = root[0];
-        if (first.ValueKind != JsonValueKind.Object ||
-            !first.TryGetProperty("jsonrpc", out var version) || version.GetString() != "2.0")
-            throw new InvalidOperationException("Invalid Request");
-
-        var hasMethod = first.TryGetProperty("method", out _);
-        var hasId = first.TryGetProperty("id", out var id);
-        if (!hasMethod && !hasId)
-            return JsonDocument.Parse("""{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","clientInfo":{"name":"copilot-studio","version":"1.0.0"},"capabilities":{}}}""").RootElement.Clone();
-
-        if (!hasMethod)
-            return first;
-
-        return first;
-    }
+    private static string SessionKey(string sessionId) => $"mcp-session:{sessionId}";
 
     private static readonly JsonSerializerOptions CamelCase = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 

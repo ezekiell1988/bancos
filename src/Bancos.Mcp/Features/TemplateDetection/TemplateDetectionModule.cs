@@ -31,11 +31,10 @@ public static class TemplateDetectionModule
 
     public static IEndpointRouteBuilder MapMcpEndpoints(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapGet("/mcp/sse", Protocol.McpSseHandler.HandleSseAsync);
-        endpoints.MapPost("/mcp/sse/message", (HttpRequest req, Tools.ToolRegistry reg, IOptions<Protocol.McpOptions> opt, string sessionId, CancellationToken ct) =>
-            Protocol.McpSseHandler.HandleMessageAsync(req, reg, opt, sessionId, ct));
-        endpoints.MapPost("/{**path}", Protocol.McpHandler.HandleAsync).RequireRateLimiting(McpToolsRateLimitPolicy);
-        endpoints.MapGet("/{**path}", Protocol.McpHandler.GetHealth);
+        var mcp = endpoints.MapGroup("/mcp").ExcludeFromDescription();
+        mcp.MapGet("", Protocol.McpHandler.GetHealth);
+        mcp.MapPost("", Protocol.McpHandler.HandleAsync).RequireRateLimiting(McpToolsRateLimitPolicy);
+        mcp.MapDelete("", Protocol.McpHandler.HandleDeleteAsync);
         return endpoints;
     }
 }

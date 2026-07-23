@@ -1,6 +1,8 @@
 # 04 — Tareas activas
 
-> **Última actualización:** 2026-07-22 CR (TASK-EBC-MCP-18 creada)
+> **Última actualización:** 2026-07-22 CR (TASK-EBC-MCP-19 completada)
+
+
 
 
 

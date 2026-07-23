@@ -9,8 +9,7 @@ namespace Bancos.Mcp.Features.FileProcessing;
 
 public sealed class ProcessImportFileTool(
     ImportTemplateDetectionService detectionService,
-    IServiceScopeFactory scopeFactory,
-    IBackgroundJobClient jobClient) : IMcpTool
+    IServiceScopeFactory scopeFactory) : IMcpTool
 {
     public McpToolDefinition Definition { get; } = new(
         Name: "process_import_file",
@@ -32,6 +31,31 @@ public sealed class ProcessImportFileTool(
             },
             required = new[] { "files" },
             additionalProperties = false
+        },
+        OutputSchema: new
+        {
+            type = "object",
+            properties = new
+            {
+                jobs = new
+                {
+                    type = "array",
+                    items = new
+                    {
+                        type = "object",
+                        properties = new
+                        {
+                            file = new { type = "string" },
+                            jobId = new { type = new[] { "string", "null" } },
+                            template = new { type = new[] { "string", "null" } },
+                            status = new { type = "string" }
+                        },
+                        required = new[] { "file", "jobId", "template", "status" }
+                    }
+                }
+            },
+            required = new[] { "jobs" },
+            additionalProperties = false
         });
 
     public async ValueTask<McpToolResult> ExecuteAsync(JsonElement arguments, CancellationToken cancellationToken)
@@ -49,6 +73,7 @@ public sealed class ProcessImportFileTool(
 
         using var scope = scopeFactory.CreateScope();
         var accountResolver = scope.ServiceProvider.GetRequiredService<AccountResolver>();
+        var jobClient = scope.ServiceProvider.GetRequiredService<IBackgroundJobClient>();
 
         var jobs = new List<object>();
         foreach (var relativePath in relativePaths)
@@ -74,6 +99,6 @@ public sealed class ProcessImportFileTool(
         }
 
         var json = JsonSerializer.Serialize(jobs, new JsonSerializerOptions { WriteIndented = true });
-        return new McpToolResult([McpContent.FromText(json)]);
+        return new McpToolResult([McpContent.FromText(json)], new { jobs });
     }
 }
