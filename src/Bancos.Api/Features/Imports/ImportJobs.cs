@@ -21,6 +21,7 @@ public sealed class ImportJobs(BancosDbContext db, ImportTemplateDetector detect
     public async Task ProcessAsync(Guid importId, PerformContext? context)
     {
         var import = await db.Imports.SingleOrDefaultAsync(x => x.Id == importId) ?? throw new InvalidOperationException("Import was not found.");
+        if (!File.Exists(import.TemporaryPath) && import.Status == ImportStatus.Completed) return;
         import.Status = ImportStatus.Processing; import.FailureReason = null; await db.SaveChangesAsync();
         var attempt = await progress.BeginAttemptAsync(importId, context);
         WriteStage(context, "Starting import."); logger.LogInformation("Processing import {ImportId}", importId);

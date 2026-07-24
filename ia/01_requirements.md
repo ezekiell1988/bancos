@@ -41,6 +41,26 @@ Consolidar movimientos de débito, crédito y préstamos para producir informaci
 * Diferencial cambiario usa una cuenta de gasto; resultado favorable reduce ese gasto.
 * Julio 2026 permanece abierto hasta recibir corte y movimientos correspondientes.
 
+## Requisito estratégico — Migración API → MCP
+
+| ID | Requisito | Aceptación |
+|---|---|---|
+| REQ-020 | Migrar progresivamente cada feature de `Bancos.Api` a tools de `Bancos.Mcp`. | Cada feature migrada tiene tool(s) MCP equivalentes y los tests de la feature pasan en MCP. |
+| REQ-021 | Eliminar `Bancos.Api` cuando `Bancos.Mcp` tenga paridad funcional completa. | El proyecto `Bancos.Api` y su base de datos se eliminan; solo `Bancos.Mcp` permanece. |
+
+**Orden de migración sugerido** (de menor a mayor dependencia):
+
+1. Catálogo y plantillas de importación — ya en MCP (`tbImportTemplates`, `tbBankAccounts`, etc.)
+2. Parsers de formatos (PDF/Excel/CSV) — tools de extracción por formato
+3. Tipos de cambio — tool de consulta y carga manual
+4. Importación e idempotencia — tool de ingesta con huella
+5. Movimientos y cortes de tarjeta — tools de consulta y carga
+6. Clasificación — tools de reglas, categorías e IA
+7. Préstamos — tools de extracto y cuotas
+8. Contabilidad y diferencial cambiario — tools de libro mayor y FX
+9. Reportes — tools de P&G y situación financiera
+10. Eliminación de `Bancos.Api`
+
 ## Fuera de alcance inicial
 
 * Autenticación y despliegue Azure.

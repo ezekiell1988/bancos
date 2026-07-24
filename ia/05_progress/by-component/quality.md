@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-18 CR (TASK-EBC-QA-01 completada)
+> **Última actualización:** 2026-07-24 CR (TASK-EBC-QA-02 completada)
 
 
 
 ## Completado
+
+* **2026-07-24** — TASK-EBC-QA-02: 46/46 tests pasan. Se corrigieron 4 fallas pre-existentes: (1) texto de detección BacCreditOnlinePdfV1 actualizado a "fecha de pago de contado"; (2) JsonConverter en AccountKind e ImportStatus/ClosingStatus/ClassificationSource/ClassificationStatus/TransactionOperationType para correcta serialización en tests; (3) fixture CoopealianzaLoanPdfFixture actualizado con encoding Latin-1 y mapeo /colonmonetary para que PdfPig extraiga ₡ correctamente; (4) endpoint Upload corregido: bool force → bool? force, accountAuxiliaryId de [FromForm] a [FromQuery], configuración de StorageOptions en BancosApiFactory con path temporal, y early-return en ProcessAsync cuando el archivo fue eliminado y el import ya está Completed. — EBC
 
 * **2026-07-18** — TASK-EBC-QA-01: Se completó la revisión colaborativa del flujo solicitado: archivos sueltos o ZIP, preclasificación por contenido, job por archivo, parsers bancarios, clasificación reglas→IA→General y revisión/categorías manuales. — EBC
 

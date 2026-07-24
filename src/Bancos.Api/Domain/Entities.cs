@@ -35,8 +35,13 @@ public sealed class AuditLog : AuditableEntity { public required string EntityNa
 
 [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<AccountKind>))]
 public enum AccountKind { Asset, Liability, Equity, Income, Expense, Control }
+[System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<ImportStatus>))]
 public enum ImportStatus { Queued, Processing, Completed, Failed }
+[System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<ClosingStatus>))]
 public enum ClosingStatus { Pending, Processing, Completed, Failed }
+[System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<ClassificationSource>))]
 public enum ClassificationSource { General = 0, ExactApproved = 1, Rule = 2, Manual = 3, Ai = 4 }
+[System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<ClassificationStatus>))]
 public enum ClassificationStatus { PendingReview, Approved }
+[System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<TransactionOperationType>))]
 public enum TransactionOperationType { General, CardPurchase, CardPayment, CardInterest, CardCharge }

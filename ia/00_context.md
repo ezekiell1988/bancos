@@ -1,7 +1,7 @@
 # 00 — Contexto del Proyecto
 
-> Última actualización: 2026-07-18
-> Alcance activo: aplicación familiar local para consolidar estados bancarios.
+> Última actualización: 2026-07-24
+> Alcance activo: migración progresiva de Bancos.Api → Bancos.Mcp como único proyecto funcional.
 
 ## Identidad
 
@@ -12,6 +12,7 @@
 | Usuarios | Ezequiel Baltodano y Karen Soto. |
 | Despliegue actual | Local, sin autenticación. |
 | Despliegue futuro | Contenedor Azure; autenticación pendiente antes de exponerlo. |
+| Dirección estratégica | Migrar toda la funcionalidad de `Bancos.Api` a `Bancos.Mcp`; eliminar `Bancos.Api` cuando MCP tenga paridad funcional completa. |
 
 ## Stack decidido
 
@@ -25,12 +26,12 @@
 
 ## Proyectos y persistencia
 
-| Proyecto | Responsabilidad | Persistencia |
+| Proyecto | Responsabilidad | Estado |
 |---|---|---|
-| `Bancos.Api` | Monolito funcional: imports, contabilidad, clasificación y reportes | Base de datos propia con migraciones de `BancosDbContext` |
-| `Bancos.Mcp` | Servidor MCP auxiliar y catálogo de plantillas de importación | Base de datos propia con migraciones de `McpCatalogDbContext` |
+| `Bancos.Api` | Monolito funcional original: imports, contabilidad, clasificación y reportes | **En retiro progresivo** — funcionalidad se migra a MCP |
+| `Bancos.Mcp` | Servidor MCP destino final: acumula toda la funcionalidad del proyecto | **Proyecto principal activo** |
 
-Los proyectos no comparten tablas, historial de EF Core ni cadenas de conexión.
+Los proyectos no comparten tablas, historial de EF Core ni cadenas de conexión. `Bancos.Api` se elimina cuando `Bancos.Mcp` tenga paridad funcional completa.
 
 ## Límites y constantes críticas
 

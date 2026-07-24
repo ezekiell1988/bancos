@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-24 CR (ISSUE-005 resuelto)
+> **Última actualización:** 2026-07-24 CR (TASK-EBC-QA-02 completada)
 
 ## En curso
 
@@ -21,6 +21,8 @@
 * Aprobar y ejecutar `TASK-EZ-BE-01` mediante `iaWorkflow`.
 
 ## Completado en sesiones recientes
+
+* **2026-07-24** — TASK-EBC-QA-02 cerrada: 46/46 tests pasan. Se corrigieron 4 fallas pre-existentes: (1) texto de detección BacCreditOnlinePdfV1 actualizado a "fecha de pago de contado"; (2) JsonConverter en AccountKind e ImportStatus/ClosingStatus/ClassificationSource/ClassificationStatus/TransactionOperationType para correcta serialización en tests; (3) fixture CoopealianzaLoanPdfFixture actualizado con encoding Latin-1 y mapeo /colonmonetary para que PdfPig extraiga ₡ correctamente; (4) endpoint Upload corregido: bool force → bool? force, accountAuxiliaryId de [FromForm] a [FromQuery], configuración de StorageOptions en BancosApiFactory con path temporal, y early-return en ProcessAsync cuando el archivo fue eliminado y el import ya está Completed. — EBC
 
 * **2026-07-24** — ISSUE-005 resuelto: McpProtocolTests pasan en su totalidad (20/20). El problema de IBackgroundJobClient se resolvió porque ProcessImportFileTool obtiene el cliente en ExecuteAsync (lazy), no en el constructor, por lo que startup sin Hangfire funciona correctamente.
 
