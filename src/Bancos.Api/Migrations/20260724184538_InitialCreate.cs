@@ -145,6 +145,22 @@ namespace Bancos.Api.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ImportTemplatePatterns",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SignatureHash = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ContentKind = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Template = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedUtc = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ImportTemplatePatterns", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "JournalEntries",
                 columns: table => new
                 {
@@ -256,6 +272,9 @@ namespace Bancos.Api.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Iban = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    Bank = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CurrencyCode = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CardNumberMasked = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     AccountId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     OwnerId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CreatedUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -306,6 +325,43 @@ namespace Bancos.Api.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "CardStatements",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    AccountAuxiliaryId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ImportId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CardNumberMasked = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    CardBrand = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    LoyaltyPlan = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    StatementDate = table.Column<DateOnly>(type: "date", nullable: false),
+                    PaymentDueDate = table.Column<DateOnly>(type: "date", nullable: false),
+                    MinimumPaymentCrc = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    MinimumPaymentUsd = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    CashPaymentCrc = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    CashPaymentUsd = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    SourceFingerprint = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedUtc = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CardStatements", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CardStatements_AccountAuxiliaries_AccountAuxiliaryId",
+                        column: x => x.AccountAuxiliaryId,
+                        principalTable: "AccountAuxiliaries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_CardStatements_Imports_ImportId",
+                        column: x => x.ImportId,
+                        principalTable: "Imports",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "CreditFinancings",
                 columns: table => new
                 {
@@ -318,6 +374,7 @@ namespace Bancos.Api.Migrations
                     InstallmentAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     InitialBalance = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     OutstandingBalance = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    CurrencyCode = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     SourceFingerprint = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     CreatedUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedUtc = table.Column<DateTime>(type: "datetime2", nullable: true)
@@ -354,6 +411,33 @@ namespace Bancos.Api.Migrations
                     table.PrimaryKey("PK_ImportFingerprints", x => x.Id);
                     table.ForeignKey(
                         name: "FK_ImportFingerprints_Imports_ImportId",
+                        column: x => x.ImportId,
+                        principalTable: "Imports",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ImportProgress",
+                columns: table => new
+                {
+                    ImportId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Attempt = table.Column<int>(type: "int", nullable: false),
+                    Stage = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: false),
+                    Current = table.Column<int>(type: "int", nullable: false),
+                    Total = table.Column<int>(type: "int", nullable: false),
+                    Percent = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    UpdatedUtc = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ImportProgress", x => x.ImportId);
+                    table.CheckConstraint("CK_ImportProgress_Attempt", "[Attempt] >= 0");
+                    table.CheckConstraint("CK_ImportProgress_Counts", "[Current] >= 0 AND [Total] >= 0 AND [Current] <= [Total]");
+                    table.CheckConstraint("CK_ImportProgress_Percent", "[Percent] >= 0 AND [Percent] <= 100");
+                    table.ForeignKey(
+                        name: "FK_ImportProgress_Imports_ImportId",
                         column: x => x.ImportId,
                         principalTable: "Imports",
                         principalColumn: "Id",
@@ -403,6 +487,7 @@ namespace Bancos.Api.Migrations
                     OriginalAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     OriginalCurrencyCode = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ExchangeRate = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    OperationType = table.Column<int>(type: "int", nullable: false),
                     DescriptionNormalized = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CategoryId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     ClassificationSource = table.Column<int>(type: "int", nullable: false),
@@ -492,17 +577,22 @@ namespace Bancos.Api.Migrations
                 });
 
             migrationBuilder.InsertData(
+                table: "Categories",
+                columns: new[] { "Id", "CreatedUtc", "Name", "ParentId", "UpdatedUtc" },
+                values: new object[] { new Guid("00000000-0000-0000-0000-000000000301"), new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc), "General", null, null });
+
+            migrationBuilder.InsertData(
                 table: "Owners",
                 columns: new[] { "Id", "CreatedUtc", "DisplayName", "DocumentReference", "UpdatedUtc" },
                 values: new object[] { new Guid("00000000-0000-0000-0000-000000000001"), new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc), "Propietario predeterminado", null, null });
 
             migrationBuilder.InsertData(
                 table: "AccountAuxiliaries",
-                columns: new[] { "Id", "AccountId", "CreatedUtc", "Iban", "Name", "OwnerId", "UpdatedUtc" },
+                columns: new[] { "Id", "AccountId", "Bank", "CardNumberMasked", "CreatedUtc", "CurrencyCode", "Iban", "Name", "OwnerId", "UpdatedUtc" },
                 values: new object[,]
                 {
-                    { new Guid("00000000-0000-0000-0000-000000000201"), new Guid("00000000-0000-0000-0000-000000000101"), new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc), null, "Cuenta transaccional CRC", new Guid("00000000-0000-0000-0000-000000000001"), null },
-                    { new Guid("00000000-0000-0000-0000-000000000202"), new Guid("00000000-0000-0000-0000-000000000102"), new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc), null, "Financiamientos", new Guid("00000000-0000-0000-0000-000000000001"), null }
+                    { new Guid("00000000-0000-0000-0000-000000000201"), new Guid("00000000-0000-0000-0000-000000000101"), null, null, new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc), null, null, "Cuenta bancaria", new Guid("00000000-0000-0000-0000-000000000001"), null },
+                    { new Guid("00000000-0000-0000-0000-000000000202"), new Guid("00000000-0000-0000-0000-000000000102"), null, null, new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc), null, null, "Créditos y financiamientos", new Guid("00000000-0000-0000-0000-000000000001"), null }
                 });
 
             migrationBuilder.CreateIndex(
@@ -527,6 +617,17 @@ namespace Bancos.Api.Migrations
                 table: "Accounts",
                 column: "Code",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CardStatements_AccountAuxiliaryId_CardNumberMasked_StatementDate",
+                table: "CardStatements",
+                columns: new[] { "AccountAuxiliaryId", "CardNumberMasked", "StatementDate" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CardStatements_ImportId",
+                table: "CardStatements",
+                column: "ImportId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Categories_Name_ParentId",
@@ -596,6 +697,12 @@ namespace Bancos.Api.Migrations
                 column: "ContentHash");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ImportTemplatePatterns_SignatureHash",
+                table: "ImportTemplatePatterns",
+                column: "SignatureHash",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_JournalLines_JournalEntryId",
                 table: "JournalLines",
                 column: "JournalEntryId");
@@ -659,6 +766,9 @@ namespace Bancos.Api.Migrations
                 name: "AuditLogs");
 
             migrationBuilder.DropTable(
+                name: "CardStatements");
+
+            migrationBuilder.DropTable(
                 name: "ClassificationRules");
 
             migrationBuilder.DropTable(
@@ -678,6 +788,12 @@ namespace Bancos.Api.Migrations
 
             migrationBuilder.DropTable(
                 name: "ImportFingerprints");
+
+            migrationBuilder.DropTable(
+                name: "ImportProgress");
+
+            migrationBuilder.DropTable(
+                name: "ImportTemplatePatterns");
 
             migrationBuilder.DropTable(
                 name: "JournalLines");

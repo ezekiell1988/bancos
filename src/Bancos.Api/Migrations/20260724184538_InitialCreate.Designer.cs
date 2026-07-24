@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Bancos.Api.Migrations
 {
     [DbContext(typeof(BancosDbContext))]
-    [Migration("20260721032825_AddAuxiliaryImportIdentity")]
-    partial class AddAuxiliaryImportIdentity
+    [Migration("20260724184538_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
