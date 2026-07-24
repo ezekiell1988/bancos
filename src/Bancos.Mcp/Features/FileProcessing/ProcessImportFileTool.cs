@@ -86,10 +86,32 @@ public sealed class ProcessImportFileTool(
 
                 var fullPath = detectionService.ResolveFullPath(relativePath!);
                 var fileContent = await File.ReadAllBytesAsync(fullPath, cancellationToken);
-                var bankAccountId = await accountResolver.ResolveAsync(templateId, null, fileContent, cancellationToken);
+
+                Guid primaryAccountId;
+                Guid? secondaryAccountId = null;
+                if (definition.ParserKey == "bac-credit-financing-xls")
+                {
+                    var pair = await accountResolver.ResolveFinancingPairByPathAsync(relativePath!, cancellationToken);
+                    primaryAccountId = pair.CrcAccountId;
+                    secondaryAccountId = pair.UsdAccountId;
+                }
+                else if (definition.ParserKey == "bac-credit-online-pdf")
+                {
+                    primaryAccountId = await accountResolver.ResolveCrcByPathAsync(relativePath!, cancellationToken);
+                }
+                else if (definition.ParserKey == "bac-credit-csv")
+                {
+                    var pair = await accountResolver.ResolveFinancingPairByPathAsync(relativePath!, cancellationToken);
+                    primaryAccountId = pair.CrcAccountId;
+                    secondaryAccountId = pair.UsdAccountId;
+                }
+                else
+                {
+                    primaryAccountId = await accountResolver.ResolveAsync(templateId, null, fileContent, cancellationToken);
+                }
 
                 var jobId = jobClient.Enqueue<ImportFileJob>(job =>
-                    job.ExecuteAsync(fullPath, definition.ParserKey, bankAccountId, null!));
+                    job.ExecuteAsync(fullPath, definition.ParserKey, primaryAccountId, secondaryAccountId, null!));
 
                 jobs.Add(new { file = relativePath, jobId, template = definition.Code, status = "enqueued" });
             }

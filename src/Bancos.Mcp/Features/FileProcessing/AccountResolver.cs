@@ -3,11 +3,16 @@ using Bancos.Mcp.Features.Parsing;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Bancos.Mcp.Features.FileProcessing;
 
+public sealed record FinancingAccountPair(Guid CrcAccountId, Guid UsdAccountId);
+
 public sealed class AccountResolver(McpCatalogDbContext db)
 {
+    private static readonly Regex IbanPattern = new(@"CR\d{20}", RegexOptions.Compiled);
+
     public async Task<Guid> ResolveAsync(
         Guid templateId,
         Guid? bankAccountId,
@@ -45,5 +50,46 @@ public sealed class AccountResolver(McpCatalogDbContext db)
             0 => throw new InvalidOperationException("No se pudo identificar una cuenta única desde el contenido del archivo."),
             _ => throw new InvalidOperationException("El contenido del archivo coincide con más de una cuenta bancaria.")
         };
+    }
+
+    public async Task<Guid> ResolveCrcByPathAsync(string relativePath, CancellationToken ct)
+    {
+        var folder = relativePath.Replace('\\', '/').Split('/').Reverse().Skip(1).FirstOrDefault() ?? "";
+        var ibanHashes = IbanPattern.Matches(folder)
+            .Select(m => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(m.Value))))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        if (ibanHashes.Count == 0)
+            throw new InvalidOperationException("No se encontraron IBANs en el nombre de carpeta del archivo.");
+
+        var account = await db.BankAccounts
+            .Where(a => a.IdentifierHash != null && ibanHashes.Contains(a.IdentifierHash) && a.CurrencyCode == "CRC")
+            .Select(a => (Guid?)a.Id)
+            .FirstOrDefaultAsync(ct);
+
+        return account ?? throw new InvalidOperationException("No se encontró cuenta CRC para los IBANs del archivo. Verifique que los IBANs estén registrados en el catálogo.");
+    }
+
+    public async Task<FinancingAccountPair> ResolveFinancingPairByPathAsync(string relativePath, CancellationToken ct)
+    {
+        var folder = relativePath.Replace('\\', '/').Split('/').Reverse().Skip(1).FirstOrDefault() ?? "";
+        var ibanHashes = IbanPattern.Matches(folder)
+            .Select(m => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(m.Value))))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        if (ibanHashes.Count == 0)
+            throw new InvalidOperationException("No se encontraron IBANs en el nombre de carpeta del archivo.");
+
+        var accounts = await db.BankAccounts
+            .Where(a => a.IdentifierHash != null && ibanHashes.Contains(a.IdentifierHash))
+            .Select(a => new { a.Id, a.CurrencyCode })
+            .ToListAsync(ct);
+
+        var crc = accounts.FirstOrDefault(a => a.CurrencyCode == "CRC")?.Id
+            ?? throw new InvalidOperationException("No se encontró cuenta CRC para los IBANs del archivo. Verifique que los IBANs estén registrados en el catálogo.");
+        var usd = accounts.FirstOrDefault(a => a.CurrencyCode == "USD")?.Id
+            ?? throw new InvalidOperationException("No se encontró cuenta USD para los IBANs del archivo. Verifique que los IBANs estén registrados en el catálogo.");
+
+        return new FinancingAccountPair(crc, usd);
     }
 }

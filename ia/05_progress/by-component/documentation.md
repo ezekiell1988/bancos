@@ -1,8 +1,12 @@
-> **Última actualización:** 2026-07-24 CR (TASK-EBC-MCP-18 completada)
+> **Última actualización:** 2026-07-24 CR (TASK-EBC-MCP-13 completada)
 
 
 
 ## Completado
+
+* **2026-07-24** — TASK-EBC-MCP-13: Parser bac-credit-online-pdf implementado y validado. Se corrigió extracción de texto PDF (GetWords() con reconstrucción por líneas Y), resolución de cuenta CRC por IBANs del folder, signos (banco invertido), ExchangeRate=1 para CRC, idPeriods, updatedAt en re-importación y extracción de place. Además se implementó bac-credit-csv-v1 con ruteo CRC/USD a las 8 cuentas. 11 jobs Succeeded: 244 transacciones con amounts, signos y place correctos. — EBC
+
+* **2026-07-24** — TASK-EBC-MCP-12: Financiamientos BAC completamente implementado. Se creó ResolveFinancingPairByPathAsync que resuelve el par CRC/USD por IBANs del folder, se pobló identifierHash en la semilla para las 4 cuentas BAC de crédito, y se implementó ProcessCardFinancings en ImportFileJob con persistencia separada por moneda en tbCardFinancings. Jobs Succeeded para los 3 archivos procesados (bac-credit-01, 02 y 04). — EBC
 
 * **2026-07-24** — TASK-EBC-MCP-18: Auditoría completada sin defectos. Parser MCP extrae campos de encabezado completos (monto original, tasa, plazo, fecha inicio) más historial de pagos y tabla de cuotas. Job hace upsert correcto de header y cuotas, calcula porciones corriente y largo plazo. Sin incidencias que abrir. — EBC
 

@@ -40,12 +40,12 @@ public sealed class CardStatementParser
         var headerIndex = rows.FindIndex(row => FindColumn(row, DateHeaders) >= 0 && FindColumn(row, DescriptionHeaders) >= 0 && FindColumn(row, AmountHeaders) >= 0);
         if (headerIndex < 0)
         {
-            if (HasBacPaymentSummary(rows))
-                return new ParsedCardStatement(CardStatementContentKind.PaymentSummary, []);
-
             var bacIdx = rows.FindIndex(row => FindColumn(row, DateHeaders) >= 0 && FindColumn(row, AmountLocalHeaders) >= 0 && FindColumn(row, AmountDollarsHeaders) >= 0);
             if (bacIdx >= 0)
                 return ParseBacDualAmountRows(rows, bacIdx);
+
+            if (HasBacPaymentSummary(rows))
+                return new ParsedCardStatement(CardStatementContentKind.PaymentSummary, []);
 
             throw new InvalidDataException("El estado de tarjeta no contiene una tabla de movimientos con fecha, descripción e importe.");
         }
@@ -97,8 +97,9 @@ public sealed class CardStatementParser
                 : (dollarsAmount, "USD", (decimal?)null);
             movements.Add(new ParsedCardMovement(date, $"card-{movements.Count + 1}", description.Trim(), originalAmount, currency, amountCrc, InferOperation(description)));
         }
-        if (movements.Count == 0) throw new InvalidDataException("El estado de tarjeta no contiene movimientos válidos.");
-        return new ParsedCardStatement(CardStatementContentKind.Movements, movements);
+        return movements.Count > 0
+            ? new ParsedCardStatement(CardStatementContentKind.Movements, movements)
+            : new ParsedCardStatement(CardStatementContentKind.PaymentSummary, []);
     }
 
     private static bool HasBacPaymentSummary(IReadOnlyList<string[]> rows) =>
@@ -143,17 +144,24 @@ public sealed class CardStatementParser
         return movements;
     }
 
+    // Matches page headers like "18/7/26, 10:36 a.m. Banca en Línea" and trailing URLs
+    private static readonly Regex PageHeaderPattern = new(
+        @"\d{1,2}/\d{1,2}/\d{2,4},\s*\d+:\d+\s*[ap]\.m\..*?(?=\r?\n|$)|https?://\S+",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+    private static readonly Regex BacTableMarker = new(
+        @"fecha\s*concepto\s*monto\s*colones", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
     private static List<ParsedCardMovement> ParseBacOnlinePdfConcatenated(string text)
     {
         var movements = new List<ParsedCardMovement>();
         var normalized = TextNormalizer.Normalize(text);
-        var tableMarker = "fechaconceptomonto colones";
-        var markerIndex = normalized.IndexOf(tableMarker, StringComparison.Ordinal);
-        if (markerIndex < 0) return movements;
-        var body = text[(markerIndex + tableMarker.Length)..];
+        var markerMatch = BacTableMarker.Match(normalized);
+        if (!markerMatch.Success) return movements;
+        var body = PageHeaderPattern.Replace(text[(markerMatch.Index + markerMatch.Length)..], " ");
 
         var matches = Regex.Matches(body,
-            "(?<date>\\d{2}/\\d{2}/\\d{4})(?<description>.+?)(?<amount>[\\d,]+\\.\\d{2})\\s*(?<currency>CRC|USD)(?=\\d{2}/\\d{2}/\\d{4}|Los pagos|Movimientos|$)",
+            "(?<date>\\d{2}/\\d{2}/\\d{4})(?<description>.+?)(?<amount>-?[\\d,.]+\\.\\d{2})\\s*(?<currency>CRC|USD)(?=\\d{2}/\\d{2}/\\d{4}|Los pagos|Movimientos|$)",
             RegexOptions.Singleline | RegexOptions.CultureInvariant);
         foreach (Match m in matches)
         {

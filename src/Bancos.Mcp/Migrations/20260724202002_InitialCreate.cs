@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Bancos.Mcp.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialMcpCatalog : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -448,14 +448,14 @@ namespace Bancos.Mcp.Migrations
                 columns: new[] { "idBankAccounts", "accountType", "idBanks", "cardFingerprint", "code", "createdAt", "currencyCode", "identifierHash", "isEnabled", "updatedAt" },
                 values: new object[,]
                 {
-                    { new Guid("40000000-0000-0000-0000-000000000001"), "credit-card", new Guid("30000000-0000-0000-0000-000000000003"), null, "bac-credit-01-crc", new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), "CRC", null, true, null },
-                    { new Guid("40000000-0000-0000-0000-000000000002"), "credit-card", new Guid("30000000-0000-0000-0000-000000000003"), null, "bac-credit-01-usd", new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), "USD", null, true, null },
-                    { new Guid("40000000-0000-0000-0000-000000000003"), "credit-card", new Guid("30000000-0000-0000-0000-000000000003"), null, "bac-credit-02-crc", new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), "CRC", null, true, null },
-                    { new Guid("40000000-0000-0000-0000-000000000004"), "credit-card", new Guid("30000000-0000-0000-0000-000000000003"), null, "bac-credit-02-usd", new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), "USD", null, true, null },
-                    { new Guid("40000000-0000-0000-0000-000000000005"), "credit-card", new Guid("30000000-0000-0000-0000-000000000003"), null, "bac-credit-03-crc", new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), "CRC", null, true, null },
-                    { new Guid("40000000-0000-0000-0000-000000000006"), "credit-card", new Guid("30000000-0000-0000-0000-000000000003"), null, "bac-credit-03-usd", new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), "USD", null, true, null },
-                    { new Guid("40000000-0000-0000-0000-000000000007"), "credit-card", new Guid("30000000-0000-0000-0000-000000000003"), null, "bac-credit-04-crc", new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), "CRC", null, true, null },
-                    { new Guid("40000000-0000-0000-0000-000000000008"), "credit-card", new Guid("30000000-0000-0000-0000-000000000003"), null, "bac-credit-04-usd", new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), "USD", null, true, null },
+                    { new Guid("40000000-0000-0000-0000-000000000001"), "credit-card", new Guid("30000000-0000-0000-0000-000000000003"), null, "bac-credit-01-crc", new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), "CRC", "07825F50C4920FED32C232E0AFADBAFB12EEB0762C5B99477CE80DC9CE0764F7", true, null },
+                    { new Guid("40000000-0000-0000-0000-000000000002"), "credit-card", new Guid("30000000-0000-0000-0000-000000000003"), null, "bac-credit-01-usd", new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), "USD", "CB71E5C9AF2BE78C6045E02929B89590A28538EBA15491133CF1CE69FE4A6B29", true, null },
+                    { new Guid("40000000-0000-0000-0000-000000000003"), "credit-card", new Guid("30000000-0000-0000-0000-000000000003"), null, "bac-credit-02-crc", new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), "CRC", "55A4EC76E34349CD6A33908B598B209DD0807AA10ACD3612EF058994C0FD684C", true, null },
+                    { new Guid("40000000-0000-0000-0000-000000000004"), "credit-card", new Guid("30000000-0000-0000-0000-000000000003"), null, "bac-credit-02-usd", new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), "USD", "56A7FBE1229ADB5852D0099B0FEFC7F26327637D9E3AFF1609EFF3FB5AB06091", true, null },
+                    { new Guid("40000000-0000-0000-0000-000000000005"), "credit-card", new Guid("30000000-0000-0000-0000-000000000003"), null, "bac-credit-03-crc", new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), "CRC", "F299DFDEB48DF802DDEDA26856F1A483739482932C307878EF65D88254FACA59", true, null },
+                    { new Guid("40000000-0000-0000-0000-000000000006"), "credit-card", new Guid("30000000-0000-0000-0000-000000000003"), null, "bac-credit-03-usd", new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), "USD", "36A6585E5645DC484F13517E01A170767CAD3C6F82496E1B5F0206468603A4E0", true, null },
+                    { new Guid("40000000-0000-0000-0000-000000000007"), "credit-card", new Guid("30000000-0000-0000-0000-000000000003"), null, "bac-credit-04-crc", new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), "CRC", "D0B207A37C18F6A3CC1367ECED0222D222B1232AACDCBAC8379B66DB5FCA5CC3", true, null },
+                    { new Guid("40000000-0000-0000-0000-000000000008"), "credit-card", new Guid("30000000-0000-0000-0000-000000000003"), null, "bac-credit-04-usd", new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), "USD", "8E9F3E66F0952B0FEDD9A9CB2AB7C395811496C2FB948A1562FEC479A3C15A24", true, null },
                     { new Guid("40000000-0000-0000-0000-000000000009"), "credit-card", new Guid("30000000-0000-0000-0000-000000000002"), null, "bn-credit-01-crc", new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), "CRC", null, true, null },
                     { new Guid("40000000-0000-0000-0000-000000000010"), "credit-card", new Guid("30000000-0000-0000-0000-000000000002"), null, "bn-credit-01-usd", new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), "USD", null, true, null },
                     { new Guid("40000000-0000-0000-0000-000000000011"), "debit-card", new Guid("30000000-0000-0000-0000-000000000002"), null, "bn-debit-01-usd", new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), "USD", null, true, null },
@@ -613,6 +613,11 @@ namespace Bancos.Mcp.Migrations
                 table: "tbLoanPayments",
                 columns: new[] { "idLoanStatements", "installmentNumber" },
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_tbLoanPayments_installmentNumber",
+                table: "tbLoanPayments",
+                column: "installmentNumber");
 
             migrationBuilder.CreateIndex(
                 name: "IX_tbLoanStatements_idBankAccounts_sourceFingerprint",

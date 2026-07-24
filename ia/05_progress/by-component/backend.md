@@ -1,8 +1,20 @@
-> **Última actualización:** 2026-07-24 CR (ISSUE-005 resuelto)
+> **Última actualización:** 2026-07-24 CR (progreso actualizado)
 
 
 
 ## Completado
+
+* **2026-07-24** — **Implementación completa y validada en producción local (2026-07-24)**
+
+- Implementado `ResolveFinancingPairByPathAsync` en `AccountResolver`: extrae IBANs del nombre de carpeta vía regex, hashea con SHA-256 y los busca en `tbBankAccounts.identifierHash` para retornar par CRC+USD.
+- Extendido `ProcessImportFileTool` para detectar `bac-credit-financing-xls` y usar resolución por path en lugar de por contenido.
+- Extendido `ImportFileJob.ExecuteAsync` con parámetro `Guid? usdBankAccountId`; `ProcessCreditFinancings` agrupa por moneda y persiste en la cuenta correcta.
+- Corregido `status = "active"` (minúsculas) para respetar check constraint de `tbCardFinancings`.
+- Migración única `InitialCreate` regenerada con `identifierHash` en seed para pares:
+  - `bac-credit-01`: CR69...1047 (CRC) / CR17...8556 (USD)
+  - `bac-credit-02`: CR48...1545 (CRC) / CR18...4214 (USD)
+- Importación real de 2 archivos validada: 8 registros en `tbCardFinancings`, ambos jobs Hangfire en `Succeeded`, enrutamiento CRC/USD correcto.
+- Próximo paso: agregar `bac-credit-03` (CR64...9651 CRC / CR13...8803 USD) y procesar su archivo. — EBC
 
 * **2026-07-24** — ISSUE-005 resuelto: McpProtocolTests pasan en su totalidad (20/20). El problema de IBackgroundJobClient se resolvió porque ProcessImportFileTool obtiene el cliente en ExecuteAsync (lazy), no en el constructor, por lo que startup sin Hangfire funciona correctamente.
 

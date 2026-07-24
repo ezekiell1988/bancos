@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-24 CR (TASK-EBC-QA-02 completada)
+> **Última actualización:** 2026-07-24 CR (TASK-EBC-MCP-13 completada)
 
 ## En curso
 
@@ -21,6 +21,22 @@
 * Aprobar y ejecutar `TASK-EZ-BE-01` mediante `iaWorkflow`.
 
 ## Completado en sesiones recientes
+
+* **2026-07-24** — TASK-EBC-MCP-13 cerrada: Parser bac-credit-online-pdf implementado y validado. Se corrigió extracción de texto PDF (GetWords() con reconstrucción por líneas Y), resolución de cuenta CRC por IBANs del folder, signos (banco invertido), ExchangeRate=1 para CRC, idPeriods, updatedAt en re-importación y extracción de place. Además se implementó bac-credit-csv-v1 con ruteo CRC/USD a las 8 cuentas. 11 jobs Succeeded: 244 transacciones con amounts, signos y place correctos. — EBC
+
+* **2026-07-24** — TASK-EBC-MCP-12 cerrada: Financiamientos BAC completamente implementado. Se creó ResolveFinancingPairByPathAsync que resuelve el par CRC/USD por IBANs del folder, se pobló identifierHash en la semilla para las 4 cuentas BAC de crédito, y se implementó ProcessCardFinancings en ImportFileJob con persistencia separada por moneda en tbCardFinancings. Jobs Succeeded para los 3 archivos procesados (bac-credit-01, 02 y 04). — EBC
+
+* **2026-07-24** — **Implementación completa y validada en producción local (2026-07-24)**
+
+- Implementado `ResolveFinancingPairByPathAsync` en `AccountResolver`: extrae IBANs del nombre de carpeta vía regex, hashea con SHA-256 y los busca en `tbBankAccounts.identifierHash` para retornar par CRC+USD.
+- Extendido `ProcessImportFileTool` para detectar `bac-credit-financing-xls` y usar resolución por path en lugar de por contenido.
+- Extendido `ImportFileJob.ExecuteAsync` con parámetro `Guid? usdBankAccountId`; `ProcessCreditFinancings` agrupa por moneda y persiste en la cuenta correcta.
+- Corregido `status = "active"` (minúsculas) para respetar check constraint de `tbCardFinancings`.
+- Migración única `InitialCreate` regenerada con `identifierHash` en seed para pares:
+  - `bac-credit-01`: CR69...1047 (CRC) / CR17...8556 (USD)
+  - `bac-credit-02`: CR48...1545 (CRC) / CR18...4214 (USD)
+- Importación real de 2 archivos validada: 8 registros en `tbCardFinancings`, ambos jobs Hangfire en `Succeeded`, enrutamiento CRC/USD correcto.
+- Próximo paso: agregar `bac-credit-03` (CR64...9651 CRC / CR13...8803 USD) y procesar su archivo. — EBC
 
 * **2026-07-24** — TASK-EBC-QA-02 cerrada: 46/46 tests pasan. Se corrigieron 4 fallas pre-existentes: (1) texto de detección BacCreditOnlinePdfV1 actualizado a "fecha de pago de contado"; (2) JsonConverter en AccountKind e ImportStatus/ClosingStatus/ClassificationSource/ClassificationStatus/TransactionOperationType para correcta serialización en tests; (3) fixture CoopealianzaLoanPdfFixture actualizado con encoding Latin-1 y mapeo /colonmonetary para que PdfPig extraiga ₡ correctamente; (4) endpoint Upload corregido: bool force → bool? force, accountAuxiliaryId de [FromForm] a [FromQuery], configuración de StorageOptions en BancosApiFactory con path temporal, y early-return en ProcessAsync cuando el archivo fue eliminado y el import ya está Completed. — EBC
 

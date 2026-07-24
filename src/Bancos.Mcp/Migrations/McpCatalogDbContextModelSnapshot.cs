@@ -195,6 +195,7 @@ namespace Bancos.Mcp.Migrations
                             Code = "bac-credit-01-crc",
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
                             CurrencyCode = "CRC",
+                            IdentifierHash = "07825F50C4920FED32C232E0AFADBAFB12EEB0762C5B99477CE80DC9CE0764F7",
                             IsEnabled = true
                         },
                         new
@@ -205,6 +206,7 @@ namespace Bancos.Mcp.Migrations
                             Code = "bac-credit-01-usd",
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
                             CurrencyCode = "USD",
+                            IdentifierHash = "CB71E5C9AF2BE78C6045E02929B89590A28538EBA15491133CF1CE69FE4A6B29",
                             IsEnabled = true
                         },
                         new
@@ -215,6 +217,7 @@ namespace Bancos.Mcp.Migrations
                             Code = "bac-credit-02-crc",
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
                             CurrencyCode = "CRC",
+                            IdentifierHash = "55A4EC76E34349CD6A33908B598B209DD0807AA10ACD3612EF058994C0FD684C",
                             IsEnabled = true
                         },
                         new
@@ -225,6 +228,7 @@ namespace Bancos.Mcp.Migrations
                             Code = "bac-credit-02-usd",
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
                             CurrencyCode = "USD",
+                            IdentifierHash = "56A7FBE1229ADB5852D0099B0FEFC7F26327637D9E3AFF1609EFF3FB5AB06091",
                             IsEnabled = true
                         },
                         new
@@ -235,6 +239,7 @@ namespace Bancos.Mcp.Migrations
                             Code = "bac-credit-03-crc",
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
                             CurrencyCode = "CRC",
+                            IdentifierHash = "F299DFDEB48DF802DDEDA26856F1A483739482932C307878EF65D88254FACA59",
                             IsEnabled = true
                         },
                         new
@@ -245,6 +250,7 @@ namespace Bancos.Mcp.Migrations
                             Code = "bac-credit-03-usd",
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
                             CurrencyCode = "USD",
+                            IdentifierHash = "36A6585E5645DC484F13517E01A170767CAD3C6F82496E1B5F0206468603A4E0",
                             IsEnabled = true
                         },
                         new
@@ -255,6 +261,7 @@ namespace Bancos.Mcp.Migrations
                             Code = "bac-credit-04-crc",
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
                             CurrencyCode = "CRC",
+                            IdentifierHash = "D0B207A37C18F6A3CC1367ECED0222D222B1232AACDCBAC8379B66DB5FCA5CC3",
                             IsEnabled = true
                         },
                         new
@@ -265,6 +272,7 @@ namespace Bancos.Mcp.Migrations
                             Code = "bac-credit-04-usd",
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
                             CurrencyCode = "USD",
+                            IdentifierHash = "8E9F3E66F0952B0FEDD9A9CB2AB7C395811496C2FB948A1562FEC479A3C15A24",
                             IsEnabled = true
                         },
                         new

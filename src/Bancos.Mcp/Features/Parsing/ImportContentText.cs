@@ -19,7 +19,35 @@ internal static class ImportContentText
     private static string ExtractPdf(byte[] bytes)
     {
         using var document = PdfDocument.Open(bytes);
-        return string.Join('\n', document.GetPages().Select(page => page.Text));
+        var pages = document.GetPages().Select(ReconstructPageText);
+        return string.Join('\n', pages);
+    }
+
+    private static string ReconstructPageText(UglyToad.PdfPig.Content.Page page)
+    {
+        var words = page.GetWords().ToList();
+        if (words.Count == 0) return page.Text;
+
+        // Group words into lines by Y-coordinate proximity (within 3 points = same row)
+        var rows = new List<List<UglyToad.PdfPig.Content.Word>>();
+        foreach (var word in words.OrderByDescending(w => w.BoundingBox.Bottom).ThenBy(w => w.BoundingBox.Left))
+        {
+            var placed = false;
+            foreach (var row in rows)
+            {
+                var rowY = row[0].BoundingBox.Bottom;
+                if (Math.Abs(word.BoundingBox.Bottom - rowY) <= 3)
+                {
+                    row.Add(word);
+                    placed = true;
+                    break;
+                }
+            }
+            if (!placed) rows.Add([word]);
+        }
+
+        return string.Join('\n', rows.Select(row =>
+            string.Join(' ', row.OrderBy(w => w.BoundingBox.Left).Select(w => w.Text))));
     }
 
     private static string ExtractXls(byte[] bytes)

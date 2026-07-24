@@ -22,7 +22,7 @@ public sealed class ImportFileJob(
     ILogger<ImportFileJob> logger)
 {
     [DisableConcurrentExecution(timeoutInSeconds: 600)]
-    public async Task ExecuteAsync(string filePath, string parserKey, Guid bankAccountId, PerformContext? context)
+    public async Task ExecuteAsync(string filePath, string parserKey, Guid bankAccountId, Guid? usdBankAccountId, PerformContext? context)
     {
         context?.WriteLine("Iniciando procesamiento: {0} con parser {1}", Path.GetFileName(filePath), parserKey);
         logger.LogInformation("Processing {File} with parser {ParserKey} for account {AccountId}", filePath, parserKey, bankAccountId);
@@ -39,14 +39,22 @@ public sealed class ImportFileJob(
                     await ProcessBankMovements(bankAccountId, spreadsheetParser.Parse(await File.ReadAllBytesAsync(filePath)), context);
                     break;
                 case "bac-credit-financing-xls":
-                    await ProcessCreditFinancings(bankAccountId, financingParser.Parse(await File.ReadAllBytesAsync(filePath)), context);
+                    await ProcessCreditFinancings(bankAccountId, usdBankAccountId, financingParser.Parse(await File.ReadAllBytesAsync(filePath)), context);
                     break;
                 case "bac-credit-csv":
-                case "bac-credit-online-pdf":
-                    var statement = cardParser.Parse(await File.ReadAllBytesAsync(filePath));
-                    if (statement.RequiresManualReview) throw new InvalidDataException("El archivo requiere revisión manual y no contiene movimientos procesables.");
-                    await ProcessCardMovements(bankAccountId, statement.Movements, context);
+                {
+                    var s = cardParser.Parse(await File.ReadAllBytesAsync(filePath));
+                    if (s.RequiresManualReview) throw new InvalidDataException("El archivo requiere revisión manual y no contiene movimientos procesables.");
+                    await ProcessCardMovements(bankAccountId, usdBankAccountId, s.Movements, useBankSign: true, context);
                     break;
+                }
+                case "bac-credit-online-pdf":
+                {
+                    var s = cardParser.Parse(await File.ReadAllBytesAsync(filePath));
+                    if (s.RequiresManualReview) throw new InvalidDataException("El archivo requiere revisión manual y no contiene movimientos procesables.");
+                    await ProcessCardMovements(bankAccountId, null, s.Movements, useBankSign: true, context);
+                    break;
+                }
                 case "coopealianza-loan-pdf":
                     await ProcessLoan(bankAccountId, loanParser.Parse(await File.ReadAllBytesAsync(filePath)), context);
                     break;
@@ -95,7 +103,7 @@ public sealed class ImportFileJob(
                 CurrencyCode = "CRC",
                 Amount = movement.Credit - movement.Debit,
                 AmountCrc = movement.Credit - movement.Debit,
-                OperationType = "General",
+                OperationType = "purchase",
                 SourceFingerprint = fingerprint
             });
             inserted++;
@@ -103,62 +111,156 @@ public sealed class ImportFileJob(
         context?.WriteLine("Movimientos: {0} insertados, {1} duplicados omitidos.", inserted, movements.Count - inserted);
     }
 
-    private async Task ProcessCardMovements(Guid bankAccountId, IReadOnlyList<ParsedCardMovement> movements, PerformContext? context)
+    private async Task ProcessCardMovements(
+        Guid crcAccountId,
+        Guid? usdAccountId,
+        IReadOnlyList<ParsedCardMovement> movements,
+        bool useBankSign,
+        PerformContext? context)
     {
-        var rateDates = movements.Where(m => m.OriginalCurrencyCode == "USD" && m.AmountCrc is null).Select(m => m.BookingDate).Distinct().ToArray();
-        var rates = rateDates.Length == 0 ? new Dictionary<DateOnly, decimal>() : await db.ExchangeRates
-            .Where(r => r.CurrencyCode == "USD" && rateDates.Contains(r.RateDate))
-            .ToDictionaryAsync(r => r.RateDate, r => r.CrcPerUnit);
+        // Resolve amountCrc for USD movements that don't have it yet
+        var needsRate = movements.Where(m => m.OriginalCurrencyCode == "USD" && m.AmountCrc is null).ToArray();
+        Dictionary<DateOnly, decimal> rates = [];
+        if (needsRate.Length > 0)
+        {
+            var allRates = await db.ExchangeRates
+                .Where(r => r.CurrencyCode == "USD")
+                .OrderByDescending(r => r.RateDate)
+                .Select(r => new { r.RateDate, r.CrcPerUnit })
+                .ToListAsync();
+            if (allRates.Count == 0)
+                throw new InvalidDataException("No existe ningún tipo de cambio USD disponible.");
+            foreach (var m in needsRate)
+                rates[m.BookingDate] = (allRates.FirstOrDefault(r => r.RateDate <= m.BookingDate) ?? allRates[^1]).CrcPerUnit;
+        }
 
-        var normalized = movements.Select(m => m.AmountCrc is not null ? m : rates.TryGetValue(m.BookingDate, out var rate)
-            ? m with { AmountCrc = m.OriginalAmount * rate }
-            : throw new InvalidDataException($"No existe tipo de cambio USD para la fecha {m.BookingDate:yyyy-MM-dd}.")).ToArray();
+        var normalized = movements
+            .Select(m => m.AmountCrc is not null ? m : m with { AmountCrc = m.OriginalAmount * rates[m.BookingDate] })
+            .ToArray();
 
-        var fingerprints = normalized.Select(m => FingerprintHelper.ForCardMovement(bankAccountId, m)).ToArray();
+        // Route each movement to its account: USD → usdAccountId (if provided), CRC → crcAccountId
+        Guid AccountFor(ParsedCardMovement m) =>
+            m.OriginalCurrencyCode == "USD" && usdAccountId.HasValue ? usdAccountId.Value : crcAccountId;
+
+        var fingerprints = normalized.Select(m => FingerprintHelper.ForCardMovement(AccountFor(m), m)).ToArray();
+
+        var allAccountIds = new[] { crcAccountId }.Concat(usdAccountId.HasValue ? [usdAccountId.Value] : Array.Empty<Guid>()).ToArray();
         var existing = await db.Transactions
-            .Where(t => t.BankAccountId == bankAccountId && fingerprints.Contains(t.SourceFingerprint))
-            .Select(t => t.SourceFingerprint).ToListAsync();
+            .Where(t => allAccountIds.Contains(t.BankAccountId) && fingerprints.Contains(t.SourceFingerprint))
+            .ToListAsync();
+        var existingByFingerprint = existing.ToDictionary(t => t.SourceFingerprint);
+
+        var movementDates = normalized.Select(m => m.BookingDate).Distinct().ToArray();
+        var periods = await db.Periods
+            .Where(p => movementDates.Any(d => p.StartDate <= d && d <= p.EndDate))
+            .ToListAsync();
 
         var inserted = 0;
+        var updated = 0;
         foreach (var (movement, fingerprint) in normalized.Zip(fingerprints))
         {
-            if (existing.Contains(fingerprint)) continue;
+            if (existingByFingerprint.TryGetValue(fingerprint, out var existing2))
+            {
+                existing2.UpdatedAt = CostaRicaTime.Now;
+                updated++;
+                continue;
+            }
+
+            var accountId = AccountFor(movement);
+            var period = periods.FirstOrDefault(p => p.StartDate <= movement.BookingDate && movement.BookingDate <= p.EndDate);
+            var (description, place) = SplitDescriptionPlace(movement.Description);
+
+            // Sign convention: bank shows positive = debit (money out), negative = credit (money in).
+            // We invert: expense = negative Amount, income/payment = positive Amount.
+            decimal amount, amountCrc;
+            string operationType;
+            if (useBankSign)
+            {
+                amount = -movement.OriginalAmount;
+                amountCrc = -movement.AmountCrc!.Value;
+                operationType = movement.Operation switch
+                {
+                    CardOperationKind.Payment => "payment",
+                    CardOperationKind.Interest => "interest",
+                    CardOperationKind.Charge => "other-charge",
+                    _ => amount >= 0 ? "payment" : "purchase"
+                };
+            }
+            else
+            {
+                var abs = Math.Abs(movement.OriginalAmount);
+                var absCrc = Math.Abs(movement.AmountCrc!.Value);
+                var isPayment = movement.Operation == CardOperationKind.Payment;
+                amount = isPayment ? abs : -abs;
+                amountCrc = isPayment ? absCrc : -absCrc;
+                operationType = movement.Operation switch
+                {
+                    CardOperationKind.Payment => "payment",
+                    CardOperationKind.Interest => "interest",
+                    CardOperationKind.Charge => "other-charge",
+                    _ => "purchase"
+                };
+            }
+
+            var absAmt = Math.Abs(movement.OriginalAmount);
+            var absAmtCrc = Math.Abs(movement.AmountCrc!.Value);
+            var norm = TextNormalizer.Normalize(description);
             db.Transactions.Add(new Transaction
             {
-                BankAccountId = bankAccountId,
+                BankAccountId = accountId,
+                PeriodId = period?.Id,
                 TransactionDate = movement.BookingDate,
                 ReferenceNumber = movement.ExternalReference,
-                Description = TextNormalizer.Normalize(movement.Description),
+                Description = norm[..Math.Min(200, norm.Length)],
+                Place = string.IsNullOrWhiteSpace(place) ? null : place[..Math.Min(120, place.Length)],
                 CurrencyCode = movement.OriginalCurrencyCode,
-                Amount = movement.OriginalAmount,
-                AmountCrc = movement.AmountCrc!.Value,
-                ExchangeRate = movement.OriginalCurrencyCode == "USD" && movement.OriginalAmount != 0 ? movement.AmountCrc!.Value / movement.OriginalAmount : null,
-                OperationType = movement.Operation switch
-                {
-                    CardOperationKind.Payment => "CardPayment",
-                    CardOperationKind.Interest => "CardInterest",
-                    CardOperationKind.Charge => "CardCharge",
-                    _ => "CardPurchase"
-                },
+                Amount = amount,
+                AmountCrc = amountCrc,
+                ExchangeRate = movement.OriginalCurrencyCode == "USD" && absAmt != 0 ? absAmtCrc / absAmt : 1m,
+                OperationType = operationType,
                 SourceFingerprint = fingerprint
             });
             inserted++;
         }
-        context?.WriteLine("Movimientos de tarjeta: {0} insertados, {1} duplicados omitidos.", inserted, movements.Count - inserted);
+        context?.WriteLine("Movimientos de tarjeta: {0} insertados, {1} actualizados.", inserted, updated);
     }
 
-    private async Task ProcessCreditFinancings(Guid bankAccountId, IReadOnlyList<ParsedCreditFinancing> financings, PerformContext? context)
+    private static readonly System.Text.RegularExpressions.Regex PlacePattern =
+        new(@"\\([^\\]+)\\([A-Z]{1,3})\s*$", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    private static (string Description, string? Place) SplitDescriptionPlace(string raw)
     {
-        var fingerprints = financings.Select(f => FingerprintHelper.ForCreditFinancing(bankAccountId, f)).ToArray();
+        var match = PlacePattern.Match(raw);
+        if (!match.Success) return (raw.Trim(), null);
+        var place = $"{match.Groups[1].Value.Trim()}, {match.Groups[2].Value.Trim()}";
+        var description = raw[..match.Index].Trim().TrimEnd('\\').Trim();
+        return (description, place);
+    }
+
+    private async Task ProcessCreditFinancings(Guid crcAccountId, Guid? usdAccountId, IReadOnlyList<ParsedCreditFinancing> financings, PerformContext? context)
+    {
+        var groups = financings.GroupBy(f => f.CurrencyCode == "USD" && usdAccountId.HasValue ? usdAccountId.Value : crcAccountId);
+        var total = 0;
+        foreach (var group in groups)
+        {
+            await SaveCreditFinancings(group.Key, group.ToList());
+            total += group.Count();
+        }
+        context?.WriteLine("Financiamientos: {0} procesados.", total);
+    }
+
+    private async Task SaveCreditFinancings(Guid accountId, IReadOnlyList<ParsedCreditFinancing> financings)
+    {
+        var fingerprints = financings.Select(f => FingerprintHelper.ForCreditFinancing(accountId, f)).ToArray();
         var dates = financings.Select(f => f.FinancingDate).ToArray();
         var rawConcepts = financings.Select(f => f.Concept.Trim()).ToArray();
-        var existingFinancings = await db.CardFinancings
-            .Where(f => f.BankAccountId == bankAccountId && dates.Contains(f.FinancingDate) && rawConcepts.Contains(f.Concept))
+        var existing = await db.CardFinancings
+            .Where(f => f.BankAccountId == accountId && dates.Contains(f.FinancingDate) && rawConcepts.Contains(f.Concept))
             .ToListAsync();
 
         foreach (var (parsed, fingerprint) in financings.Zip(fingerprints))
         {
-            var match = existingFinancings.FirstOrDefault(f => f.FinancingDate == parsed.FinancingDate && f.Concept == parsed.Concept.Trim());
+            var match = existing.FirstOrDefault(f => f.FinancingDate == parsed.FinancingDate && f.Concept == parsed.Concept.Trim());
             if (match is not null)
             {
                 match.Installments = parsed.Installments;
@@ -172,7 +274,7 @@ public sealed class ImportFileJob(
             {
                 db.CardFinancings.Add(new CardFinancing
                 {
-                    BankAccountId = bankAccountId,
+                    BankAccountId = accountId,
                     FinancingDate = parsed.FinancingDate,
                     Concept = parsed.Concept.Trim(),
                     CurrencyCode = parsed.CurrencyCode,
@@ -180,12 +282,11 @@ public sealed class ImportFileJob(
                     OutstandingBalance = parsed.OutstandingBalance,
                     Installments = parsed.Installments,
                     InstallmentAmount = parsed.InstallmentAmount,
-                    Status = "Active",
+                    Status = "active",
                     SourceFingerprint = fingerprint
                 });
             }
         }
-        context?.WriteLine("Financiamientos: {0} procesados.", financings.Count);
     }
 
     private async Task ProcessLoan(Guid bankAccountId, ParsedCoopealianzaLoan loan, PerformContext? context)
@@ -361,7 +462,7 @@ public sealed class ImportFileJob(
         }
 
         if (bn.Movements.Count > 0)
-            await ProcessCardMovements(bankAccountId, bn.Movements, context);
+            await ProcessCardMovements(bankAccountId, null, bn.Movements, useBankSign: false, context);
 
         if (bn.FinancingLines.Count > 0)
         {

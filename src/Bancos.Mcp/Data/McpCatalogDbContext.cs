@@ -372,14 +372,15 @@ public sealed class McpCatalogDbContext(DbContextOptions<McpCatalogDbContext> op
         var coopealianza = Guid.Parse("30000000-0000-0000-0000-000000000004");
 
         builder.Entity<BankAccount>().HasData(
-            Account(1, bac, "bac-credit-01-crc", "credit-card", "CRC"),
-            Account(2, bac, "bac-credit-01-usd", "credit-card", "USD"),
-            Account(3, bac, "bac-credit-02-crc", "credit-card", "CRC"),
-            Account(4, bac, "bac-credit-02-usd", "credit-card", "USD"),
-            Account(5, bac, "bac-credit-03-crc", "credit-card", "CRC"),
-            Account(6, bac, "bac-credit-03-usd", "credit-card", "USD"),
-            Account(7, bac, "bac-credit-04-crc", "credit-card", "CRC"),
-            Account(8, bac, "bac-credit-04-usd", "credit-card", "USD"),
+            // bac-credit-01: tarjeta 5491-94**-****-6515 — IBAN CRC: CR69010202510369031047, IBAN USD: CR17010202526537778556
+            Account(1, bac, "bac-credit-01-crc", "credit-card", "CRC", "07825F50C4920FED32C232E0AFADBAFB12EEB0762C5B99477CE80DC9CE0764F7"),
+            Account(2, bac, "bac-credit-01-usd", "credit-card", "USD", "CB71E5C9AF2BE78C6045E02929B89590A28538EBA15491133CF1CE69FE4A6B29"),
+            Account(3, bac, "bac-credit-02-crc", "credit-card", "CRC", "55A4EC76E34349CD6A33908B598B209DD0807AA10ACD3612EF058994C0FD684C"),
+            Account(4, bac, "bac-credit-02-usd", "credit-card", "USD", "56A7FBE1229ADB5852D0099B0FEFC7F26327637D9E3AFF1609EFF3FB5AB06091"),
+            Account(5, bac, "bac-credit-03-crc", "credit-card", "CRC", "F299DFDEB48DF802DDEDA26856F1A483739482932C307878EF65D88254FACA59"),
+            Account(6, bac, "bac-credit-03-usd", "credit-card", "USD", "36A6585E5645DC484F13517E01A170767CAD3C6F82496E1B5F0206468603A4E0"),
+            Account(7, bac, "bac-credit-04-crc", "credit-card", "CRC", "D0B207A37C18F6A3CC1367ECED0222D222B1232AACDCBAC8379B66DB5FCA5CC3"),
+            Account(8, bac, "bac-credit-04-usd", "credit-card", "USD", "8E9F3E66F0952B0FEDD9A9CB2AB7C395811496C2FB948A1562FEC479A3C15A24"),
             Account(9, bn, "bn-credit-01-crc", "credit-card", "CRC"),
             Account(10, bn, "bn-credit-01-usd", "credit-card", "USD"),
             Account(11, bn, "bn-debit-01-usd", "debit-card", "USD"),
@@ -388,13 +389,14 @@ public sealed class McpCatalogDbContext(DbContextOptions<McpCatalogDbContext> op
             Account(14, bn, "bn-debit-01-crc", "debit-card", "CRC"),
             Account(15, coopealianza, "coopealianza-loan-01-crc", "loan", "CRC"));
 
-        BankAccount Account(int accountNumber, Guid bankId, string code, string accountType, string currencyCode) => new()
+        BankAccount Account(int accountNumber, Guid bankId, string code, string accountType, string currencyCode, string? identifierHash = null) => new()
         {
             Id = Guid.Parse($"40000000-0000-0000-0000-{accountNumber:D12}"),
             BankId = bankId,
             Code = code,
             AccountType = accountType,
             CurrencyCode = currencyCode,
+            IdentifierHash = identifierHash,
             CreatedAt = createdAt
         };
     }

@@ -1,6 +1,8 @@
 # 04 — Tareas activas
 
-> **Última actualización:** 2026-07-24 CR (TASK-EBC-QA-02 completada)
+> **Última actualización:** 2026-07-24 CR (TASK-EBC-MCP-13 completada)
+
+
 
 
 
@@ -146,8 +148,6 @@ Sin tareas.
 | `TASK-EBC-MCP-16` | Revisar implementación MCP — Movimientos BCR HTML | bajo | pendiente |
 | `TASK-EBC-MCP-15` | Revisar implementación MCP — Movimientos de cuenta BCR | bajo | pendiente |
 | `TASK-EBC-MCP-14` | Revisar implementación MCP — Movimientos de cuenta XLS | bajo | pendiente |
-| `TASK-EBC-MCP-13` | Revisar implementación MCP — Tarjeta BAC en línea | bajo | pendiente |
-| `TASK-EBC-MCP-12` | Revisar implementación MCP — Financiamientos BAC | bajo | pendiente |
 | `TASK-EBC-MCP-11` | Revisar implementación MCP — Resumen de tarjeta BAC | bajo | pendiente |
 | `TASK-EBC-MCP-10` | Revisar implementación MCP — Estado de cuenta consolidado BAC | bajo | pendiente |
 | `TASK-EBC-DB-07` | Agregar tablas transaccionales al MCP: tbTransactions, tbCardFinancings, tbLoanStatements y tbLoanPayments | medio | pendiente |
