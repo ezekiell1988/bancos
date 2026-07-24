@@ -369,7 +369,7 @@ public sealed class ImportTemplateDetectorTests
     [Fact]
     public void Rejects_coopealianza_payment_that_does_not_reconcile()
     {
-        var content = CoopealianzaLoanPdfFixture.Create("01/07/2026 100,00 20,00 0,00 5,00 124,00");
+        var content = CoopealianzaLoanPdfFixture.Create("01/07/2026Pago¡100,00¡20,00¡0,00¡5,00¡124,00¡");
 
         Assert.Throws<InvalidDataException>(() => new CoopealianzaLoanPdfParser().Parse(content));
     }
@@ -474,27 +474,34 @@ public sealed class ImportTemplateDetectorTests
 
 internal static class CoopealianzaLoanPdfFixture
 {
+    // U+00A1 (¡) encoded as Latin-1 produces byte 0xA1, which the /colonmonetary font
+    // difference mapping decodes to U+20A1 (₡) when PdfPig reads the PDF.
+    private const char ColonMonetary = '¡';
+
     public static byte[] Create(string? paymentLine = null)
     {
+        var defaultPayment = $"01/07/2026Pago{ColonMonetary}100,00{ColonMonetary}20,00{ColonMonetary}0,00{ColonMonetary}5,00{ColonMonetary}125,00{ColonMonetary}";
         var lines = new[]
         {
             "Ver detalles del prestamo",
-            "Saldo actual 1.250,00",
+            $"Saldo actual:{ColonMonetary}1.250,00",
             "Fecha Capital Interes Mora Otros Total",
-            paymentLine ?? "01/07/2026 100,00 20,00 0,00 5,00 125,00"
+            paymentLine ?? defaultPayment
         };
+        var latin1 = Encoding.Latin1;
         var textOperations = string.Join("\n", lines.Select(line => $"({Escape(line)}) Tj\nT*"));
         var stream = $"BT\n/F1 12 Tf\n14 TL\n72 720 Td\n{textOperations}\nET\n";
+        var streamBytes = latin1.GetByteCount(stream);
         var objects = new[]
         {
             "<< /Type /Catalog /Pages 2 0 R >>",
             "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
             "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>",
-            $"<< /Length {Encoding.ASCII.GetByteCount(stream)} >>\nstream\n{stream}endstream",
-            "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"
+            $"<< /Length {streamBytes} >>\nstream\n{stream}endstream",
+            "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding << /Type /Encoding /Differences [161 /colonmonetary] >> >>"
         };
         using var output = new MemoryStream();
-        using var writer = new StreamWriter(output, Encoding.ASCII, leaveOpen: true);
+        using var writer = new StreamWriter(output, latin1, leaveOpen: true);
         writer.Write("%PDF-1.4\n"); writer.Flush();
         var offsets = new List<long> { 0 };
         for (var index = 0; index < objects.Length; index++)

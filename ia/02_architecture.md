@@ -4,12 +4,15 @@
 
 ## Resumen
 
-`Bancos.Api` es el monolito modular funcional: Angular es UI; la API recibe
-importaciones, ejecuta jobs, persiste MSSQL y sirve frontend compilado.
+**Dirección estratégica:** migrar toda la funcionalidad de `Bancos.Api` a `Bancos.Mcp`
+de forma progresiva. `Bancos.Api` está en retiro; `Bancos.Mcp` es el proyecto destino
+y será el único proyecto activo al completar la migración.
 
-`Bancos.Mcp` es un servidor MCP auxiliar independiente del monolito. Mantiene el
-catálogo de plantillas de importación mediante `McpCatalogDbContext` y no participa
-en los flujos contables, los jobs ni la persistencia funcional de la API.
+`Bancos.Api` es el monolito funcional original (en retiro progresivo): recibe
+importaciones, ejecuta jobs Hangfire, persiste MSSQL y sirve el frontend Angular.
+
+`Bancos.Mcp` es el servidor MCP destino: acumula tools equivalentes a cada feature
+de la API. Usa `McpCatalogDbContext` y su propia base de datos (`dbbancosmcp`).
 
 ## Límites de proyectos y datos
 

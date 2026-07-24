@@ -64,7 +64,7 @@ public static class ImportsModule
         return TypedResults.NoContent();
     }
 
-    private static async Task<Results<Created<ImportResponse>, ValidationProblem>> Upload(IFormFile file, [FromForm] string? entryPath, [FromForm] int? entryIndex, [FromForm] string? template, [FromForm] bool force, [FromForm] Guid? accountAuxiliaryId, BancosDbContext db, ImportTemplatePatternService patterns, ImportAccountResolver resolver, IImportJobScheduler scheduler, IOptions<StorageOptions> storage, CancellationToken ct)
+    private static async Task<Results<Created<ImportResponse>, ValidationProblem>> Upload(IFormFile file, [FromForm] string? entryPath, [FromForm] int? entryIndex, [FromForm] string? template, [FromForm] bool? force, [FromQuery] Guid? accountAuxiliaryId, BancosDbContext db, ImportTemplatePatternService patterns, ImportAccountResolver resolver, IImportJobScheduler scheduler, IOptions<StorageOptions> storage, CancellationToken ct)
     {
         if (file.Length == 0) return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["file"] = ["El archivo no puede estar vacío."] });
         var sources = ZipImportReader.Read(file.FileName, await ReadContent(file, ct));
@@ -78,7 +78,8 @@ public static class ImportsModule
         if (plan.Error is not null) return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["template"] = [plan.Error] });
 
         var hash = Convert.ToHexString(SHA256.HashData(source.Content));
-        if (!force && await db.ImportFingerprints.AnyAsync(x => x.Hash == hash, ct))
+        var forceImport = force == true;
+        if (!forceImport && await db.ImportFingerprints.AnyAsync(x => x.Hash == hash, ct))
             return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["file"] = ["An identical import already exists."] });
 
         Directory.CreateDirectory(storage.Value.TemporaryPath);
@@ -88,7 +89,7 @@ public static class ImportsModule
         var import = new Import { FileName = Path.GetFileName(source.Path), TemporaryPath = path, ContentHash = hash, AccountAuxiliaryId = plan.AccountAuxiliaryId!.Value, Template = selectedTemplate };
         db.Imports.Add(import);
         db.ImportProgress.Add(new ImportProgress { ImportId = import.Id, Attempt = 0, Stage = ImportProgressStages.Queued, Current = 0, Total = 0, Percent = 0, Status = ImportStatus.Queued, UpdatedUtc = DateTime.UtcNow });
-        if (!force) db.ImportFingerprints.Add(new ImportFingerprint { Hash = hash, ImportId = import.Id });
+        if (!forceImport) db.ImportFingerprints.Add(new ImportFingerprint { Hash = hash, ImportId = import.Id });
         await db.SaveChangesAsync(ct);
         scheduler.Enqueue(import.Id);
         return TypedResults.Created($"/api/imports/{import.Id}", new ImportResponse(import.Id, import.Status));

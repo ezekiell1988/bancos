@@ -1,12 +1,14 @@
 {
   "version": "0.2.0",
-  "configurations": [],
-  "compounds": [
+  "configurations": [
     {
       "name": "Bancos MCP",
-      "configurations": [],
-      "preLaunchTask": "Levantar MCP",
-      "stopAll": true
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "pwsh",
+      "runtimeArgs": ["${workspaceFolder}/.mcp/bancos-mcp.ps1"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
     }
   ]
 }

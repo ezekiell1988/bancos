@@ -7,6 +7,7 @@ using Bancos.Api.Features.Imports;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Xunit;
@@ -78,17 +79,26 @@ public sealed class BcrImportIntegrationTests : IClassFixture<BancosApiFactory>
 public sealed class BancosApiFactory : WebApplicationFactory<Program>
 {
     private readonly string _databaseName = Guid.NewGuid().ToString();
+    public string TempPath { get; } = Path.Combine(Path.GetTempPath(), "bancos-tests-" + Guid.NewGuid().ToString("N"));
     public RecordingImportJobScheduler Scheduler { get; } = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
+        builder.ConfigureAppConfiguration((_, config) =>
+            config.AddInMemoryCollection(new Dictionary<string, string?> { ["Storage:TemporaryPath"] = TempPath }));
         builder.ConfigureServices(services =>
         {
             services.AddDbContext<BancosDbContext>(options => options.UseInMemoryDatabase(_databaseName));
             services.RemoveAll<IImportJobScheduler>();
             services.AddSingleton<IImportJobScheduler>(Scheduler);
         });
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing && Directory.Exists(TempPath)) Directory.Delete(TempPath, recursive: true);
+        base.Dispose(disposing);
     }
 }
 

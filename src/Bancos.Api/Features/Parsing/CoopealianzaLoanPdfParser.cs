@@ -58,7 +58,7 @@ public sealed partial class CoopealianzaLoanPdfParser
     }
 
     // Matches "Saldo actual:₡ 4 372 249,85" — Bankingly PDFs use regular or non-breaking spaces as thousands separators.
-    [GeneratedRegex(@"(?i)Saldo actual:?\s*₡?\s*(?<balance>[\d][\d.,\s]*)")]
+    [GeneratedRegex(@"(?i)Saldo actual:₡\s*(?<balance>[\d][\d.,\s]*)")]
     private static partial Regex BalanceRegex();
 
     // Matches payment history rows: "TxNum dd/MM/yyyy Pago ₡Capital ₡Interés ₡Mora ₡Otros ₡Total ₡SaldoRestante"
