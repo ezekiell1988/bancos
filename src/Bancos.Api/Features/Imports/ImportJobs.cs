@@ -21,7 +21,6 @@ public sealed class ImportJobs(BancosDbContext db, ImportTemplateDetector detect
     public async Task ProcessAsync(Guid importId, PerformContext? context)
     {
         var import = await db.Imports.SingleOrDefaultAsync(x => x.Id == importId) ?? throw new InvalidOperationException("Import was not found.");
-        if (import.Status == ImportStatus.Completed) return;
         import.Status = ImportStatus.Processing; import.FailureReason = null; await db.SaveChangesAsync();
         var attempt = await progress.BeginAttemptAsync(importId, context);
         WriteStage(context, "Starting import."); logger.LogInformation("Processing import {ImportId}", importId);
@@ -269,7 +268,7 @@ public sealed class ImportJobs(BancosDbContext db, ImportTemplateDetector detect
     }
     private static string CreateFingerprint(Guid accountAuxiliaryId, ParsedCreditFinancing financing)
     {
-        var source = string.Join('|', accountAuxiliaryId, financing.FinancingDate, ImportTemplateDetector.Normalize(financing.Concept), financing.Installments.Trim(), financing.InstallmentAmount, financing.InitialBalance, financing.OutstandingBalance, "CRC");
+        var source = string.Join('|', accountAuxiliaryId, financing.FinancingDate, ImportTemplateDetector.Normalize(financing.Concept), financing.Installments.Trim(), financing.InstallmentAmount, financing.InitialBalance, financing.OutstandingBalance, financing.CurrencyCode);
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(source)));
     }
     private static string CreateFingerprint(Guid accountAuxiliaryId, ParsedCoopealianzaLoan loan)

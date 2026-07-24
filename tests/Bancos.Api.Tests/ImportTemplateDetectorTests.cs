@@ -305,7 +305,7 @@ public sealed class ImportTemplateDetectorTests
     [Fact]
     public void Recognizes_pdf_and_html_signatures_from_extracted_content()
     {
-        var pdf = ImportTemplateDetector.Detect("Tarjeta de crédito Saldo en colones Saldo en dólares Pago de tarjeta al día", "pdf");
+        var pdf = ImportTemplateDetector.Detect("Tarjeta de crédito Saldo en colones Saldo en dólares Fecha de pago de contado", "pdf");
         var html = ImportTemplateDetector.Detect("Banco de Costa Rica Movimientos por rango de fechas", "html");
         Assert.Equal(ImportTemplates.BacCreditOnlinePdfV1, pdf.Template);
         Assert.Equal(ImportTemplates.BcrDebitHtmlXlsV1, html.Template);

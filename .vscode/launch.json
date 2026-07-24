@@ -1,0 +1,12 @@
+{
+  "version": "0.2.0",
+  "configurations": [],
+  "compounds": [
+    {
+      "name": "Bancos MCP",
+      "configurations": [],
+      "preLaunchTask": "Levantar MCP",
+      "stopAll": true
+    }
+  ]
+}

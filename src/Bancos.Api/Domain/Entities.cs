@@ -33,6 +33,7 @@ public sealed class ForeignExchangeClosingLine : AuditableEntity { public Guid F
 public sealed class ReportPeriod : AuditableEntity { public DateOnly PeriodEnd { get; set; } public bool IsStale { get; set; } = true; }
 public sealed class AuditLog : AuditableEntity { public required string EntityName { get; set; } public required string EntityId { get; set; } public required string Action { get; set; } public string? Changes { get; set; } }
 
+[System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<AccountKind>))]
 public enum AccountKind { Asset, Liability, Equity, Income, Expense, Control }
 public enum ImportStatus { Queued, Processing, Completed, Failed }
 public enum ClosingStatus { Pending, Processing, Completed, Failed }
