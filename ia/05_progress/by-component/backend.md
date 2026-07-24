@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-22 CR (TASK-EBC-MCP-19 completada)
+> **Última actualización:** 2026-07-24 CR (TASK-EBC-MCP-20 completada)
 
 
 
 ## Completado
+
+* **2026-07-24** — TASK-EBC-MCP-20: Resolver automático de cuenta implementado en AccountResolver y BacCreditFinancingXlsParser. ProcessImportFileTool mantiene contrato files-only. Build limpio y 20/20 tests correctos. — EBC
 
 * **2026-07-22** — TASK-EBC-MCP-19: Actualizado Bancos.Mcp para Streamable HTTP de ChatGPT: endpoint /mcp con sesiones, validación de versión y origen, cierre DELETE, outputSchema y structuredContent. Se difirió la autenticación de producción porque el proyecto continúa local y el despliegue queda fuera de alcance. — EBC
 

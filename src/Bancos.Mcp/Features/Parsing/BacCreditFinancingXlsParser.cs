@@ -1,5 +1,7 @@
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using ExcelDataReader;
 
 namespace Bancos.Mcp.Features.Parsing;
@@ -7,12 +9,27 @@ namespace Bancos.Mcp.Features.Parsing;
 public sealed class BacCreditFinancingXlsParser
 {
     private static readonly string[] RequiredHeaders = ["fecha", "concepto", "cuotas", "monto de cuota", "saldo inicial", "saldo faltante"];
+    private static readonly Regex IdentifierPattern = new(@"(?<!\d)(?:\d[\s-]?){7,18}\d(?!\d)", RegexOptions.Compiled);
+
+    public static ISet<string> ExtractIdentifierFingerprints(ReadOnlyMemory<byte> content)
+    {
+        var fingerprints = new HashSet<string>(StringComparer.Ordinal);
+        using var reader = CreateReader(content);
+        foreach (var cell in ReadRows(reader).SelectMany(row => row))
+        {
+            foreach (Match match in IdentifierPattern.Matches(cell))
+            {
+                var identifier = string.Concat(match.Value.Where(char.IsDigit));
+                fingerprints.Add(Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(identifier))));
+            }
+        }
+
+        return fingerprints;
+    }
 
     public IReadOnlyList<ParsedCreditFinancing> Parse(ReadOnlyMemory<byte> content)
     {
-        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-        using var stream = new MemoryStream(content.ToArray());
-        using var reader = ExcelReaderFactory.CreateReader(stream);
+        using var reader = CreateReader(content);
         var rows = ReadRows(reader);
         var headerIndex = rows.FindIndex(row => RequiredHeaders.All(header => row.Any(cell => TextNormalizer.Normalize(cell) == header)));
         if (headerIndex < 0) throw new InvalidDataException("BAC financing XLS does not contain the required header row.");
@@ -54,6 +71,12 @@ public sealed class BacCreditFinancingXlsParser
             }
         } while (reader.NextResult());
         return rows;
+    }
+
+    private static IExcelDataReader CreateReader(ReadOnlyMemory<byte> content)
+    {
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+        return ExcelReaderFactory.CreateReader(new MemoryStream(content.ToArray()));
     }
 
     private static string GetCell(string[] row, int index) => index < row.Length ? row[index] : string.Empty;
