@@ -1,6 +1,10 @@
 # 04 — Tareas activas
 
-> **Última actualización:** 2026-07-24 CR (TASK-EBC-MCP-20 completada)
+> **Última actualización:** 2026-07-24 CR (TASK-EBC-QA-02 aprobada)
+
+
+
+
 
 
 
@@ -132,13 +136,13 @@ Sin tareas.
 
 | ID | Área | Título | Prioridad |
 |---|---|---|---|
+| `TASK-EBC-QA-02` | QA | Fix 4 test failures in Bancos.Api.Tests: detection text, Coopealianza regex, AccountKind enum converter | alta |
 | `TASK-EBC-INF-10` | INF | Reiniciar API local antes del launch de VS Code | baja |
 
 ## Borradores
 
 | ID | Título | Riesgo | Aprobación |
 |---|---|---|---|
-| `TASK-EBC-MCP-18` | Revisar implementación MCP — Préstamo Coopealianza | bajo | pendiente |
 | `TASK-EBC-MCP-17` | Revisar implementación MCP — Estado de cuenta de tarjeta Banco Nacional | bajo | pendiente |
 | `TASK-EBC-MCP-16` | Revisar implementación MCP — Movimientos BCR HTML | bajo | pendiente |
 | `TASK-EBC-MCP-15` | Revisar implementación MCP — Movimientos de cuenta BCR | bajo | pendiente |

@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-22 CR (TASK-EBC-MCP-09 completada)
+> **Última actualización:** 2026-07-24 CR (TASK-EBC-MCP-18 completada)
 
 
 
 ## Completado
+
+* **2026-07-24** — TASK-EBC-MCP-18: Auditoría completada sin defectos. Parser MCP extrae campos de encabezado completos (monto original, tasa, plazo, fecha inicio) más historial de pagos y tabla de cuotas. Job hace upsert correcto de header y cuotas, calcula porciones corriente y largo plazo. Sin incidencias que abrir. — EBC
 
 * **2026-07-22** — TASK-EBC-MCP-09: Implementado endpoint SSE en /mcp/sse para Claude Code. Descubierto que la spec MCP requiere camelCase en tools/list — PascalCase de .NET impedía el descubrimiento. Corregidos regexes del parser Coopealianza (espacios opcionales en texto PDF sin separadores). Verificado: 4 PDFs paginados → 36 cuotas en tbLoanPayments, LoanStatement con datos de header completos. Documentado en references/10-sse-claude-code.md. — EBC
 

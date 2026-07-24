@@ -1,8 +1,14 @@
-> **Última actualización:** 2026-07-24 CR (TASK-EBC-MCP-20 completada)
+> **Última actualización:** 2026-07-24 CR (ISSUE-005 resuelto)
 
 
 
 ## Completado
+
+* **2026-07-24** — ISSUE-005 resuelto: McpProtocolTests pasan en su totalidad (20/20). El problema de IBackgroundJobClient se resolvió porque ProcessImportFileTool obtiene el cliente en ExecuteAsync (lazy), no en el constructor, por lo que startup sin Hangfire funciona correctamente.
+
+* **2026-07-24** — ISSUE-004 resuelto: Corregidos los dos defectos residuales en ImportJobs.cs: CreateFingerprint(ParsedCreditFinancing) usa financing.CurrencyCode y el guard de Completed fue eliminado para permitir re-procesamiento.
+
+* **2026-07-24** — TASK-EBC-BE-27: Corregidos dos defectos residuales del ISSUE-004: CreateFingerprint(ParsedCreditFinancing) ahora usa financing.CurrencyCode en lugar del literal CRC; eliminado el early return que bloqueaba re-procesar imports con estado Completed. — EBC
 
 * **2026-07-24** — TASK-EBC-MCP-20: Resolver automático de cuenta implementado en AccountResolver y BacCreditFinancingXlsParser. ProcessImportFileTool mantiene contrato files-only. Build limpio y 20/20 tests correctos. — EBC
 

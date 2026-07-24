@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-24 CR (TASK-EBC-MCP-20 completada)
+> **Última actualización:** 2026-07-24 CR (ISSUE-005 resuelto)
 
 ## En curso
 
@@ -21,6 +21,14 @@
 * Aprobar y ejecutar `TASK-EZ-BE-01` mediante `iaWorkflow`.
 
 ## Completado en sesiones recientes
+
+* **2026-07-24** — ISSUE-005 resuelto: McpProtocolTests pasan en su totalidad (20/20). El problema de IBackgroundJobClient se resolvió porque ProcessImportFileTool obtiene el cliente en ExecuteAsync (lazy), no en el constructor, por lo que startup sin Hangfire funciona correctamente.
+
+* **2026-07-24** — TASK-EBC-MCP-18 cerrada: Auditoría completada sin defectos. Parser MCP extrae campos de encabezado completos (monto original, tasa, plazo, fecha inicio) más historial de pagos y tabla de cuotas. Job hace upsert correcto de header y cuotas, calcula porciones corriente y largo plazo. Sin incidencias que abrir. — EBC
+
+* **2026-07-24** — ISSUE-004 resuelto: Corregidos los dos defectos residuales en ImportJobs.cs: CreateFingerprint(ParsedCreditFinancing) usa financing.CurrencyCode y el guard de Completed fue eliminado para permitir re-procesamiento.
+
+* **2026-07-24** — TASK-EBC-BE-27 cerrada: Corregidos dos defectos residuales del ISSUE-004: CreateFingerprint(ParsedCreditFinancing) ahora usa financing.CurrencyCode en lugar del literal CRC; eliminado el early return que bloqueaba re-procesar imports con estado Completed. — EBC
 
 * **2026-07-24** — TASK-EBC-MCP-20 cerrada: Resolver automático de cuenta implementado en AccountResolver y BacCreditFinancingXlsParser. ProcessImportFileTool mantiene contrato files-only. Build limpio y 20/20 tests correctos. — EBC
 
