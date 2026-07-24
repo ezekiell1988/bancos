@@ -84,8 +84,9 @@ public sealed class ProcessImportFileTool(
                 var definition = ImportTemplateCatalog.Definitions.FirstOrDefault(d => d.Id == templateId)
                     ?? throw new InvalidOperationException("Plantilla no encontrada en catálogo.");
 
-                var bankAccountId = await accountResolver.ResolveAsync(templateId, null, cancellationToken);
                 var fullPath = detectionService.ResolveFullPath(relativePath!);
+                var fileContent = await File.ReadAllBytesAsync(fullPath, cancellationToken);
+                var bankAccountId = await accountResolver.ResolveAsync(templateId, null, fileContent, cancellationToken);
 
                 var jobId = jobClient.Enqueue<ImportFileJob>(job =>
                     job.ExecuteAsync(fullPath, definition.ParserKey, bankAccountId, null!));
