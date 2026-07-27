@@ -1,8 +1,12 @@
-> **Última actualización:** 2026-07-24 CR (progreso actualizado)
+> **Última actualización:** 2026-07-27 CR (ISSUE-007 resuelto)
 
 
 
 ## Completado
+
+* **2026-07-27** — ISSUE-007 resuelto: Se incorporó extracción normalizada con checksum, comparación simultánea de huellas bancaria y de tarjeta, resolución obligatoria de una cuenta CRC y una USD, y unicidad de catálogo por identidad más moneda. La migración y el reproceso MCP fueron verificados con conciliación e idempotencia correctas.
+
+* **2026-07-27** — TASK-EBC-BE-28: Validación de identidad compartida implementada y verificada operativamente. El estado BN se resuelve contra cuentas lógicas CRC y USD separadas, exige coincidencia de identidad bancaria y tarjeta, y conserva conciliación e idempotencia. — EBC
 
 * **2026-07-24** — **Implementación completa y validada en producción local (2026-07-24)**
 

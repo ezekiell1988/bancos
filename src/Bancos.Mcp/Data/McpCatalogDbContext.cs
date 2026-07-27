@@ -44,7 +44,9 @@ public sealed class McpCatalogDbContext(DbContextOptions<McpCatalogDbContext> op
                 table.HasCheckConstraint("CK_tbBankAccounts_currencyCode", "[currencyCode] IN ('CRC', 'USD')");
             });
             entity.HasIndex(account => new { account.BankId, account.Code }).IsUnique();
-            entity.HasIndex(account => account.IdentifierHash).IsUnique().HasFilter("[identifierHash] IS NOT NULL");
+            entity.HasIndex(account => new { account.IdentifierHash, account.CurrencyCode })
+                .IsUnique()
+                .HasFilter("[identifierHash] IS NOT NULL");
             entity.Property(account => account.Id).HasColumnName("idBankAccounts").HasComment("Identificador único de la cuenta bancaria.");
             entity.Property(account => account.BankId).HasColumnName("idBanks").HasComment("Identificador del banco propietario de la cuenta.");
             entity.Property(account => account.Code).HasColumnName("code").HasMaxLength(80).HasComment("Código interno no sensible que identifica la cuenta.");
@@ -394,7 +396,6 @@ public sealed class McpCatalogDbContext(DbContextOptions<McpCatalogDbContext> op
         var coopealianza = Guid.Parse("30000000-0000-0000-0000-000000000004");
 
         builder.Entity<BankAccount>().HasData(
-            // bac-credit-01: tarjeta 5491-94**-****-6515 — IBAN CRC: CR69010202510369031047, IBAN USD: CR17010202526537778556
             Account(1, bac, "bac-credit-01-crc", "credit-card", "CRC", "07825F50C4920FED32C232E0AFADBAFB12EEB0762C5B99477CE80DC9CE0764F7"),
             Account(2, bac, "bac-credit-01-usd", "credit-card", "USD", "CB71E5C9AF2BE78C6045E02929B89590A28538EBA15491133CF1CE69FE4A6B29"),
             Account(3, bac, "bac-credit-02-crc", "credit-card", "CRC", "55A4EC76E34349CD6A33908B598B209DD0807AA10ACD3612EF058994C0FD684C"),
@@ -403,15 +404,28 @@ public sealed class McpCatalogDbContext(DbContextOptions<McpCatalogDbContext> op
             Account(6, bac, "bac-credit-03-usd", "credit-card", "USD", "36A6585E5645DC484F13517E01A170767CAD3C6F82496E1B5F0206468603A4E0"),
             Account(7, bac, "bac-credit-04-crc", "credit-card", "CRC", "D0B207A37C18F6A3CC1367ECED0222D222B1232AACDCBAC8379B66DB5FCA5CC3"),
             Account(8, bac, "bac-credit-04-usd", "credit-card", "USD", "8E9F3E66F0952B0FEDD9A9CB2AB7C395811496C2FB948A1562FEC479A3C15A24"),
-            Account(9, bn, "bn-credit-01-crc", "credit-card", "CRC"),
-            Account(10, bn, "bn-credit-01-usd", "credit-card", "USD"),
+            Account(
+                9, bn, "bn-credit-01-crc", "credit-card", "CRC",
+                identifierHash: "F81224881C588E934588730A5E60191CEF644390A8B0C728C3C33E1200A3DFB4",
+                cardFingerprint: "C3F2ECAC42C4D0E8A3C87B37CE1047CA8F1AB81F19D2E2401D2EC549BE369B8D"),
+            Account(
+                10, bn, "bn-credit-01-usd", "credit-card", "USD",
+                identifierHash: "F81224881C588E934588730A5E60191CEF644390A8B0C728C3C33E1200A3DFB4",
+                cardFingerprint: "C3F2ECAC42C4D0E8A3C87B37CE1047CA8F1AB81F19D2E2401D2EC549BE369B8D"),
             Account(11, bn, "bn-debit-01-usd", "debit-card", "USD", "BBAD6EA77F349D1265C4082AA7EBCD93D8F975221BE18D17720FA22027E06BA1"),
             Account(12, bcr, "bcr-debit-01-crc", "debit-card", "CRC", "A9A76820A1F0CEEA89995562122687A33EC9F971692DC4121E2A8D35CDE6343B"),
             Account(13, bac, "bac-debit-01-crc", "debit-card", "CRC", "DAFC04C14315C23B1207A1D2CD70B60839F2821BFE2A245938FAB6F863AA9DB5"),
             Account(14, bn, "bn-debit-01-crc", "debit-card", "CRC", "46995612194255ABF847233C41563CAFAA3EE6C77F5CBACF59DDA57F8BA34AAF"),
             Account(15, coopealianza, "coopealianza-loan-01-crc", "loan", "CRC"));
 
-        BankAccount Account(int accountNumber, Guid bankId, string code, string accountType, string currencyCode, string? identifierHash = null) => new()
+        BankAccount Account(
+            int accountNumber,
+            Guid bankId,
+            string code,
+            string accountType,
+            string currencyCode,
+            string? identifierHash = null,
+            string? cardFingerprint = null) => new()
         {
             Id = Guid.Parse($"40000000-0000-0000-0000-{accountNumber:D12}"),
             BankId = bankId,
@@ -419,6 +433,7 @@ public sealed class McpCatalogDbContext(DbContextOptions<McpCatalogDbContext> op
             AccountType = accountType,
             CurrencyCode = currencyCode,
             IdentifierHash = identifierHash,
+            CardFingerprint = cardFingerprint,
             CreatedAt = createdAt
         };
     }

@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-26 CR (TASK-EBC-DOC-09 completada)
+> **Última actualización:** 2026-07-27 CR (TASK-EBC-MCP-41 completada)
 
 
 
 ## Completado
+
+* **2026-07-27** — TASK-EBC-MCP-41: Importación BN PDF corregida y validada de extremo a extremo: detección, job Hangfire, persistencia del corte, movimientos, vínculos idempotentes y conciliación por moneda. — EBC
 
 * **2026-07-26** — TASK-EBC-DOC-09: Documentada la regla operativa: el usuario levanta manualmente Bancos.Mcp con .mcp/bancos-mcp.ps1 y el agente debe solicitarlo cuando sea necesario reiniciar o levantar el proyecto. — EBC
 

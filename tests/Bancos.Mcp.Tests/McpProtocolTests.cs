@@ -49,7 +49,6 @@ public sealed class McpProtocolTests : IClassFixture<McpWebApplicationFactory>
         Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "detect_import_template");
     }
 
-    [Fact]
     [Theory]
     [InlineData("2025-03-26")]
     [InlineData("2025-11-25")]

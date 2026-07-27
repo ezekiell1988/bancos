@@ -105,6 +105,13 @@ public sealed class ProcessImportFileTool(
                     primaryAccountId = pair.CrcAccountId;
                     secondaryAccountId = pair.UsdAccountId;
                 }
+                else if (definition.ParserKey == "bn-card-statement-pdf")
+                {
+                    var pair = await accountResolver.ResolveBnCardStatementPairAsync(
+                        templateId, fileContent, cancellationToken);
+                    primaryAccountId = pair.CrcAccountId;
+                    secondaryAccountId = pair.UsdAccountId;
+                }
                 else if (definition.ParserKey is "bcr-debit-csv" or "bn-debit-csv" or "bn-debit-csv-crc")
                 {
                     var resolved = await accountResolver.TryResolveDebitCsvByIbanPathAsync(

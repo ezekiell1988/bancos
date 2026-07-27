@@ -1,6 +1,10 @@
 using System.IO.Compression;
 using Bancos.Mcp.Catalog;
 using Bancos.Mcp.Features.TemplateDetection;
+using UglyToad.PdfPig.Content;
+using UglyToad.PdfPig.Core;
+using UglyToad.PdfPig.Fonts.Standard14Fonts;
+using UglyToad.PdfPig.Writer;
 using Xunit;
 
 namespace Bancos.Mcp.Tests;
@@ -29,6 +33,25 @@ public sealed class ImportTemplateDetectionServiceTests : IDisposable
         var id = await CreateService().DetectAsync("statement.xlsx", CancellationToken.None);
 
         Assert.Equal(ImportTemplateCatalog.Definitions.Single(definition => definition.Code == "bank-account-movements-xls-v1").Id, id);
+    }
+
+    [Fact]
+    public async Task Detects_bn_pdf_when_words_are_positioned_separately()
+    {
+        var builder = new PdfDocumentBuilder();
+        var font = builder.AddStandard14Font(Standard14Font.Helvetica);
+        var page = builder.AddPage(PageSize.A4);
+        page.AddText("Banco Nacional de Costa Rica", 12, new PdfPoint(40, 800), font);
+        page.AddText("Estado de cuenta tarjetas de credito", 12, new PdfPoint(40, 780), font);
+        page.AddText("Detalle de compras del periodo", 12, new PdfPoint(40, 760), font);
+        page.AddText("Total pago de contado", 12, new PdfPoint(40, 740), font);
+        await File.WriteAllBytesAsync(Path.Combine(inputDirectory, "bn.pdf"), builder.Build());
+
+        var id = await CreateService().DetectAsync("bn.pdf", CancellationToken.None);
+
+        Assert.Equal(
+            ImportTemplateCatalog.Definitions.Single(definition => definition.Code == "bn-card-statement-pdf-v1").Id,
+            id);
     }
 
     [Fact]

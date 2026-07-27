@@ -4,6 +4,7 @@ using Bancos.Mcp.Catalog;
 using Bancos.Mcp.Data;
 using Bancos.Mcp.Domain;
 using Bancos.Mcp.Features.FileProcessing;
+using Bancos.Mcp.Features.Parsing;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
@@ -11,6 +12,55 @@ namespace Bancos.Mcp.Tests;
 
 public sealed class AccountResolverTests
 {
+    [Fact]
+    public void Resolves_bn_card_pair_with_shared_identity_and_distinct_currencies()
+    {
+        var crcAccountId = Guid.NewGuid();
+        var usdAccountId = Guid.NewGuid();
+        var identity = new BnCardStatementIdentity(new string('A', 64), new string('B', 64));
+        BnCardAccountCandidate[] accounts =
+        [
+            new(crcAccountId, "CRC", identity.IdentifierHash, identity.CardFingerprint),
+            new(usdAccountId, "USD", identity.IdentifierHash, identity.CardFingerprint)
+        ];
+
+        var resolved = AccountResolver.ResolveBnCardStatementPair(accounts, identity);
+
+        Assert.Equal(crcAccountId, resolved.CrcAccountId);
+        Assert.Equal(usdAccountId, resolved.UsdAccountId);
+    }
+
+    [Fact]
+    public void Rejects_bn_card_pair_when_a_registered_fingerprint_is_missing()
+    {
+        var identity = new BnCardStatementIdentity(new string('A', 64), new string('B', 64));
+        BnCardAccountCandidate[] accounts =
+        [
+            new(Guid.NewGuid(), "CRC", identity.IdentifierHash, identity.CardFingerprint),
+            new(Guid.NewGuid(), "USD", identity.IdentifierHash, null)
+        ];
+
+        var error = Assert.Throws<InvalidOperationException>(
+            () => AccountResolver.ResolveBnCardStatementPair(accounts, identity));
+
+        Assert.DoesNotContain(identity.IdentifierHash, error.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(identity.CardFingerprint, error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Rejects_bn_card_pair_when_document_identity_does_not_match()
+    {
+        var identity = new BnCardStatementIdentity(new string('A', 64), new string('B', 64));
+        BnCardAccountCandidate[] accounts =
+        [
+            new(Guid.NewGuid(), "CRC", new string('C', 64), identity.CardFingerprint),
+            new(Guid.NewGuid(), "USD", new string('C', 64), identity.CardFingerprint)
+        ];
+
+        Assert.Throws<InvalidOperationException>(
+            () => AccountResolver.ResolveBnCardStatementPair(accounts, identity));
+    }
+
     [Fact]
     public async Task Resolves_account_from_parent_folder_without_changing_detected_template()
     {

@@ -68,7 +68,7 @@ public sealed class ImportFileJob(
                     await ProcessBacAccountStatements(bankAccountId, accountStatementParser.Parse(await File.ReadAllBytesAsync(filePath)), context);
                     break;
                 case "bn-card-statement-pdf":
-                    await ProcessBnCardStatement(bankAccountId, bnParser.Parse(await File.ReadAllBytesAsync(filePath)), context);
+                    await ProcessBnCardStatement(bankAccountId, usdBankAccountId, bnParser.Parse(await File.ReadAllBytesAsync(filePath)), context);
                     break;
                 default:
                     throw new InvalidDataException($"No hay parser disponible para '{parserKey}'.");
@@ -163,7 +163,7 @@ public sealed class ImportFileJob(
         context?.WriteLine("Movimientos: {0} insertados, {1} duplicados omitidos.", inserted, movements.Count - inserted);
     }
 
-    private async Task ProcessCardMovements(
+    private async Task<IReadOnlyList<Transaction>> ProcessCardMovements(
         Guid crcAccountId,
         Guid? usdAccountId,
         IReadOnlyList<ParsedCardMovement> movements,
@@ -203,17 +203,21 @@ public sealed class ImportFileJob(
         var existingByFingerprint = existing.ToDictionary(t => t.SourceFingerprint);
 
         var movementDates = normalized.Select(m => m.BookingDate).Distinct().ToArray();
+        var firstMovementDate = movementDates.Min();
+        var lastMovementDate = movementDates.Max();
         var periods = await db.Periods
-            .Where(p => movementDates.Any(d => p.StartDate <= d && d <= p.EndDate))
+            .Where(p => p.EndDate >= firstMovementDate && p.StartDate <= lastMovementDate)
             .ToListAsync();
 
         var inserted = 0;
         var updated = 0;
+        var processed = new List<Transaction>(normalized.Length);
         foreach (var (movement, fingerprint) in normalized.Zip(fingerprints))
         {
             if (existingByFingerprint.TryGetValue(fingerprint, out var existing2))
             {
                 existing2.UpdatedAt = CostaRicaTime.Now;
+                processed.Add(existing2);
                 updated++;
                 continue;
             }
@@ -257,7 +261,7 @@ public sealed class ImportFileJob(
             var absAmt = Math.Abs(movement.OriginalAmount);
             var absAmtCrc = Math.Abs(movement.AmountCrc!.Value);
             var norm = TextNormalizer.Normalize(description);
-            db.Transactions.Add(new Transaction
+            var transaction = new Transaction
             {
                 BankAccountId = accountId,
                 PeriodId = period?.Id,
@@ -271,10 +275,14 @@ public sealed class ImportFileJob(
                 ExchangeRate = movement.OriginalCurrencyCode == "USD" && absAmt != 0 ? absAmtCrc / absAmt : 1m,
                 OperationType = operationType,
                 SourceFingerprint = fingerprint
-            });
+            };
+            db.Transactions.Add(transaction);
+            existingByFingerprint[fingerprint] = transaction;
+            processed.Add(transaction);
             inserted++;
         }
         context?.WriteLine("Movimientos de tarjeta: {0} insertados, {1} actualizados.", inserted, updated);
+        return processed;
     }
 
     private static readonly System.Text.RegularExpressions.Regex PlacePattern =
@@ -481,24 +489,35 @@ public sealed class ImportFileJob(
         context?.WriteLine("Estados de cuenta BAC: {0} procesados.", statements.Count);
     }
 
-    private async Task ProcessBnCardStatement(Guid bankAccountId, ParsedBnCardStatement bn, PerformContext? context)
+    internal async Task ProcessBnCardStatement(
+        Guid bankAccountId,
+        Guid? usdBankAccountId,
+        ParsedBnCardStatement bn,
+        PerformContext? context)
     {
         var fingerprint = FingerprintHelper.ForBnCardStatement(bankAccountId, bn);
         var existingStatement = await db.CardStatements
+            .Include(statement => statement.Lines)
             .FirstOrDefaultAsync(s => s.BankAccountId == bankAccountId && s.StatementDate == bn.StatementDate);
 
+        CardStatement statement;
         if (existingStatement is not null)
         {
+            statement = existingStatement;
             existingStatement.MinimumPaymentCrc = bn.MinimumPaymentCrc;
             existingStatement.MinimumPaymentUsd = bn.MinimumPaymentUsd;
             existingStatement.CashPaymentCrc = bn.CashPaymentCrc;
             existingStatement.CashPaymentUsd = bn.CashPaymentUsd;
+            existingStatement.PreviousBalanceCrc = bn.PreviousBalanceCrc;
+            existingStatement.PreviousBalanceUsd = bn.PreviousBalanceUsd;
+            existingStatement.CurrentBalanceCrc = bn.CurrentBalanceCrc;
+            existingStatement.CurrentBalanceUsd = bn.CurrentBalanceUsd;
             existingStatement.SourceFingerprint = fingerprint;
             existingStatement.UpdatedAt = CostaRicaTime.Now;
         }
         else
         {
-            db.CardStatements.Add(new CardStatement
+            statement = new CardStatement
             {
                 BankAccountId = bankAccountId,
                 StatementDate = bn.StatementDate,
@@ -509,12 +528,28 @@ public sealed class ImportFileJob(
                 MinimumPaymentUsd = bn.MinimumPaymentUsd,
                 CashPaymentCrc = bn.CashPaymentCrc,
                 CashPaymentUsd = bn.CashPaymentUsd,
+                PreviousBalanceCrc = bn.PreviousBalanceCrc,
+                PreviousBalanceUsd = bn.PreviousBalanceUsd,
+                CurrentBalanceCrc = bn.CurrentBalanceCrc,
+                CurrentBalanceUsd = bn.CurrentBalanceUsd,
                 SourceFingerprint = fingerprint
-            });
+            };
+            db.CardStatements.Add(statement);
         }
 
         if (bn.Movements.Count > 0)
-            await ProcessCardMovements(bankAccountId, null, bn.Movements, useBankSign: false, context);
+        {
+            var transactions = await ProcessCardMovements(
+                bankAccountId, usdBankAccountId, bn.Movements, useBankSign: false, context);
+            var linkedTransactionIds = statement.Lines.Select(line => line.TransactionId).ToHashSet();
+            foreach (var transaction in transactions
+                         .DistinctBy(transaction => transaction.SourceFingerprint)
+                         .Where(transaction => transaction.Id == Guid.Empty || !linkedTransactionIds.Contains(transaction.Id)))
+            {
+                statement.Lines.Add(new CardStatementLine { Transaction = transaction });
+                if (transaction.Id != Guid.Empty) linkedTransactionIds.Add(transaction.Id);
+            }
+        }
 
         if (bn.FinancingLines.Count > 0)
         {

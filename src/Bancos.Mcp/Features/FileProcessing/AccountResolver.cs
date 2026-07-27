@@ -8,6 +8,12 @@ using System.Text.RegularExpressions;
 namespace Bancos.Mcp.Features.FileProcessing;
 
 public sealed record FinancingAccountPair(Guid CrcAccountId, Guid UsdAccountId);
+public sealed record CardStatementAccountPair(Guid CrcAccountId, Guid? UsdAccountId);
+internal sealed record BnCardAccountCandidate(
+    Guid AccountId,
+    string CurrencyCode,
+    string? IdentifierHash,
+    string? CardFingerprint);
 
 public sealed class AccountResolver(McpCatalogDbContext db)
 {
@@ -51,6 +57,55 @@ public sealed class AccountResolver(McpCatalogDbContext db)
             0 => throw new InvalidOperationException("No se pudo identificar una cuenta única desde el contenido del archivo."),
             _ => throw new InvalidOperationException("El contenido del archivo coincide con más de una cuenta bancaria.")
         };
+    }
+
+    public async Task<CardStatementAccountPair> ResolveBnCardStatementPairAsync(
+        Guid templateId,
+        ReadOnlyMemory<byte> fileContent,
+        CancellationToken ct)
+    {
+        var accounts = await db.BankAccountImportTemplates
+            .Where(x => x.ImportTemplateId == templateId)
+            .Select(x => new BnCardAccountCandidate(
+                x.BankAccountId,
+                x.BankAccount!.CurrencyCode,
+                x.BankAccount.IdentifierHash,
+                x.BankAccount.CardFingerprint))
+            .ToListAsync(ct);
+
+        if (accounts.Count == 0)
+            throw new InvalidOperationException("No hay cuentas bancarias vinculadas a esta plantilla.");
+
+        var identity = BnCardStatementPdfParser.ExtractIdentityFingerprints(fileContent);
+        return ResolveBnCardStatementPair(accounts, identity);
+    }
+
+    internal static CardStatementAccountPair ResolveBnCardStatementPair(
+        IReadOnlyList<BnCardAccountCandidate> accounts,
+        BnCardStatementIdentity identity)
+    {
+        var matches = accounts
+            .Where(account =>
+                string.Equals(account.IdentifierHash, identity.IdentifierHash, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(account.CardFingerprint, identity.CardFingerprint, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+
+        var crcMatches = matches
+            .Where(account => account.CurrencyCode == "CRC")
+            .Select(account => account.AccountId)
+            .Distinct()
+            .ToArray();
+        var usdMatches = matches
+            .Where(account => account.CurrencyCode == "USD")
+            .Select(account => account.AccountId)
+            .Distinct()
+            .ToArray();
+
+        if (crcMatches.Length != 1 || usdMatches.Length != 1)
+            throw new InvalidOperationException(
+                "La identidad bancaria y de tarjeta del estado BN no coincide con un par CRC/USD registrado.");
+
+        return new CardStatementAccountPair(crcMatches[0], usdMatches[0]);
     }
 
     public async Task<Guid> ResolveCrcByPathAsync(string relativePath, CancellationToken ct)

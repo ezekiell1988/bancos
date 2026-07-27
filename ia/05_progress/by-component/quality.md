@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-26 CR (TASK-EBC-MCP-17 completada)
+> **Última actualización:** 2026-07-27 CR (ISSUE-006 resuelto)
 
 
 
 ## Completado
+
+* **2026-07-27** — ISSUE-006 resuelto: Se unificó la extracción PDF reconstruida, se alinearon las regex con el formato BN, se resolvió el par CRC/USD, se enrutaron movimientos por moneda y se crearon vínculos idempotentes. La importación local terminó correctamente y la conciliación almacenada resultó válida en ambas monedas.
 
 * **2026-07-26** — TASK-EBC-MCP-17: Auditoría técnica completada sin cambios de código ni datos. La muestra PDF no coincide con la firma y los patrones requeridos; el flujo de cuenta falla para múltiples vínculos y no persiste asociaciones entre corte y movimientos. ISSUE-006 abierto. — EBC
 

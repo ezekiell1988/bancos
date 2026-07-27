@@ -2,8 +2,8 @@ using System.Globalization;
 using System.Text;
 using ExcelDataReader;
 using Microsoft.Extensions.Options;
-using UglyToad.PdfPig;
 using Bancos.Mcp.Catalog;
+using Bancos.Mcp.Features.Parsing;
 
 namespace Bancos.Mcp.Features.TemplateDetection;
 
@@ -127,10 +127,7 @@ public sealed class ImportTemplateDetectionService
     }
 
     private static string ExtractPdf(byte[] content)
-    {
-        using var document = PdfDocument.Open(content);
-        return string.Join('\n', document.GetPages().Select(page => page.Text));
-    }
+        => ImportContentText.Extract(content).Text;
 
     private string ExtractPlainText(byte[] content)
     {

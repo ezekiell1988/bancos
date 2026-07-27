@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-26 CR (TASK-EBC-MCP-17 completada)
+> **Última actualización:** 2026-07-27 CR (ISSUE-007 resuelto)
 
 ## En curso
 
@@ -21,6 +21,14 @@
 * Aprobar y ejecutar `TASK-EZ-BE-01` mediante `iaWorkflow`.
 
 ## Completado en sesiones recientes
+
+* **2026-07-27** — ISSUE-007 resuelto: Se incorporó extracción normalizada con checksum, comparación simultánea de huellas bancaria y de tarjeta, resolución obligatoria de una cuenta CRC y una USD, y unicidad de catálogo por identidad más moneda. La migración y el reproceso MCP fueron verificados con conciliación e idempotencia correctas.
+
+* **2026-07-27** — TASK-EBC-BE-28 cerrada: Validación de identidad compartida implementada y verificada operativamente. El estado BN se resuelve contra cuentas lógicas CRC y USD separadas, exige coincidencia de identidad bancaria y tarjeta, y conserva conciliación e idempotencia. — EBC
+
+* **2026-07-27** — ISSUE-006 resuelto: Se unificó la extracción PDF reconstruida, se alinearon las regex con el formato BN, se resolvió el par CRC/USD, se enrutaron movimientos por moneda y se crearon vínculos idempotentes. La importación local terminó correctamente y la conciliación almacenada resultó válida en ambas monedas.
+
+* **2026-07-27** — TASK-EBC-MCP-41 cerrada: Importación BN PDF corregida y validada de extremo a extremo: detección, job Hangfire, persistencia del corte, movimientos, vínculos idempotentes y conciliación por moneda. — EBC
 
 * **2026-07-26** — TASK-EBC-MCP-17 cerrada: Auditoría técnica completada sin cambios de código ni datos. La muestra PDF no coincide con la firma y los patrones requeridos; el flujo de cuenta falla para múltiples vínculos y no persiste asociaciones entre corte y movimientos. ISSUE-006 abierto. — EBC
 
