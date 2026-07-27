@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-26 CR (TASK-EBC-INF-12 completada)
+> **Última actualización:** 2026-07-26 CR (TASK-EBC-INF-03 completada)
 
 
 
 ## Completado
+
+* **2026-07-26** — TASK-EBC-INF-03: Cerrada como obsoleta por decisión explícita: se eliminó el alcance de API y el proyecto queda únicamente con MCP; no se realizaron trabajos de autenticación, contenedores, CI/CD ni despliegue. — EBC
 
 * **2026-07-26** — TASK-EBC-INF-12: Se retiraron Bancos.Api, Bancos.Web, sus pruebas y configuraciones asociadas. Bancos.Mcp queda como único proyecto funcional; las tareas frontend fueron archivadas como canceladas por cambio de arquitectura. — C
 

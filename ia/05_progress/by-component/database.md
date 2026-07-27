@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-26 CR (TASK-EBC-MCP-27 completada)
+> **Última actualización:** 2026-07-26 CR (TASK-EBC-DB-06 completada)
 
 
 
 ## Completado
+
+* **2026-07-26** — TASK-EBC-DB-06: Cancelada por cambio de arquitectura: dependía del modelo y tablas de Bancos.Api, retirados al consolidar Bancos.Mcp como único proyecto funcional. — C
 
 * **2026-07-26** — TASK-EBC-MCP-27: Se recalcularon los cierres después de asignar período a todos los movimientos; la conciliación final del corte coincide íntegramente con la documentación. — C
 

@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-26 CR (TASK-EBC-INF-12 completada)
+> **Última actualización:** 2026-07-26 CR (TASK-EBC-INF-03 completada)
 
 ## En curso
 
@@ -21,6 +21,10 @@
 * Aprobar y ejecutar `TASK-EZ-BE-01` mediante `iaWorkflow`.
 
 ## Completado en sesiones recientes
+
+* **2026-07-26** — TASK-EBC-INF-03 cerrada: Cerrada como obsoleta por decisión explícita: se eliminó el alcance de API y el proyecto queda únicamente con MCP; no se realizaron trabajos de autenticación, contenedores, CI/CD ni despliegue. — EBC
+
+* **2026-07-26** — TASK-EBC-DB-06 cerrada: Cancelada por cambio de arquitectura: dependía del modelo y tablas de Bancos.Api, retirados al consolidar Bancos.Mcp como único proyecto funcional. — C
 
 * **2026-07-26** — TASK-EBC-INF-12 cerrada: Se retiraron Bancos.Api, Bancos.Web, sus pruebas y configuraciones asociadas. Bancos.Mcp queda como único proyecto funcional; las tareas frontend fueron archivadas como canceladas por cambio de arquitectura. — C
 
