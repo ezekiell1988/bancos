@@ -151,6 +151,35 @@ namespace Bancos.Mcp.Migrations
                 comment: "Patrones aprobados para detectar una plantilla de importación por contenido.");
 
             migrationBuilder.CreateTable(
+                name: "tbAccountPeriodClosings",
+                columns: table => new
+                {
+                    idAccountPeriodClosings = table.Column<Guid>(type: "uniqueidentifier", nullable: false, comment: "Identificador único del cierre."),
+                    idBankAccounts = table.Column<Guid>(type: "uniqueidentifier", nullable: false, comment: "Cuenta bancaria del cierre."),
+                    idPeriods = table.Column<Guid>(type: "uniqueidentifier", nullable: false, comment: "Período de reporte del cierre."),
+                    balance = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false, comment: "Saldo acumulado al cierre del período en CRC."),
+                    createdAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false, comment: "Fecha y hora de creación del registro."),
+                    updatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true, comment: "Fecha y hora de la última actualización del registro.")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_tbAccountPeriodClosings", x => x.idAccountPeriodClosings);
+                    table.ForeignKey(
+                        name: "FK_tbAccountPeriodClosings_tbBankAccounts_idBankAccounts",
+                        column: x => x.idBankAccounts,
+                        principalTable: "tbBankAccounts",
+                        principalColumn: "idBankAccounts",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_tbAccountPeriodClosings_tbPeriods_idPeriods",
+                        column: x => x.idPeriods,
+                        principalTable: "tbPeriods",
+                        principalColumn: "idPeriods",
+                        onDelete: ReferentialAction.Restrict);
+                },
+                comment: "Saldo acumulado al cierre de cada periodo por cuenta bancaria.");
+
+            migrationBuilder.CreateTable(
                 name: "tbBankAccountImportTemplates",
                 columns: table => new
                 {
@@ -537,6 +566,28 @@ namespace Bancos.Mcp.Migrations
                     { new Guid("40000000-0000-0000-0000-000000000015"), new Guid("10000000-0000-0000-0000-000000000007") }
                 });
 
+            migrationBuilder.InsertData(
+                table: "tbTransactions",
+                columns: new[] { "idTransactions", "amount", "amountCrc", "idBankAccounts", "createdAt", "currencyCode", "description", "exchangeRate", "operationType", "paymentDate", "idPeriods", "place", "referenceNumber", "sourceFingerprint", "transactionDate", "updatedAt" },
+                values: new object[,]
+                {
+                    { new Guid("a0000000-0000-0000-0000-000000000001"), -177724.97m, -177724.97m, new Guid("40000000-0000-0000-0000-000000000001"), new DateTimeOffset(new DateTime(2026, 7, 26, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), "CRC", "Saldo inicial", 1m, "other-charge", null, new Guid("60000000-0000-0000-0000-000000000005"), null, null, "53414c494e4943494f310000000000000000000000000000000000000000001", new DateOnly(2026, 5, 18), null },
+                    { new Guid("a0000000-0000-0000-0000-000000000003"), -477326.20m, -477326.20m, new Guid("40000000-0000-0000-0000-000000000003"), new DateTimeOffset(new DateTime(2026, 7, 26, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), "CRC", "Saldo inicial", 1m, "other-charge", null, new Guid("60000000-0000-0000-0000-000000000005"), null, null, "53414c494e4943494f330000000000000000000000000000000000000000003", new DateOnly(2026, 5, 18), null },
+                    { new Guid("a0000000-0000-0000-0000-000000000004"), -153.18m, -70156.44m, new Guid("40000000-0000-0000-0000-000000000004"), new DateTimeOffset(new DateTime(2026, 7, 26, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), "USD", "Saldo inicial", 458m, "other-charge", null, new Guid("60000000-0000-0000-0000-000000000005"), null, null, "53414c494e4943494f340000000000000000000000000000000000000000004", new DateOnly(2026, 5, 18), null },
+                    { new Guid("a0000000-0000-0000-0000-000000000007"), -119014.25m, -119014.25m, new Guid("40000000-0000-0000-0000-000000000007"), new DateTimeOffset(new DateTime(2026, 7, 26, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)), "CRC", "Saldo inicial", 1m, "other-charge", null, new Guid("60000000-0000-0000-0000-000000000005"), null, null, "53414c494e4943494f370000000000000000000000000000000000000000007", new DateOnly(2026, 5, 18), null }
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_tbAccountPeriodClosings_idBankAccounts_idPeriods",
+                table: "tbAccountPeriodClosings",
+                columns: new[] { "idBankAccounts", "idPeriods" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_tbAccountPeriodClosings_idPeriods",
+                table: "tbAccountPeriodClosings",
+                column: "idPeriods");
+
             migrationBuilder.CreateIndex(
                 name: "IX_tbBankAccountImportTemplates_idImportTemplates",
                 table: "tbBankAccountImportTemplates",
@@ -658,6 +709,9 @@ namespace Bancos.Mcp.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "tbAccountPeriodClosings");
+
             migrationBuilder.DropTable(
                 name: "tbBankAccountImportTemplates");
 

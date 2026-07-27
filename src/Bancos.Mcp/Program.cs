@@ -3,6 +3,7 @@ using Bancos.Mcp.Tools;
 using Bancos.Mcp.Data;
 using Bancos.Mcp.Features.Health;
 using Bancos.Mcp.Features.TemplateDetection;
+using Bancos.Mcp.Features.AccountPeriodClosings;
 using Bancos.Mcp.Features.FileProcessing;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +24,7 @@ builder.Services.AddSingleton<IMcpTool, StatusTool>();
 builder.Services.AddSingleton<ToolRegistry>();
 builder.Services.AddTemplateDetectionModule(builder.Configuration);
 builder.Services.AddFileProcessingModule(builder.Configuration);
+builder.Services.AddAccountPeriodClosingsModule();
 
 var app = builder.Build();
 
@@ -34,6 +36,8 @@ if (!app.Environment.IsEnvironment("Testing"))
 app.MapHealthEndpoints();
 if (!app.Environment.IsEnvironment("Testing"))
     app.UseHangfireDashboard("/hangfire");
+app.MapAccountPeriodClosingsEndpoints();
+app.UseAccountPeriodClosingsJobs();
 app.MapMcpEndpoints();
 
 app.Run();

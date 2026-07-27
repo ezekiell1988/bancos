@@ -1,6 +1,6 @@
 # 04 — Tareas activas
 
-> **Última actualización:** 2026-07-24 CR (TASK-EBC-MCP-13 completada)
+> **Última actualización:** 2026-07-24 CR (TASK-EBC-MCP-18 aprobada)
 
 
 
@@ -139,6 +139,7 @@ Sin tareas.
 
 | ID | Área | Título | Prioridad |
 |---|---|---|---|
+| `TASK-EBC-MCP-18` | MCP | Cierres de saldo por periodo por cuenta bancaria | media |
 
 ## Borradores
 

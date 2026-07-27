@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Bancos.Mcp.Migrations
 {
     [DbContext(typeof(McpCatalogDbContext))]
-    [Migration("20260724202002_InitialCreate")]
+    [Migration("20260727020809_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -24,6 +24,53 @@ namespace Bancos.Mcp.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("Bancos.Mcp.Domain.AccountPeriodClosing", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("idAccountPeriodClosings")
+                        .HasComment("Identificador único del cierre.");
+
+                    b.Property<decimal>("Balance")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("balance")
+                        .HasComment("Saldo acumulado al cierre del período en CRC.");
+
+                    b.Property<Guid>("BankAccountId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("idBankAccounts")
+                        .HasComment("Cuenta bancaria del cierre.");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("createdAt")
+                        .HasComment("Fecha y hora de creación del registro.");
+
+                    b.Property<Guid>("PeriodId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("idPeriods")
+                        .HasComment("Período de reporte del cierre.");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("updatedAt")
+                        .HasComment("Fecha y hora de la última actualización del registro.");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PeriodId");
+
+                    b.HasIndex("BankAccountId", "PeriodId")
+                        .IsUnique();
+
+                    b.ToTable("tbAccountPeriodClosings", null, t =>
+                        {
+                            t.HasComment("Saldo acumulado al cierre de cada periodo por cuenta bancaria.");
+                        });
+                });
 
             modelBuilder.Entity("Bancos.Mcp.Domain.Bank", b =>
                 {
@@ -1808,6 +1855,87 @@ namespace Bancos.Mcp.Migrations
 
                             t.HasCheckConstraint("CK_tbTransactions_operationType", "[operationType] IN ('purchase', 'payment', 'interest', 'other-charge', 'interest-reversal')");
                         });
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("a0000000-0000-0000-0000-000000000001"),
+                            Amount = -177724.97m,
+                            AmountCrc = -177724.97m,
+                            BankAccountId = new Guid("40000000-0000-0000-0000-000000000001"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 26, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
+                            CurrencyCode = "CRC",
+                            Description = "Saldo inicial",
+                            ExchangeRate = 1m,
+                            OperationType = "other-charge",
+                            PeriodId = new Guid("60000000-0000-0000-0000-000000000005"),
+                            SourceFingerprint = "53414c494e4943494f310000000000000000000000000000000000000000001",
+                            TransactionDate = new DateOnly(2026, 5, 18)
+                        },
+                        new
+                        {
+                            Id = new Guid("a0000000-0000-0000-0000-000000000003"),
+                            Amount = -477326.20m,
+                            AmountCrc = -477326.20m,
+                            BankAccountId = new Guid("40000000-0000-0000-0000-000000000003"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 26, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
+                            CurrencyCode = "CRC",
+                            Description = "Saldo inicial",
+                            ExchangeRate = 1m,
+                            OperationType = "other-charge",
+                            PeriodId = new Guid("60000000-0000-0000-0000-000000000005"),
+                            SourceFingerprint = "53414c494e4943494f330000000000000000000000000000000000000000003",
+                            TransactionDate = new DateOnly(2026, 5, 18)
+                        },
+                        new
+                        {
+                            Id = new Guid("a0000000-0000-0000-0000-000000000004"),
+                            Amount = -153.18m,
+                            AmountCrc = -70156.44m,
+                            BankAccountId = new Guid("40000000-0000-0000-0000-000000000004"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 26, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
+                            CurrencyCode = "USD",
+                            Description = "Saldo inicial",
+                            ExchangeRate = 458m,
+                            OperationType = "other-charge",
+                            PeriodId = new Guid("60000000-0000-0000-0000-000000000005"),
+                            SourceFingerprint = "53414c494e4943494f340000000000000000000000000000000000000000004",
+                            TransactionDate = new DateOnly(2026, 5, 18)
+                        },
+                        new
+                        {
+                            Id = new Guid("a0000000-0000-0000-0000-000000000007"),
+                            Amount = -119014.25m,
+                            AmountCrc = -119014.25m,
+                            BankAccountId = new Guid("40000000-0000-0000-0000-000000000007"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 26, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
+                            CurrencyCode = "CRC",
+                            Description = "Saldo inicial",
+                            ExchangeRate = 1m,
+                            OperationType = "other-charge",
+                            PeriodId = new Guid("60000000-0000-0000-0000-000000000005"),
+                            SourceFingerprint = "53414c494e4943494f370000000000000000000000000000000000000000007",
+                            TransactionDate = new DateOnly(2026, 5, 18)
+                        });
+                });
+
+            modelBuilder.Entity("Bancos.Mcp.Domain.AccountPeriodClosing", b =>
+                {
+                    b.HasOne("Bancos.Mcp.Domain.BankAccount", "BankAccount")
+                        .WithMany()
+                        .HasForeignKey("BankAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Bancos.Mcp.Domain.Period", "Period")
+                        .WithMany()
+                        .HasForeignKey("PeriodId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("BankAccount");
+
+                    b.Navigation("Period");
                 });
 
             modelBuilder.Entity("Bancos.Mcp.Domain.BankAccount", b =>

@@ -2,8 +2,7 @@
 name: mcp-local-db-create
 description: >
    Crear, copiar, instalar y registrar el MCP SQL local .mcp/db-query en VS Code,
-   Codex y Claude Code. Incluye consultas SQL seguras y validaciones Azure Sponsorship
-   con aprobación explícita. Usar cuando se pida crear db-query, instalar un MCP SQL local,
+   Codex y Claude Code. Usar cuando se pida crear db-query, instalar un MCP SQL local,
    configurar dbQuery en mcp.json o config.toml, copiar el paquete a otro proyecto,
    preparar mssql o validar el smoke test. No aplica a MCP SQL de produccion aislado.
 ---
@@ -11,9 +10,8 @@ description: >
 # MCP Local DB Create
 
 Prepara el paquete portable `.mcp/db-query` para consultar SQL Server desde clientes
-MCP locales. El paquete base contiene el runtime, `mssql`, `db_exec` y la validación
-acotada `azure_sponsorship_validate`. `db-query-pro` es opcional, depende de
-`db-query` y mantiene `requireApply:true`.
+MCP locales. El paquete base contiene el runtime, `mssql` y el unico tool `db_exec`.
+`db-query-pro` es opcional, depende de `db-query` y mantiene `requireApply:true`.
 
 ## Cuando Usarlo
 
@@ -21,7 +19,6 @@ acotada `azure_sponsorship_validate`. `db-query-pro` es opcional, depende de
 * Instalar las dependencias npm del MCP SQL local
 * Registrar `dbQuery` en VS Code, Codex o Claude Code
 * Diagnosticar que el cliente no detecta `db_exec`
-* Validar el acceso ARM de las suscripciones Azure Sponsorship configuradas
 * Validar que el paquete no expone secretos ni reportes en Git
 
 ## Contrato Del Paquete
@@ -38,33 +35,6 @@ acotada `azure_sponsorship_validate`. `db-query-pro` es opcional, depende de
    catalogo sin conectarse a SQL Server.
 5. Registrar el mismo entrypoint `server.mjs` en el cliente correspondiente. Agregar
    una entrada sin reemplazar los servidores MCP ya existentes.
-
-## Herramientas
-
-| Tool | Uso | Seguridad |
-| --- | --- | --- |
-| `db_exec` | Ejecuta T-SQL en EvistaDev y genera un reporte Markdown | Bloquea resultados con columnas sensibles |
-| `azure_sponsorship_validate` | Valida token ARM y APIs Azure para suscripciones Sponsorship activas | Exige aprobación literal por llamada y nunca devuelve secretos ni tokens |
-
-### Validación Sponsorship Con Aprobación
-
-La herramienta lee `TenantId`, `ClientId` y `ClientSecret` solo en memoria para validar
-cada fila activa de `[amgt].[SponsorshipSubscription]`. Devuelve únicamente metadatos
-de la suscripción y códigos HTTP para token, ARM, UsageAggregates, RateCard y, si se
-solicita, Cost Management.
-
-Requiere ambos valores exactos en cada llamada:
-
-```json
-{
-   "approval": "I_APPROVE_SENSITIVE_CREDENTIAL_USE",
-   "purpose": "validate_azure_sponsorship_access"
-}
-```
-
-La aprobación no habilita lecturas SQL genéricas de secretos ni revela valores en la
-respuesta, los logs o los reportes. Solo autoriza esa validación de Azure durante la
-ejecución de la llamada.
 
 ## Referencias Por Cliente
 

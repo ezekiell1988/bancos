@@ -122,6 +122,42 @@ function sanitizeValue(value) {
 function identifier(value, name) { const result = requiredString(value, name); if (!/^[A-Za-z_][A-Za-z0-9_$#@]*$/.test(result)) throw new ToolError(`${name} inválido`); return result; }
 function parseServer(value) { const server = requiredString(value, "Server"); const comma = server.match(/^(.+?),(\d+)$/); if (comma) return { host: comma[1], port: Number(comma[2]) }; const instance = server.match(/^(.+?)\\(.+)$/); if (instance) return { host: instance[1], instanceName: instance[2] }; return { host: server, port: 1433 }; }
 function safeSqlMessage(error) { const code = error?.code ?? error?.originalError?.info?.number; return code ? `código ${code}` : "verifica red y credenciales locales"; }
+export async function execQuery(args) {
+  const { ToolError } = await import("./common.mjs");
+  if (args.apply !== true) throw new ToolError("apply debe ser true para ejecutar esta operación.");
+  const statement = requiredString(args.sql, "sql");
+  const timeoutSeconds = clamp(args.timeoutSeconds, 1, 60, 15);
+  const pool = await getPool();
+  const request = pool.request();
+  request.requestTimeout = timeoutSeconds * 1000;
+  const result = await request.batch(statement);
+  const rows = result?.recordset ?? [];
+  if (rows.length > 0) assertSafeColumns(Object.keys(rows[0] ?? {}));
+  const sanitized = rows.map(sanitizeRow);
+  const rowsAffected = result?.rowsAffected?.reduce((a, b) => a + b, 0) ?? 0;
+  return saveExecResult("db_exec", { rowsAffected, total: sanitized.length, rows: sanitized }, { timeoutSeconds });
+}
+
+async function saveExecResult(tool, result, metadata) {
+  const { writeMarkdownExec } = await buildMarkdownWriter();
+  return { rowsAffected: result.rowsAffected, total: result.total, rows: result.rows, resultPath: await writeMarkdownExec(tool, result, metadata) };
+}
+
+async function buildMarkdownWriter() {
+  return {
+    writeMarkdownExec: async (tool, result, metadata) => {
+      const dir = path.join(projectRoot, ".local-output", "db-query");
+      await fs.mkdir(dir, { recursive: true, mode: 0o700 });
+      const filename = `${new Date().toISOString().replaceAll(":", "-").replaceAll(".", "-")}-${crypto.randomUUID().slice(0, 8)}-${tool}.md`;
+      const details = Object.entries(metadata).map(([k, v]) => `- ${k}: ${String(v)}`).join("\n");
+      const output = path.join(dir, filename);
+      const tableSection = result.rows.length > 0 ? markdownTable(result.rows) : "_Sin resultados devueltos._";
+      await fs.writeFile(output, `# ${tool}\n\nGenerado: ${new Date().toISOString()}\n\n${details}\n\nFilas afectadas: **${result.rowsAffected}**\n\n## Resultado (${result.total})\n\n${tableSection}\n`, { mode: 0o600 });
+      return output;
+    }
+  };
+}
+
 export async function resetSchemas(args) {
   if (args.confirm !== true) throw new ToolError("confirm debe ser true para ejecutar esta operación destructiva");
   const pool = await getPool();

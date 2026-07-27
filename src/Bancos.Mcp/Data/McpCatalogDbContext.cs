@@ -19,6 +19,7 @@ public sealed class McpCatalogDbContext(DbContextOptions<McpCatalogDbContext> op
     public DbSet<CardFinancing> CardFinancings => Set<CardFinancing>();
     public DbSet<LoanStatement> LoanStatements => Set<LoanStatement>();
     public DbSet<LoanPayment> LoanPayments => Set<LoanPayment>();
+    public DbSet<AccountPeriodClosing> AccountPeriodClosings => Set<AccountPeriodClosing>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -344,6 +345,27 @@ public sealed class McpCatalogDbContext(DbContextOptions<McpCatalogDbContext> op
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        builder.Entity<AccountPeriodClosing>(entity =>
+        {
+            entity.ToTable("tbAccountPeriodClosings", table => table.HasComment("Saldo acumulado al cierre de cada periodo por cuenta bancaria."));
+            entity.HasIndex(c => new { c.BankAccountId, c.PeriodId }).IsUnique();
+            entity.Property(c => c.Id).HasColumnName("idAccountPeriodClosings").HasComment("Identificador único del cierre.");
+            entity.Property(c => c.BankAccountId).HasColumnName("idBankAccounts").HasComment("Cuenta bancaria del cierre.");
+            entity.Property(c => c.PeriodId).HasColumnName("idPeriods").HasComment("Período de reporte del cierre.");
+            entity.Property(c => c.Balance).HasColumnName("balance").HasPrecision(18, 2).HasComment("Saldo acumulado al cierre del período en CRC.");
+            entity.Property(c => c.CreatedAt).HasColumnName("createdAt").HasComment("Fecha y hora de creación del registro.");
+            entity.Property(c => c.UpdatedAt).HasColumnName("updatedAt").HasComment("Fecha y hora de la última actualización del registro.");
+            entity.HasOne(c => c.BankAccount)
+                .WithMany()
+                .HasForeignKey(c => c.BankAccountId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(c => c.Period)
+                .WithMany()
+                .HasForeignKey(c => c.PeriodId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        SeedInitialBalanceTransactions(builder);
         SeedBanks(builder);
         SeedBankAccounts(builder);
         SeedExchangeRates(builder);
@@ -463,6 +485,83 @@ public sealed class McpCatalogDbContext(DbContextOptions<McpCatalogDbContext> op
     private static void SeedImportTemplatePatterns(ModelBuilder builder)
     {
         builder.Entity<ImportTemplatePattern>().HasData(ImportTemplateCatalog.SeedPatterns());
+    }
+
+    private static void SeedInitialBalanceTransactions(ModelBuilder builder)
+    {
+        // Saldos iniciales al cierre de MAY-2026 (periodo anterior a los primeros archivos importados).
+        // Fuente: columna "Previous balance" de los CSV de JUN-2026.
+        // Signo negativo = pasivo (deuda de tarjeta de crédito).
+        var createdAt = new DateTimeOffset(2026, 7, 26, 0, 0, 0, TimeSpan.FromHours(-6));
+        var periodMay2026 = Guid.Parse("60000000-0000-0000-0000-000000000005");
+        var date = new DateOnly(2026, 5, 18);
+
+        builder.Entity<Transaction>().HasData(
+            // bac-credit-01-crc: saldo previo 177,724.97 CRC
+            new Transaction
+            {
+                Id = Guid.Parse("A0000000-0000-0000-0000-000000000001"),
+                BankAccountId = Guid.Parse("40000000-0000-0000-0000-000000000001"),
+                PeriodId = periodMay2026,
+                TransactionDate = date,
+                Description = "Saldo inicial",
+                CurrencyCode = "CRC",
+                Amount = -177724.97m,
+                AmountCrc = -177724.97m,
+                ExchangeRate = 1m,
+                OperationType = "other-charge",
+                SourceFingerprint = "53414c494e4943494f310000000000000000000000000000000000000000001",
+                CreatedAt = createdAt,
+            },
+            // bac-credit-02-crc: saldo previo 477,326.20 CRC
+            new Transaction
+            {
+                Id = Guid.Parse("A0000000-0000-0000-0000-000000000003"),
+                BankAccountId = Guid.Parse("40000000-0000-0000-0000-000000000003"),
+                PeriodId = periodMay2026,
+                TransactionDate = date,
+                Description = "Saldo inicial",
+                CurrencyCode = "CRC",
+                Amount = -477326.20m,
+                AmountCrc = -477326.20m,
+                ExchangeRate = 1m,
+                OperationType = "other-charge",
+                SourceFingerprint = "53414c494e4943494f330000000000000000000000000000000000000000003",
+                CreatedAt = createdAt,
+            },
+            // bac-credit-02-usd: saldo previo 153.18 USD → 70,156.44 CRC @ 458
+            new Transaction
+            {
+                Id = Guid.Parse("A0000000-0000-0000-0000-000000000004"),
+                BankAccountId = Guid.Parse("40000000-0000-0000-0000-000000000004"),
+                PeriodId = periodMay2026,
+                TransactionDate = date,
+                Description = "Saldo inicial",
+                CurrencyCode = "USD",
+                Amount = -153.18m,
+                AmountCrc = -70156.44m,
+                ExchangeRate = 458m,
+                OperationType = "other-charge",
+                SourceFingerprint = "53414c494e4943494f340000000000000000000000000000000000000000004",
+                CreatedAt = createdAt,
+            },
+            // bac-credit-04-crc: saldo previo 119,014.25 CRC
+            new Transaction
+            {
+                Id = Guid.Parse("A0000000-0000-0000-0000-000000000007"),
+                BankAccountId = Guid.Parse("40000000-0000-0000-0000-000000000007"),
+                PeriodId = periodMay2026,
+                TransactionDate = date,
+                Description = "Saldo inicial",
+                CurrencyCode = "CRC",
+                Amount = -119014.25m,
+                AmountCrc = -119014.25m,
+                ExchangeRate = 1m,
+                OperationType = "other-charge",
+                SourceFingerprint = "53414c494e4943494f370000000000000000000000000000000000000000007",
+                CreatedAt = createdAt,
+            }
+        );
     }
 
     private static void SeedPeriods(ModelBuilder builder)
