@@ -41,8 +41,13 @@ export async function runSmoke({ serverPath, projectRoot, serverName, requiresAp
     const listed = await rpc("tools/list");
     const tools = listed.result?.tools ?? [];
     const dbExec = tools.find((item) => item.name === "db_exec");
-    check("tools/list expone las herramientas esperadas", tools.length === 1 && dbExec);
+    const resetSchemas = tools.find((item) => item.name === "db_reset_schemas");
+    check("tools/list expone las herramientas esperadas", tools.length === 2 && dbExec && resetSchemas);
     check("db_exec publica schema estricto", dbExec?.inputSchema?.additionalProperties === false);
+    check("db_reset_schemas exige confirm", resetSchemas?.inputSchema?.required?.includes("confirm") === true);
+    const blockedReset = await rpc("tools/call", { name: "db_reset_schemas", arguments: { confirm: false } });
+    const resetPayload = blockedReset.result?.structuredContent;
+    check("db_reset_schemas bloquea sin confirm", resetPayload?.applied === false && resetPayload?.requiresApply === true);
     if (requiresApply) {
       const response = await rpc("tools/call", { name: "db_exec", arguments: { blocks: [{ name: "preview", sql: "DELETE FROM dbo.X" }], reportName: "db-exec-preview" } });
       const payload = response.result?.structuredContent;

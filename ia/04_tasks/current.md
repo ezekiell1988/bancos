@@ -1,6 +1,8 @@
 # 04 — Tareas activas
 
-> **Última actualización:** 2026-07-27 CR (TASK-EBC-MCP-32 aprobada)
+> **Última actualización:** 2026-07-27 CR (TASK-EBC-MCP-32 completada)
+
+
 
 
 
@@ -179,7 +181,6 @@ Sin tareas.
 
 | ID | Área | Título | Prioridad |
 |---|---|---|---|
-| `TASK-EBC-MCP-32` | MCP | Tools MCP de clasificación determinista y revisión manual aprendible | alta |
 
 ## Borradores
 

@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-27 CR (ISSUE-007 resuelto)
+> **Última actualización:** 2026-07-27 CR (TASK-EBC-MCP-32 completada)
 
 
 
 ## Completado
+
+* **2026-07-27** — TASK-EBC-MCP-32: Revisados los 6 criterios de aceptación contra el código: classify_pending_transactions ejecuta lote regla→IA→No clasificado; list_unclassified_transactions expone explicación; confirm_transaction_classification registra manual y crea/actualiza regla determinista (probado con test dedicado); TryClassifyWithAiAsync cae a No clasificado ante fallo/baja confianza sin excepción no controlada; todas las respuestas incluyen Explanation con el origen (rule/ai/manual/unclassified) sin datos bancarios sensibles. Los 9 tests de ClassificationServiceTests pasan; el único fallo al filtrar McpProtocolTests es el problema preexistente de Hangfire JobStorage en el arranque del WebApplicationFactory, no relacionado con esta tarea. — EBC
 
 * **2026-07-27** — ISSUE-007 resuelto: Se incorporó extracción normalizada con checksum, comparación simultánea de huellas bancaria y de tarjeta, resolución obligatoria de una cuenta CRC y una USD, y unicidad de catálogo por identidad más moneda. La migración y el reproceso MCP fueron verificados con conciliación e idempotencia correctas.
 

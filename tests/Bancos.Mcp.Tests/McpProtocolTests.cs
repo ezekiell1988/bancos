@@ -47,6 +47,9 @@ public sealed class McpProtocolTests : IClassFixture<McpWebApplicationFactory>
         var statusTool = tools.EnumerateArray().Single(tool => tool.GetProperty("name").GetString() == "health_status");
         Assert.True(statusTool.TryGetProperty("outputSchema", out _));
         Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "detect_import_template");
+        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "classify_pending_transactions");
+        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "list_unclassified_transactions");
+        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "confirm_transaction_classification");
     }
 
     [Theory]
