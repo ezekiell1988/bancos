@@ -62,6 +62,11 @@ public sealed class AzureAiClassifier(HttpClient httpClient, IOptions<Classifica
 
             return new AiClassificationSuggestion(suggestion.CategoryCode, (decimal)suggestion.Confidence, suggestion.Reasoning ?? string.Empty);
         }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            // El timeout del proveedor es un fallo de clasificación, no una cancelación del lote.
+            return null;
+        }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             return null;

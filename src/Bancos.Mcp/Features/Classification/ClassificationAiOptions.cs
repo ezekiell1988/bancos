@@ -17,4 +17,7 @@ public sealed class ClassificationAiOptions
 
     [Range(0, 1)]
     public double MinimumConfidence { get; init; } = 0.8;
+
+    [Range(1, 60)]
+    public int RequestTimeoutSeconds { get; init; } = 10;
 }

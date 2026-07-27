@@ -6,6 +6,7 @@ using Bancos.Mcp.Features.TemplateDetection;
 using Bancos.Mcp.Features.AccountPeriodClosings;
 using Bancos.Mcp.Features.Classification;
 using Bancos.Mcp.Features.FileProcessing;
+using Bancos.Mcp.Features.ExchangeRates;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,19 +28,22 @@ builder.Services.AddTemplateDetectionModule(builder.Configuration);
 builder.Services.AddFileProcessingModule(builder.Configuration);
 builder.Services.AddAccountPeriodClosingsModule();
 builder.Services.AddClassificationModule();
+builder.Services.AddExchangeRatesModule(builder.Configuration);
 
 var app = builder.Build();
 
 app.UseExceptionHandler();
 app.UseRateLimiter();
 if (!app.Environment.IsEnvironment("Testing"))
+{
     app.UseHttpsRedirection();
+    app.UseHangfireDashboard("/hangfire");
+    app.MapAccountPeriodClosingsEndpoints();
+    app.UseAccountPeriodClosingsJobs();
+    app.UseExchangeRatesJobs();
+}
 
 app.MapHealthEndpoints();
-if (!app.Environment.IsEnvironment("Testing"))
-    app.UseHangfireDashboard("/hangfire");
-app.MapAccountPeriodClosingsEndpoints();
-app.UseAccountPeriodClosingsJobs();
 app.MapMcpEndpoints();
 
 app.Run();

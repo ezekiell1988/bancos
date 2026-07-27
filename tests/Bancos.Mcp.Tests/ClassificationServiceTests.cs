@@ -1,3 +1,6 @@
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
 using Bancos.Mcp.Data;
 using Bancos.Mcp.Domain;
 using Bancos.Mcp.Features.Classification;
@@ -11,9 +14,144 @@ public sealed class ClassificationServiceTests
 {
     private static readonly Guid GroceriesCategoryId = Guid.Parse("70000000-0000-0000-0000-000000000008");
     private static readonly Guid TransportCategoryId = Guid.Parse("70000000-0000-0000-0000-000000000009");
+    private const string GroceriesCategoryCode = "expense.groceries";
 
     internal static ClassificationService CreateService(McpCatalogDbContext db, ClassificationAiOptions? aiOptions = null) =>
         new(db, new AzureAiClassifier(new HttpClient(), Options.Create(aiOptions ?? new ClassificationAiOptions { Enabled = false })), Options.Create(aiOptions ?? new ClassificationAiOptions { Enabled = false }));
+
+    private static ClassificationService CreateServiceWithSimulatedAi(
+        McpCatalogDbContext db,
+        FakeAiHttpMessageHandler handler,
+        double minimumConfidence = 0.8)
+    {
+        var aiOptions = new ClassificationAiOptions
+        {
+            Enabled = true,
+            Endpoint = "https://fake-azure-ai.local/openai/v1",
+            ApiKey = "test-key",
+            Model = "gpt-5",
+            MinimumConfidence = minimumConfidence
+        };
+        var classifier = new AzureAiClassifier(new HttpClient(handler), Options.Create(aiOptions));
+        return new ClassificationService(db, classifier, Options.Create(aiOptions));
+    }
+
+    [Fact]
+    public async Task Classifies_by_ai_when_no_rule_matches_and_confidence_meets_threshold()
+    {
+        await using var db = await CreateDbAsync();
+        var accountId = (await db.BankAccounts.FirstAsync()).Id;
+        var transactionId = await AddTransactionAsync(db, accountId, "COMPRA SIN REGLA CONOCIDA");
+        await db.SaveChangesAsync();
+
+        var handler = FakeAiHttpMessageHandler.RespondingWith(GroceriesCategoryCode, confidence: 0.9);
+        var service = CreateServiceWithSimulatedAi(db, handler);
+
+        var classification = await service.ClassifyAsync(transactionId);
+
+        Assert.Equal("ai", classification.Source);
+        Assert.Equal(GroceriesCategoryId, classification.CategoryId);
+        Assert.Equal(0.9m, classification.Confidence);
+    }
+
+    [Fact]
+    public async Task Leaves_unclassified_when_ai_confidence_is_below_threshold()
+    {
+        await using var db = await CreateDbAsync();
+        var accountId = (await db.BankAccounts.FirstAsync()).Id;
+        var transactionId = await AddTransactionAsync(db, accountId, "COMPRA SIN REGLA CONOCIDA");
+        await db.SaveChangesAsync();
+
+        var handler = FakeAiHttpMessageHandler.RespondingWith(GroceriesCategoryCode, confidence: 0.5);
+        var service = CreateServiceWithSimulatedAi(db, handler, minimumConfidence: 0.8);
+
+        var classification = await service.ClassifyAsync(transactionId);
+
+        Assert.Equal("unclassified", classification.Source);
+        Assert.Null(classification.CategoryId);
+    }
+
+    [Fact]
+    public async Task Leaves_unclassified_when_ai_call_fails()
+    {
+        await using var db = await CreateDbAsync();
+        var accountId = (await db.BankAccounts.FirstAsync()).Id;
+        var transactionId = await AddTransactionAsync(db, accountId, "COMPRA SIN REGLA CONOCIDA");
+        await db.SaveChangesAsync();
+
+        var handler = FakeAiHttpMessageHandler.RespondingWithError(HttpStatusCode.ServiceUnavailable);
+        var service = CreateServiceWithSimulatedAi(db, handler);
+
+        var classification = await service.ClassifyAsync(transactionId);
+
+        Assert.Equal("unclassified", classification.Source);
+    }
+
+    [Fact]
+    public async Task Leaves_unclassified_when_ai_request_times_out()
+    {
+        await using var db = await CreateDbAsync();
+        var accountId = (await db.BankAccounts.FirstAsync()).Id;
+        var transactionId = await AddTransactionAsync(db, accountId, "COMPRA SIN REGLA CONOCIDA");
+        await db.SaveChangesAsync();
+
+        var handler = FakeAiHttpMessageHandler.Throwing(new TaskCanceledException("Tiempo de espera agotado."));
+        var service = CreateServiceWithSimulatedAi(db, handler);
+
+        var classification = await service.ClassifyAsync(transactionId);
+
+        Assert.Equal("unclassified", classification.Source);
+        Assert.Contains("IA", classification.Explanation);
+    }
+
+    [Fact]
+    public async Task Ai_prompt_only_contains_normalized_description_and_category_catalog()
+    {
+        await using var db = await CreateDbAsync();
+        var accountId = (await db.BankAccounts.FirstAsync()).Id;
+        var transactionId = await AddTransactionAsync(db, accountId, "COMPRA AUTOMERCADO SABANA");
+        await db.SaveChangesAsync();
+
+        var handler = FakeAiHttpMessageHandler.RespondingWith(GroceriesCategoryCode, confidence: 0.9);
+        var service = CreateServiceWithSimulatedAi(db, handler);
+
+        await service.ClassifyAsync(transactionId);
+
+        Assert.NotNull(handler.LastRequestBody);
+        Assert.Contains("compra automercado sabana", handler.LastRequestBody);
+        Assert.Contains(GroceriesCategoryCode, handler.LastRequestBody);
+        Assert.DoesNotContain(accountId.ToString(), handler.LastRequestBody);
+        Assert.DoesNotContain("-10", handler.LastRequestBody);
+    }
+
+    private sealed class FakeAiHttpMessageHandler : HttpMessageHandler
+    {
+        private readonly Func<HttpResponseMessage> _responder;
+        public string? LastRequestBody { get; private set; }
+
+        private FakeAiHttpMessageHandler(Func<HttpResponseMessage> responder) => _responder = responder;
+
+        public static FakeAiHttpMessageHandler RespondingWith(string categoryCode, double confidence) =>
+            new(() =>
+            {
+                var content = JsonSerializer.Serialize(new { categoryCode, confidence, reasoning = "Coincide con el catálogo." });
+                var body = new { choices = new[] { new { message = new { content } } } };
+                return new HttpResponseMessage(HttpStatusCode.OK) { Content = JsonContent.Create(body) };
+            });
+
+        public static FakeAiHttpMessageHandler RespondingWithError(HttpStatusCode statusCode) =>
+            new(() => new HttpResponseMessage(statusCode));
+
+        public static FakeAiHttpMessageHandler Throwing(Exception exception) =>
+            new(() => throw exception);
+
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            LastRequestBody = request.Content is null ? null : await request.Content.ReadAsStringAsync(cancellationToken);
+            return _responder();
+        }
+    }
 
     [Fact]
     public async Task Classifies_by_rule_when_description_matches_and_records_origin_and_confidence()

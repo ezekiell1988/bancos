@@ -1,6 +1,6 @@
 # TASK-EBC-MCP-33 — Clasificación MCP con Azure AI como fallback seguro
 
-**Estado:** Borrador
+**Estado:** Lista
 **Autor:** Ezequiel Baltodano Cubillo `<pendiente>`
 **Rama:** `dev`
 **Fecha inicio:** 2026-07-26 23:47 CR
@@ -8,7 +8,7 @@
 **Área:** MCP
 **Prioridad:** alta
 **Riesgo:** alto
-**Aprobación:** pendiente
+**Aprobación:** aprobada
 
 ---
 
@@ -95,6 +95,8 @@ Deshabilitar proveedor Azure AI por configuración y revertir feature.
 * [ ] Progreso/documentación actualizado
 
 ## Notas / contexto adicional
+
+* Aprobada por ezekiell1988 el 2026-07-27 08:49 CR.
 
 Sin notas adicionales.
 
