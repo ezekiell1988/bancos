@@ -4,6 +4,7 @@ using Bancos.Mcp.Data;
 using Bancos.Mcp.Features.Health;
 using Bancos.Mcp.Features.TemplateDetection;
 using Bancos.Mcp.Features.AccountPeriodClosings;
+using Bancos.Mcp.Features.Classification;
 using Bancos.Mcp.Features.FileProcessing;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
@@ -25,6 +26,7 @@ builder.Services.AddSingleton<ToolRegistry>();
 builder.Services.AddTemplateDetectionModule(builder.Configuration);
 builder.Services.AddFileProcessingModule(builder.Configuration);
 builder.Services.AddAccountPeriodClosingsModule();
+builder.Services.AddClassificationModule();
 
 var app = builder.Build();
 

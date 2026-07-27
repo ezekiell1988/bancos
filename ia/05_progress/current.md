@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-27 CR (ISSUE-007 resuelto)
+> **Última actualización:** 2026-07-27 CR (TASK-EBC-DB-11 completada)
 
 ## En curso
 
@@ -21,6 +21,8 @@
 * Aprobar y ejecutar `TASK-EZ-BE-01` mediante `iaWorkflow`.
 
 ## Completado en sesiones recientes
+
+* **2026-07-27** — TASK-EBC-DB-11 cerrada: Se agregó al catálogo MCP el modelo de clasificación: tbCategories (árbol jerárquico Ingreso/Gasto/Activo/Pasivo/Capital, sembrado con 17 categorías), tbClassificationRules (reglas deterministas por cuenta, patrón de descripción normalizada, tipo de operación y prioridad) y tbTransactionClassifications (historial auditable con origen rule/ai/manual/unclassified, confianza y explicación). Se implementó ClassificationRuleMatcher + ClassificationService en Features/Classification como motor determinista interno (sin exponer tool MCP ni integrar Azure AI, fuera de alcance). — EBC
 
 * **2026-07-27** — ISSUE-007 resuelto: Se incorporó extracción normalizada con checksum, comparación simultánea de huellas bancaria y de tarjeta, resolución obligatoria de una cuenta CRC y una USD, y unicidad de catálogo por identidad más moneda. La migración y el reproceso MCP fueron verificados con conciliación e idempotencia correctas.
 

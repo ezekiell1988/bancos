@@ -20,6 +20,9 @@ public sealed class McpCatalogDbContext(DbContextOptions<McpCatalogDbContext> op
     public DbSet<LoanStatement> LoanStatements => Set<LoanStatement>();
     public DbSet<LoanPayment> LoanPayments => Set<LoanPayment>();
     public DbSet<AccountPeriodClosing> AccountPeriodClosings => Set<AccountPeriodClosing>();
+    public DbSet<Category> Categories => Set<Category>();
+    public DbSet<ClassificationRule> ClassificationRules => Set<ClassificationRule>();
+    public DbSet<TransactionClassification> TransactionClassifications => Set<TransactionClassification>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -367,6 +370,87 @@ public sealed class McpCatalogDbContext(DbContextOptions<McpCatalogDbContext> op
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
+        builder.Entity<Category>(entity =>
+        {
+            entity.ToTable("tbCategories", table =>
+            {
+                table.HasComment("Árbol de categorías contables usado por la clasificación determinista.");
+                table.HasCheckConstraint("CK_tbCategories_rootType", "[rootType] IN ('income', 'expense', 'asset', 'liability', 'equity')");
+            });
+            entity.HasIndex(c => c.Code).IsUnique();
+            entity.Property(c => c.Id).HasColumnName("idCategories").HasComment("Identificador único de la categoría.");
+            entity.Property(c => c.ParentId).HasColumnName("idParentCategories").HasComment("Categoría padre; null si es una raíz del árbol.");
+            entity.Property(c => c.RootType).HasColumnName("rootType").HasMaxLength(16).HasComment("Raíz contable de la categoría: ingreso, gasto, activo, pasivo o capital.");
+            entity.Property(c => c.Code).HasColumnName("code").HasMaxLength(80).HasComment("Código estable que identifica la categoría, ej. expense.groceries.");
+            entity.Property(c => c.Name).HasColumnName("name").HasMaxLength(120).HasComment("Nombre visible de la categoría.");
+            entity.Property(c => c.IsEnabled).HasColumnName("isEnabled").HasComment("Indica si la categoría puede usarse para clasificar movimientos.");
+            entity.Property(c => c.CreatedAt).HasColumnName("createdAt").HasComment("Fecha y hora de creación del registro.");
+            entity.Property(c => c.UpdatedAt).HasColumnName("updatedAt").HasComment("Fecha y hora de la última actualización del registro.");
+            entity.HasOne(c => c.Parent)
+                .WithMany(c => c.Children)
+                .HasForeignKey(c => c.ParentId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<ClassificationRule>(entity =>
+        {
+            entity.ToTable("tbClassificationRules", table =>
+            {
+                table.HasComment("Reglas deterministas para clasificar movimientos por cuenta, descripción y contexto.");
+                table.HasCheckConstraint("CK_tbClassificationRules_matchType", "[matchType] IN ('exact', 'contains', 'starts-with')");
+            });
+            entity.HasIndex(r => new { r.BankAccountId, r.DescriptionPattern, r.MatchType, r.OperationType }).IsUnique();
+            entity.Property(r => r.Id).HasColumnName("idClassificationRules").HasComment("Identificador único de la regla.");
+            entity.Property(r => r.CategoryId).HasColumnName("idCategories").HasComment("Categoría asignada cuando la regla coincide.");
+            entity.Property(r => r.BankAccountId).HasColumnName("idBankAccounts").HasComment("Cuenta bancaria a la que aplica la regla; null aplica a cualquier cuenta.");
+            entity.Property(r => r.DescriptionPattern).HasColumnName("descriptionPattern").HasMaxLength(200).HasComment("Texto normalizado a comparar contra la descripción del movimiento.");
+            entity.Property(r => r.MatchType).HasColumnName("matchType").HasMaxLength(16).HasComment("Forma de comparar el patrón: exacto, contiene o empieza con.");
+            entity.Property(r => r.OperationType).HasColumnName("operationType").HasMaxLength(32).HasComment("Tipo de operación requerido; null aplica a cualquier tipo.");
+            entity.Property(r => r.Priority).HasColumnName("priority").HasComment("Prioridad para desempatar entre reglas igual de específicas; mayor gana.");
+            entity.Property(r => r.IsEnabled).HasColumnName("isEnabled").HasComment("Indica si la regla participa en la clasificación automática.");
+            entity.Property(r => r.CreatedAt).HasColumnName("createdAt").HasComment("Fecha y hora de creación del registro.");
+            entity.Property(r => r.UpdatedAt).HasColumnName("updatedAt").HasComment("Fecha y hora de la última actualización del registro.");
+            entity.HasOne(r => r.Category)
+                .WithMany(c => c.Rules)
+                .HasForeignKey(r => r.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(r => r.BankAccount)
+                .WithMany(a => a.ClassificationRules)
+                .HasForeignKey(r => r.BankAccountId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<TransactionClassification>(entity =>
+        {
+            entity.ToTable("tbTransactionClassifications", table =>
+            {
+                table.HasComment("Historial auditable de cada decisión de clasificación tomada sobre un movimiento.");
+                table.HasCheckConstraint("CK_tbTransactionClassifications_source", "[source] IN ('rule', 'ai', 'manual', 'unclassified')");
+                table.HasCheckConstraint("CK_tbTransactionClassifications_confidence", "[confidence] IS NULL OR ([confidence] >= 0 AND [confidence] <= 1)");
+            });
+            entity.HasIndex(tc => tc.TransactionId);
+            entity.Property(tc => tc.Id).HasColumnName("idTransactionClassifications").HasComment("Identificador único de la entrada de clasificación.");
+            entity.Property(tc => tc.TransactionId).HasColumnName("idTransactions").HasComment("Movimiento clasificado.");
+            entity.Property(tc => tc.CategoryId).HasColumnName("idCategories").HasComment("Categoría asignada; null si el movimiento quedó sin clasificar.");
+            entity.Property(tc => tc.ClassificationRuleId).HasColumnName("idClassificationRules").HasComment("Regla que produjo la clasificación; null si el origen no fue una regla.");
+            entity.Property(tc => tc.Source).HasColumnName("source").HasMaxLength(16).HasComment("Origen de la decisión: regla, IA, manual o sin clasificar.");
+            entity.Property(tc => tc.Confidence).HasColumnName("confidence").HasPrecision(5, 4).HasComment("Confianza de la decisión entre 0 y 1; null si no aplica.");
+            entity.Property(tc => tc.Explanation).HasColumnName("explanation").HasMaxLength(500).HasComment("Explicación breve de por qué se asignó la categoría.");
+            entity.Property(tc => tc.CreatedAt).HasColumnName("createdAt").HasComment("Fecha y hora en que se tomó la decisión.");
+            entity.HasOne(tc => tc.Transaction)
+                .WithMany(t => t.Classifications)
+                .HasForeignKey(tc => tc.TransactionId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(tc => tc.Category)
+                .WithMany(c => c.Classifications)
+                .HasForeignKey(tc => tc.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(tc => tc.ClassificationRule)
+                .WithMany(r => r.Classifications)
+                .HasForeignKey(tc => tc.ClassificationRuleId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
         SeedInitialBalanceTransactions(builder);
         SeedBanks(builder);
         SeedBankAccounts(builder);
@@ -375,6 +459,7 @@ public sealed class McpCatalogDbContext(DbContextOptions<McpCatalogDbContext> op
         SeedBankAccountImportTemplates(builder);
         SeedImportTemplatePatterns(builder);
         SeedPeriods(builder);
+        SeedCategories(builder);
     }
 
     private static void SeedBanks(ModelBuilder builder)
@@ -626,5 +711,50 @@ public sealed class McpCatalogDbContext(DbContextOptions<McpCatalogDbContext> op
             EndDate = m.Item3,
             CreatedAt = createdAt
         }));
+    }
+
+    private static void SeedCategories(ModelBuilder builder)
+    {
+        var createdAt = new DateTimeOffset(2026, 7, 27, 0, 0, 0, TimeSpan.FromHours(-6));
+
+        Guid CategoryId(int number) => Guid.Parse($"70000000-0000-0000-0000-{number:D12}");
+
+        Category Root(int number, string rootType, string code, string name) => new()
+        {
+            Id = CategoryId(number),
+            RootType = rootType,
+            Code = code,
+            Name = name,
+            CreatedAt = createdAt
+        };
+
+        Category Child(int number, int parentNumber, string rootType, string code, string name) => new()
+        {
+            Id = CategoryId(number),
+            ParentId = CategoryId(parentNumber),
+            RootType = rootType,
+            Code = code,
+            Name = name,
+            CreatedAt = createdAt
+        };
+
+        builder.Entity<Category>().HasData(
+            Root(1, "income", "income", "Ingreso"),
+            Root(2, "expense", "expense", "Gasto"),
+            Root(3, "asset", "asset", "Activo"),
+            Root(4, "liability", "liability", "Pasivo"),
+            Root(5, "equity", "equity", "Capital"),
+            Child(6, 1, "income", "income.salary", "Salario"),
+            Child(7, 1, "income", "income.other", "Otros ingresos"),
+            Child(8, 2, "expense", "expense.groceries", "Alimentación"),
+            Child(9, 2, "expense", "expense.transport", "Transporte"),
+            Child(10, 2, "expense", "expense.housing", "Vivienda"),
+            Child(11, 2, "expense", "expense.utilities", "Servicios"),
+            Child(12, 2, "expense", "expense.health", "Salud"),
+            Child(13, 2, "expense", "expense.entertainment", "Entretenimiento"),
+            Child(14, 2, "expense", "expense.other", "Otros gastos"),
+            Child(15, 3, "asset", "asset.cash", "Efectivo y bancos"),
+            Child(16, 4, "liability", "liability.creditCard", "Tarjetas de crédito"),
+            Child(17, 4, "liability", "liability.loan", "Préstamos"));
     }
 }

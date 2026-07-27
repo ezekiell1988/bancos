@@ -21,4 +21,5 @@ public sealed class Transaction
     public BankAccount? BankAccount { get; set; }
     public Period? Period { get; set; }
     public ICollection<CardStatementLine> CardStatementLines { get; set; } = [];
+    public ICollection<TransactionClassification> Classifications { get; set; } = [];
 }

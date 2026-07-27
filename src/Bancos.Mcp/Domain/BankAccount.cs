@@ -30,6 +30,7 @@ public sealed class BankAccount
     public ICollection<CardStatement> CardStatements { get; set; } = [];
     public ICollection<CardFinancing> CardFinancings { get; set; } = [];
     public ICollection<LoanStatement> LoanStatements { get; set; } = [];
+    public ICollection<ClassificationRule> ClassificationRules { get; set; } = [];
 }
 
 public sealed class BankAccountImportTemplate

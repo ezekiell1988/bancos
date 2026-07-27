@@ -35,6 +35,30 @@ public sealed class McpCatalogDbContextTests
         AssertColumn(model, typeof(ImportTemplate), "tbImportTemplates", "Id", "idImportTemplates", "Catálogo de formatos de archivos de importación reconocidos.");
         AssertColumn(model, typeof(ImportTemplatePattern), "tbImportTemplatePatterns", "Id", "idImportTemplatePatterns", "Patrones aprobados para detectar una plantilla de importación por contenido.");
         AssertColumn(model, typeof(BankAccountImportTemplate), "tbBankAccountImportTemplates", "BankAccountId", "idBankAccounts", "Relación entre cuentas bancarias y formatos de importación admitidos.");
+        AssertColumn(model, typeof(Category), "tbCategories", "Id", "idCategories", "Árbol de categorías contables usado por la clasificación determinista.");
+        AssertColumn(model, typeof(ClassificationRule), "tbClassificationRules", "Id", "idClassificationRules", "Reglas deterministas para clasificar movimientos por cuenta, descripción y contexto.");
+        AssertColumn(model, typeof(TransactionClassification), "tbTransactionClassifications", "Id", "idTransactionClassifications", "Historial auditable de cada decisión de clasificación tomada sobre un movimiento.");
+    }
+
+    [Fact]
+    public async Task Categories_seed_a_hierarchical_tree_for_every_accounting_root()
+    {
+        var options = new DbContextOptionsBuilder<McpCatalogDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+        await using var db = new McpCatalogDbContext(options);
+        await db.Database.EnsureCreatedAsync();
+
+        var categories = await db.Categories.ToListAsync();
+        var roots = categories.Where(c => c.ParentId == null).ToList();
+
+        Assert.Equal(5, roots.Count);
+        Assert.All(new[] { "income", "expense", "asset", "liability", "equity" },
+            rootType => Assert.Contains(roots, c => c.RootType == rootType));
+        Assert.All(categories, c => Assert.True(c.IsEnabled));
+        Assert.All(categories.Where(c => c.ParentId != null),
+            c => Assert.Equal(c.RootType, categories.Single(p => p.Id == c.ParentId).RootType));
+        Assert.True(categories.Select(c => c.Code).Distinct().Count() == categories.Count);
     }
 
     [Fact]

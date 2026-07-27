@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-26 CR (TASK-EBC-DB-06 completada)
+> **Última actualización:** 2026-07-27 CR (TASK-EBC-DB-11 completada)
 
 
 
 ## Completado
+
+* **2026-07-27** — TASK-EBC-DB-11: Se agregó al catálogo MCP el modelo de clasificación: tbCategories (árbol jerárquico Ingreso/Gasto/Activo/Pasivo/Capital, sembrado con 17 categorías), tbClassificationRules (reglas deterministas por cuenta, patrón de descripción normalizada, tipo de operación y prioridad) y tbTransactionClassifications (historial auditable con origen rule/ai/manual/unclassified, confianza y explicación). Se implementó ClassificationRuleMatcher + ClassificationService en Features/Classification como motor determinista interno (sin exponer tool MCP ni integrar Azure AI, fuera de alcance). — EBC
 
 * **2026-07-26** — TASK-EBC-DB-06: Cancelada por cambio de arquitectura: dependía del modelo y tablas de Bancos.Api, retirados al consolidar Bancos.Mcp como único proyecto funcional. — C
 
