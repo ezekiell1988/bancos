@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-27 CR (TASK-EBC-BE-29 completada)
+> **Última actualización:** 2026-07-27 CR (progreso actualizado)
 
 ## En curso
 
@@ -23,6 +23,12 @@
 ## Completado en sesiones recientes
 
 
+
+* **2026-07-27** — TASK-EBC-MCP-33: list_unclassified_transactions ahora pagina con page/itemsPerPage (máximo 200) y entrega el listado textual en TOON, con totalItems y totalPages. Pruebas de clasificación y paginación/TOON: 15 aprobadas. — EBC
+
+* **2026-07-27** — TASK-EBC-MCP-42 cerrada: Corregida la validación de sesión y versión negociada para tools/list y tools/call; actualizadas las expectativas del catálogo para 11 plantillas, 41 relaciones y 9 patrones activos. ISSUE-008 resuelto. — EBC
+
+* **2026-07-27** — ISSUE-008 resuelto: Se actualizó el contrato de pruebas a 11 plantillas, 41 relaciones y 9 patrones activos. McpHandler ahora exige sesión existente y header MCP-Protocol-Version coincidente antes de procesar métodos posteriores a initialize.
 
 * **2026-07-27** — TASK-EBC-BE-29 cerrada: Implementado job diario BCCR de tipo de cambio USD/CRC: consulta el indicador 318 con fallback de hasta tres días, realiza upsert idempotente para BN y BAC y queda programado a las 08:00 en hora de Costa Rica. Las pruebas específicas pasan; los fallos ajenos de la suite completa se registraron en ISSUE-008. — EBC
 

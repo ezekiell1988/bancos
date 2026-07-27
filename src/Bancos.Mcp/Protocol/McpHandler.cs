@@ -52,6 +52,9 @@ public static class McpHandler
             ? paramsElement
             : JsonDocument.Parse("{}").RootElement.Clone();
 
+        if (method != "initialize" && !HasValidSession(context.Request, cache))
+            return TypedResults.BadRequest();
+
         return method switch
         {
             "initialize" => Initialize(context.Response, id, parameters, options.Value, cache),
@@ -137,6 +140,16 @@ public static class McpHandler
     }
 
     private static string SessionKey(string sessionId) => $"mcp-session:{sessionId}";
+
+    private static bool HasValidSession(HttpRequest request, IMemoryCache cache)
+    {
+        var sessionId = request.Headers["Mcp-Session-Id"].FirstOrDefault();
+        var protocolVersion = request.Headers["MCP-Protocol-Version"].FirstOrDefault();
+        return !string.IsNullOrWhiteSpace(sessionId)
+            && !string.IsNullOrWhiteSpace(protocolVersion)
+            && cache.TryGetValue<string>(SessionKey(sessionId), out var negotiatedVersion)
+            && string.Equals(negotiatedVersion, protocolVersion, StringComparison.Ordinal);
+    }
 
     private static readonly JsonSerializerOptions CamelCase = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 

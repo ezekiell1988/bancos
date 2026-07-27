@@ -17,6 +17,12 @@ public sealed record UnclassifiedTransactionSummary(
 
 public sealed record ClassifyBatchSummary(int Processed, int Rule, int Ai, int Unclassified);
 
+public sealed record UnclassifiedTransactionsPage(
+    IReadOnlyList<UnclassifiedTransactionSummary> Items,
+    int Page,
+    int ItemsPerPage,
+    int TotalItems);
+
 public sealed class ClassificationService(
     McpCatalogDbContext db,
     AzureAiClassifier aiClassifier,
@@ -86,14 +92,20 @@ public sealed class ClassificationService(
         return new ClassifyBatchSummary(pendingIds.Count, rule, ai, unclassified);
     }
 
-    public async Task<IReadOnlyList<UnclassifiedTransactionSummary>> ListUnclassifiedAsync(
-        Guid? bankAccountId, int limit, CancellationToken ct = default)
+    public async Task<UnclassifiedTransactionsPage> ListUnclassifiedAsync(
+        Guid? bankAccountId, int page, int itemsPerPage, CancellationToken ct = default)
     {
         var query = db.Transactions.Where(t => !t.Classifications.Any(c => c.Source != ClassificationSource.Unclassified));
         if (bankAccountId is not null)
             query = query.Where(t => t.BankAccountId == bankAccountId);
 
-        var transactions = await query.OrderBy(t => t.TransactionDate).Take(limit).ToListAsync(ct);
+        var totalItems = await query.CountAsync(ct);
+        var transactions = await query
+            .OrderBy(t => t.TransactionDate)
+            .ThenBy(t => t.Id)
+            .Skip((page - 1) * itemsPerPage)
+            .Take(itemsPerPage)
+            .ToListAsync(ct);
         var transactionIds = transactions.Select(t => t.Id).ToList();
 
         var latestExplanationByTransaction = (await db.TransactionClassifications
@@ -102,7 +114,7 @@ public sealed class ClassificationService(
             .GroupBy(c => c.TransactionId)
             .ToDictionary(g => g.Key, g => g.OrderByDescending(c => c.CreatedAt).First().Explanation);
 
-        return transactions
+        var items = transactions
             .Select(t => new UnclassifiedTransactionSummary(
                 t.Id,
                 t.BankAccountId,
@@ -112,6 +124,8 @@ public sealed class ClassificationService(
                 t.CurrencyCode,
                 latestExplanationByTransaction.GetValueOrDefault(t.Id) ?? "Sin intento de clasificación registrado."))
             .ToList();
+
+        return new UnclassifiedTransactionsPage(items, page, itemsPerPage, totalItems);
     }
 
     public async Task<TransactionClassification> ConfirmManualClassificationAsync(

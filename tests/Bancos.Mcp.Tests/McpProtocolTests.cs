@@ -92,9 +92,11 @@ public sealed class McpProtocolTests : IClassFixture<McpWebApplicationFactory>
         using var unknownSession = await PostAsync("""{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}""", "unknown");
         var sessionId = await GetSessionIdAsync();
         using var unsupportedVersion = await PostAsync("""{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}""", sessionId, "2020-01-01");
+        using var mismatchedVersion = await PostAsync("""{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}""", sessionId, "2025-11-25");
 
         Assert.Equal(HttpStatusCode.BadRequest, unknownSession.StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, unsupportedVersion.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, mismatchedVersion.StatusCode);
     }
 
     [Fact]

@@ -1,8 +1,12 @@
-> **Última actualización:** 2026-07-27 CR (ISSUE-006 resuelto)
+> **Última actualización:** 2026-07-27 CR (TASK-EBC-MCP-42 completada)
 
 
 
 ## Completado
+
+* **2026-07-27** — TASK-EBC-MCP-42: Corregida la validación de sesión y versión negociada para tools/list y tools/call; actualizadas las expectativas del catálogo para 11 plantillas, 41 relaciones y 9 patrones activos. ISSUE-008 resuelto. — EBC
+
+* **2026-07-27** — ISSUE-008 resuelto: Se actualizó el contrato de pruebas a 11 plantillas, 41 relaciones y 9 patrones activos. McpHandler ahora exige sesión existente y header MCP-Protocol-Version coincidente antes de procesar métodos posteriores a initialize.
 
 * **2026-07-27** — ISSUE-006 resuelto: Se unificó la extracción PDF reconstruida, se alinearon las regex con el formato BN, se resolvió el par CRC/USD, se enrutaron movimientos por moneda y se crearon vínculos idempotentes. La importación local terminó correctamente y la conciliación almacenada resultó válida en ambas monedas.
 

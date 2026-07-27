@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-27 CR (TASK-EBC-BE-29 completada)
+> **Última actualización:** 2026-07-27 CR (progreso actualizado)
 
 
 
 ## Completado
+
+* **2026-07-27** — TASK-EBC-MCP-33: list_unclassified_transactions ahora pagina con page/itemsPerPage (máximo 200) y entrega el listado textual en TOON, con totalItems y totalPages. Pruebas de clasificación y paginación/TOON: 15 aprobadas. — EBC
 
 * **2026-07-27** — TASK-EBC-BE-29: Implementado job diario BCCR de tipo de cambio USD/CRC: consulta el indicador 318 con fallback de hasta tres días, realiza upsert idempotente para BN y BAC y queda programado a las 08:00 en hora de Costa Rica. Las pruebas específicas pasan; los fallos ajenos de la suite completa se registraron en ISSUE-008. — EBC
 

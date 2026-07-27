@@ -321,12 +321,33 @@ public sealed class ClassificationServiceTests
         await service.ConfirmManualClassificationAsync(laterConfirmed, GroceriesCategoryId);
 
         // La cuenta ya trae un movimiento "Saldo inicial" sembrado sin clasificar (ver McpCatalogDbContext).
-        var unclassified = await service.ListUnclassifiedAsync(accountId, limit: 50);
+        var unclassified = await service.ListUnclassifiedAsync(accountId, page: 1, itemsPerPage: 50);
 
-        Assert.Equal(2, unclassified.Count);
-        Assert.Contains(unclassified, s => s.TransactionId == stillUnclassified);
-        Assert.DoesNotContain(unclassified, s => s.TransactionId == laterConfirmed);
-        Assert.All(unclassified, s => Assert.NotEmpty(s.Explanation));
+        Assert.Equal(2, unclassified.TotalItems);
+        Assert.Contains(unclassified.Items, s => s.TransactionId == stillUnclassified);
+        Assert.DoesNotContain(unclassified.Items, s => s.TransactionId == laterConfirmed);
+        Assert.All(unclassified.Items, s => Assert.NotEmpty(s.Explanation));
+    }
+
+    [Fact]
+    public async Task ListUnclassifiedAsync_returns_requested_page_and_toon_header()
+    {
+        await using var db = await CreateDbAsync();
+        var accountId = (await db.BankAccounts.FirstAsync()).Id;
+        await AddTransactionAsync(db, accountId, "PENDIENTE UNO");
+        await AddTransactionAsync(db, accountId, "PENDIENTE DOS");
+        await AddTransactionAsync(db, accountId, "PENDIENTE TRES");
+
+        var service = CreateService(db);
+        var page = await service.ListUnclassifiedAsync(accountId, page: 2, itemsPerPage: 2);
+        var toon = ToonFormatter.Format(page);
+
+        Assert.Equal(4, page.TotalItems); // Incluye el movimiento inicial sembrado.
+        Assert.Equal(2, page.Page);
+        Assert.Equal(2, page.Items.Count);
+        Assert.Contains("format:toon", toon);
+        Assert.Contains("page:2", toon);
+        Assert.Contains("transactions[2]{transactionId,bankAccountId,transactionDate,description,amount,currencyCode,explanation}:", toon);
     }
 
     [Fact]

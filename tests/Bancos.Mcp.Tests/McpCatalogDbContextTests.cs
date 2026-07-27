@@ -98,13 +98,13 @@ public sealed class McpCatalogDbContextTests
         Assert.All(exchangeRates, rate => Assert.Equal(new DateOnly(2026, 7, 20), rate.RateDate));
         Assert.Contains(exchangeRates, rate => rate.BankId == banks.Single(bank => bank.Code == "BAC").Id);
         Assert.Contains(exchangeRates, rate => rate.BankId == banks.Single(bank => bank.Code == "BN").Id);
-        Assert.Equal(40, accountTemplates.Count);
+        Assert.Equal(41, accountTemplates.Count);
         Assert.Contains(accountTemplates, link => link.BankAccountId == accounts.Single(account => account.Code == "coopealianza-loan-01-crc").Id && link.ImportTemplateId == templates.Single(template => template.Code == "coopealianza-loan-pdf-v1").Id);
-        Assert.Equal(9, templates.Count);
+        Assert.Equal(11, templates.Count);
         Assert.All(templates, template => Assert.True(template.IsEnabled));
         Assert.All(templates, template => Assert.Equal(TimeSpan.FromHours(-6), template.CreatedAt.Offset));
-        Assert.Equal(9, patterns.Count);
-        Assert.All(patterns, pattern => Assert.True(pattern.IsApproved && pattern.IsActive));
+        Assert.Equal(11, patterns.Count);
+        Assert.Equal(9, patterns.Count(pattern => pattern.IsApproved && pattern.IsActive));
         Assert.All(patterns, pattern => Assert.Equal("content-terms", pattern.PatternKind));
         Assert.All(patterns, pattern => Assert.Equal(TimeSpan.FromHours(-6), pattern.CreatedAt.Offset));
         Assert.Contains(templates, template => template.Code == "bcr-debit-csv-v1" && template.ContentKind == "csv");

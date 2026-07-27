@@ -9,8 +9,8 @@ public sealed class ListUnclassifiedTransactionsTool(IServiceScopeFactory scopeF
     public McpToolDefinition Definition { get; } = new(
         Name: "list_unclassified_transactions",
         Title: "Listar movimientos No clasificados",
-        Description: "Devuelve los movimientos que nunca alcanzaron una clasificación por regla, IA o confirmación manual, "
-                   + "junto con la explicación de por qué quedaron pendientes. No incluye datos bancarios sensibles como IBAN o número de tarjeta.",
+        Description: "Devuelve en TOON los movimientos que nunca alcanzaron una clasificación por regla, IA o confirmación manual, "
+                   + "junto con la explicación de por qué quedaron pendientes. La respuesta está paginada y no incluye IBAN ni números de tarjeta.",
         InputSchema: new
         {
             type = "object",
@@ -22,12 +22,18 @@ public sealed class ListUnclassifiedTransactionsTool(IServiceScopeFactory scopeF
                     format = "uuid",
                     description = "Limita el listado a una cuenta bancaria específica; omite para incluir todas las cuentas."
                 },
-                limit = new
+                page = new
+                {
+                    type = new[] { "integer", "null" },
+                    minimum = 1,
+                    description = "Página a devolver, basada en 1 (por defecto 1)."
+                },
+                itemsPerPage = new
                 {
                     type = new[] { "integer", "null" },
                     minimum = 1,
                     maximum = 200,
-                    description = "Máximo de movimientos a devolver (por defecto 50)."
+                    description = "Cantidad de movimientos por página (por defecto 50; máximo 200)."
                 }
             },
             required = Array.Empty<string>(),
@@ -38,6 +44,10 @@ public sealed class ListUnclassifiedTransactionsTool(IServiceScopeFactory scopeF
             type = "object",
             properties = new
             {
+                page = new { type = "integer" },
+                itemsPerPage = new { type = "integer" },
+                totalItems = new { type = "integer" },
+                totalPages = new { type = "integer" },
                 transactions = new
                 {
                     type = "array",
@@ -59,7 +69,7 @@ public sealed class ListUnclassifiedTransactionsTool(IServiceScopeFactory scopeF
                     }
                 }
             },
-            required = new[] { "transactions" },
+            required = new[] { "page", "itemsPerPage", "totalItems", "totalPages", "transactions" },
             additionalProperties = false
         });
 
@@ -73,15 +83,19 @@ public sealed class ListUnclassifiedTransactionsTool(IServiceScopeFactory scopeF
             bankAccountId = parsedAccountId;
         }
 
-        var limit = 50;
-        if (arguments.TryGetProperty("limit", out var limitEl) && limitEl.ValueKind == JsonValueKind.Number)
-            limit = Math.Clamp(limitEl.GetInt32(), 1, 200);
+        var page = 1;
+        if (arguments.TryGetProperty("page", out var pageEl) && pageEl.ValueKind == JsonValueKind.Number)
+            page = Math.Max(pageEl.GetInt32(), 1);
+
+        var itemsPerPage = 50;
+        if (arguments.TryGetProperty("itemsPerPage", out var itemsPerPageEl) && itemsPerPageEl.ValueKind == JsonValueKind.Number)
+            itemsPerPage = Math.Clamp(itemsPerPageEl.GetInt32(), 1, 200);
 
         using var scope = scopeFactory.CreateScope();
         var service = scope.ServiceProvider.GetRequiredService<ClassificationService>();
-        var summaries = await service.ListUnclassifiedAsync(bankAccountId, limit, cancellationToken);
+        var summaries = await service.ListUnclassifiedAsync(bankAccountId, page, itemsPerPage, cancellationToken);
 
-        var transactions = summaries.Select(s => new
+        var transactions = summaries.Items.Select(s => new
         {
             transactionId = s.TransactionId,
             bankAccountId = s.BankAccountId,
@@ -92,8 +106,8 @@ public sealed class ListUnclassifiedTransactionsTool(IServiceScopeFactory scopeF
             explanation = s.Explanation
         }).ToList();
 
-        var result = new { transactions };
-        var json = JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
-        return new McpToolResult([McpContent.FromText(json)], result);
+        var totalPages = Math.Max(1, (int)Math.Ceiling(summaries.TotalItems / (double)summaries.ItemsPerPage));
+        var result = new { summaries.Page, summaries.ItemsPerPage, summaries.TotalItems, totalPages, transactions };
+        return new McpToolResult([McpContent.FromText(ToonFormatter.Format(summaries))], result);
     }
 }
