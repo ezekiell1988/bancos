@@ -8,7 +8,7 @@ namespace Bancos.Mcp.Protocol;
 public static class McpHandler
 {
     private const string DefaultProtocolVersion = "2025-06-18";
-    private static readonly HashSet<string> CompatibleProtocolVersions = ["2024-11-05", DefaultProtocolVersion];
+    private static readonly HashSet<string> CompatibleProtocolVersions = ["2024-11-05", "2025-03-26", DefaultProtocolVersion, "2025-11-25"];
 
     public static IResult GetHealth() => TypedResults.Ok(new { status = "ready" });
 
@@ -85,9 +85,9 @@ public static class McpHandler
         var sessionId = request.Headers["Mcp-Session-Id"].FirstOrDefault();
         var protocolVersion = request.Headers["MCP-Protocol-Version"].FirstOrDefault();
         return !string.IsNullOrWhiteSpace(sessionId)
-            && cache.TryGetValue(SessionKey(sessionId), out _)
             && !string.IsNullOrWhiteSpace(protocolVersion)
-            && CompatibleProtocolVersions.Contains(protocolVersion);
+            && cache.TryGetValue<string>(SessionKey(sessionId), out var negotiatedVersion)
+            && string.Equals(protocolVersion, negotiatedVersion, StringComparison.Ordinal);
     }
 
     private static IResult Initialize(HttpResponse response, JsonElement id, JsonElement parameters, McpOptions options, IMemoryCache cache)
@@ -100,7 +100,7 @@ public static class McpHandler
             : DefaultProtocolVersion;
         var sessionId = Guid.NewGuid().ToString("N");
 
-        cache.Set(SessionKey(sessionId), true, TimeSpan.FromMinutes(30));
+        cache.Set(SessionKey(sessionId), negotiatedVersion, TimeSpan.FromMinutes(30));
         response.Headers["Mcp-Session-Id"] = sessionId;
 
         return JsonRpcResult(id, new

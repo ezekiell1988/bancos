@@ -104,3 +104,18 @@ El registry autodescubre todo archivo `tools/*.mjs` que no empiece con `_`.
 12. **Confinar filesystem en el propio server** — `sandboxEnabled` de VS Code es
     macOS/Linux only; en Windows el server debe validar paths (rechazar `../`) y limitar
     el alcance de lecturas/escrituras al root del proyecto.
+
+## MCP HTTP — Compatibilidad de clientes
+
+Para un endpoint HTTP (`POST /mcp`), `initialize` debe negociar una versión soportada y
+guardar **esa versión por `Mcp-Session-Id`**. Cada mensaje posterior valida que el header
+`MCP-Protocol-Version` coincide con la versión negociada de su propia sesión.
+
+Aceptar las versiones que usan los clientes objetivo (incluidas `2025-03-26`,
+`2025-06-18` y `2025-11-25` cuando el servidor las implemente). Un `400` inmediatamente
+después de `initialize` normalmente significa que se validó contra una lista global o
+contra una versión distinta a la negociada.
+
+No aplicar un limitador global a `GET /mcp` ni a `DELETE /mcp`: VS Code puede sondear el
+endpoint y agotar una cuota compartida, causando `429` durante el uso o cierre de sesión.
+Limitar explícitamente `POST /mcp` (y, si hace falta, `tools/call`) por cliente o sesión.

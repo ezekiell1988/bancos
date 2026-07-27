@@ -50,6 +50,19 @@ public sealed class McpProtocolTests : IClassFixture<McpWebApplicationFactory>
     }
 
     [Fact]
+    [Theory]
+    [InlineData("2025-03-26")]
+    [InlineData("2025-11-25")]
+    public async Task Tools_list_accepts_the_protocol_version_negotiated_with_the_client(string protocolVersion)
+    {
+        using var initialize = await InitializeAsync(protocolVersion);
+        var sessionId = initialize.Headers.GetValues("Mcp-Session-Id").Single();
+        using var response = await PostAsync("""{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}""", sessionId, protocolVersion);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Tools_call_returns_text_and_structured_content()
     {
         var sessionId = await GetSessionIdAsync();

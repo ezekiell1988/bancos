@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-26 CR (TASK-EBC-MCP-16 completada)
+> **Última actualización:** 2026-07-26 CR (TASK-EBC-DOC-06 completada)
 
 
 
 ## Completado
+
+* **2026-07-26** — TASK-EBC-DOC-06: Se documentó la negociación de versión MCP por sesión y la exclusión de GET/DELETE del limitador global. La copia canónica de mcp-vscode fue sincronizada hacia Claude y Codex. — EBC
 
 * **2026-07-26** — TASK-EBC-MCP-16: Revisión de bcr-debit-html-xls-v1 para bcr-debit-01-crc (MovimientosPorRangoFecha_Cta_CR07015202001294229652.xls, HTML envuelto en XLS). Parser bcr-debit-html confirmado. Archivo cubre 02/01/2026–17/07/2026 con 950 movimientos. Totales: débito ₡19,737,577.49 / crédito ₡17,455,629.67 / net −₡2,281,947.82. No contiene saldo inicial explícito; seed no requerido (balance inicial = ₡0). Saldo final documentado en docs/saldos-corte-jun2026.md como net del período. Detección bcr-debit-html funciona correctamente por términos 'banco de costa rica' + alternativas de movimientos. — EBC
 

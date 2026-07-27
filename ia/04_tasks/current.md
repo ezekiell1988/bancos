@@ -1,6 +1,12 @@
 # 04 — Tareas activas
 
-> **Última actualización:** 2026-07-26 CR (TASK-EBC-MCP-16 completada)
+> **Última actualización:** 2026-07-26 CR (TASK-EBC-MCP-23 aprobada)
+
+
+
+
+
+
 
 
 
@@ -140,6 +146,8 @@ Sin tareas.
 
 | ID | Área | Título | Prioridad |
 |---|---|---|---|
+| `TASK-EBC-MCP-23` | MCP | Excluir sondeos MCP del rate limit global | alta |
+| `TASK-EBC-MCP-22` | MCP | Corregir compatibilidad MCP HTTP con VS Code y Codex | media |
 
 ## Borradores
 
@@ -162,3 +170,4 @@ Sin tareas.
 Sin tareas.
 | TASK-EBC-DB-06 | DB | Auditoría de formatos de carga: verificar IBAN, banco y responsable por plantilla | alta |
 | TASK-EBC-DB-05 | DB | Estrategia de dos entornos de base de datos (dev y prod) | crítica |
+| TASK-EBC-MCP-21 | MCP | Habilitar y verificar MCP Bancos nativo en Codex, VS Code y Claude | media |
