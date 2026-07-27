@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-24 CR (TASK-EBC-MCP-13 completada)
+> **Última actualización:** 2026-07-26 CR (TASK-EBC-MCP-18 completada)
 
 
 
 ## Completado
+
+* **2026-07-26** — TASK-EBC-MCP-18: Implementada tabla tbAccountPeriodClosings, entidad EF, job Hangfire CalculateAccountPeriodClosingsJob, endpoint POST /account-period-closings/calculate y MCP tool calculate_period_closings. Migración InitialCreate regenerada con seeds de saldo inicial correctos por cuenta (ABR-2026 para bac-credit-01/02; MAY-2026 para bac-credit-03-crc; sin seed para bac-credit-04-crc cuyo saldo anterior era 0). Corregido cruce de asignación bac-credit-03/04. 12 jobs importados y cierre calculado desde ABR-2026: 45 registros en tbAccountPeriodClosings. Diferencias vs CSV JUN-2026 documentadas en docs/saldos-corte-jun2026.md — explicadas por interés sin fecha (no importable) y txns del PDF pendientes de liquidación. — EBC
 
 * **2026-07-24** — TASK-EBC-MCP-13: Parser bac-credit-online-pdf implementado y validado. Se corrigió extracción de texto PDF (GetWords() con reconstrucción por líneas Y), resolución de cuenta CRC por IBANs del folder, signos (banco invertido), ExchangeRate=1 para CRC, idPeriods, updatedAt en re-importación y extracción de place. Además se implementó bac-credit-csv-v1 con ruteo CRC/USD a las 8 cuentas. 11 jobs Succeeded: 244 transacciones con amounts, signos y place correctos. — EBC
 

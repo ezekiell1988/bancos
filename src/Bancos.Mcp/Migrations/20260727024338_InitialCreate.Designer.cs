@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Bancos.Mcp.Migrations
 {
     [DbContext(typeof(McpCatalogDbContext))]
-    [Migration("20260727020809_InitialCreate")]
+    [Migration("20260727024338_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -1868,9 +1868,9 @@ namespace Bancos.Mcp.Migrations
                             Description = "Saldo inicial",
                             ExchangeRate = 1m,
                             OperationType = "other-charge",
-                            PeriodId = new Guid("60000000-0000-0000-0000-000000000005"),
+                            PeriodId = new Guid("60000000-0000-0000-0000-000000000004"),
                             SourceFingerprint = "53414c494e4943494f310000000000000000000000000000000000000000001",
-                            TransactionDate = new DateOnly(2026, 5, 18)
+                            TransactionDate = new DateOnly(2026, 4, 18)
                         },
                         new
                         {
@@ -1883,9 +1883,9 @@ namespace Bancos.Mcp.Migrations
                             Description = "Saldo inicial",
                             ExchangeRate = 1m,
                             OperationType = "other-charge",
-                            PeriodId = new Guid("60000000-0000-0000-0000-000000000005"),
+                            PeriodId = new Guid("60000000-0000-0000-0000-000000000004"),
                             SourceFingerprint = "53414c494e4943494f330000000000000000000000000000000000000000003",
-                            TransactionDate = new DateOnly(2026, 5, 18)
+                            TransactionDate = new DateOnly(2026, 4, 18)
                         },
                         new
                         {
@@ -1898,23 +1898,23 @@ namespace Bancos.Mcp.Migrations
                             Description = "Saldo inicial",
                             ExchangeRate = 458m,
                             OperationType = "other-charge",
-                            PeriodId = new Guid("60000000-0000-0000-0000-000000000005"),
+                            PeriodId = new Guid("60000000-0000-0000-0000-000000000004"),
                             SourceFingerprint = "53414c494e4943494f340000000000000000000000000000000000000000004",
-                            TransactionDate = new DateOnly(2026, 5, 18)
+                            TransactionDate = new DateOnly(2026, 4, 18)
                         },
                         new
                         {
-                            Id = new Guid("a0000000-0000-0000-0000-000000000007"),
+                            Id = new Guid("a0000000-0000-0000-0000-000000000005"),
                             Amount = -119014.25m,
                             AmountCrc = -119014.25m,
-                            BankAccountId = new Guid("40000000-0000-0000-0000-000000000007"),
+                            BankAccountId = new Guid("40000000-0000-0000-0000-000000000005"),
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 26, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
                             CurrencyCode = "CRC",
                             Description = "Saldo inicial",
                             ExchangeRate = 1m,
                             OperationType = "other-charge",
                             PeriodId = new Guid("60000000-0000-0000-0000-000000000005"),
-                            SourceFingerprint = "53414c494e4943494f370000000000000000000000000000000000000000007",
+                            SourceFingerprint = "53414c494e4943494f350000000000000000000000000000000000000000005",
                             TransactionDate = new DateOnly(2026, 5, 18)
                         });
                 });

@@ -489,21 +489,25 @@ public sealed class McpCatalogDbContext(DbContextOptions<McpCatalogDbContext> op
 
     private static void SeedInitialBalanceTransactions(ModelBuilder builder)
     {
-        // Saldos iniciales al cierre de MAY-2026 (periodo anterior a los primeros archivos importados).
-        // Fuente: columna "Previous balance" de los CSV de JUN-2026.
-        // Signo negativo = pasivo (deuda de tarjeta de crédito).
+        // Saldos iniciales: período anterior al primer movimiento importado por cuenta.
+        // Fuente: columna "Previous balance" de los CSV de JUN-2026. Signo negativo = pasivo (deuda).
+        // CR69 y CR48 tienen movs desde mayo → saldo inicial en ABR-2026 (fin Apr 18).
+        // CR64 tiene movs desde JUN → saldo inicial en MAY-2026 (fin May 18).
+        // CR63 tiene saldo anterior 0 → sin seed.
         var createdAt = new DateTimeOffset(2026, 7, 26, 0, 0, 0, TimeSpan.FromHours(-6));
+        var periodAbr2026 = Guid.Parse("60000000-0000-0000-0000-000000000004");
         var periodMay2026 = Guid.Parse("60000000-0000-0000-0000-000000000005");
-        var date = new DateOnly(2026, 5, 18);
+        var dateAbr = new DateOnly(2026, 4, 18);
+        var dateMay = new DateOnly(2026, 5, 18);
 
         builder.Entity<Transaction>().HasData(
-            // bac-credit-01-crc: saldo previo 177,724.97 CRC
+            // bac-credit-01-crc: saldo previo 177,724.97 CRC — primer mov 04/05 en MAY-2026 → seed en ABR-2026
             new Transaction
             {
                 Id = Guid.Parse("A0000000-0000-0000-0000-000000000001"),
                 BankAccountId = Guid.Parse("40000000-0000-0000-0000-000000000001"),
-                PeriodId = periodMay2026,
-                TransactionDate = date,
+                PeriodId = periodAbr2026,
+                TransactionDate = dateAbr,
                 Description = "Saldo inicial",
                 CurrencyCode = "CRC",
                 Amount = -177724.97m,
@@ -513,13 +517,13 @@ public sealed class McpCatalogDbContext(DbContextOptions<McpCatalogDbContext> op
                 SourceFingerprint = "53414c494e4943494f310000000000000000000000000000000000000000001",
                 CreatedAt = createdAt,
             },
-            // bac-credit-02-crc: saldo previo 477,326.20 CRC
+            // bac-credit-02-crc: saldo previo 477,326.20 CRC — primer mov 13/05 en MAY-2026 → seed en ABR-2026
             new Transaction
             {
                 Id = Guid.Parse("A0000000-0000-0000-0000-000000000003"),
                 BankAccountId = Guid.Parse("40000000-0000-0000-0000-000000000003"),
-                PeriodId = periodMay2026,
-                TransactionDate = date,
+                PeriodId = periodAbr2026,
+                TransactionDate = dateAbr,
                 Description = "Saldo inicial",
                 CurrencyCode = "CRC",
                 Amount = -477326.20m,
@@ -529,13 +533,13 @@ public sealed class McpCatalogDbContext(DbContextOptions<McpCatalogDbContext> op
                 SourceFingerprint = "53414c494e4943494f330000000000000000000000000000000000000000003",
                 CreatedAt = createdAt,
             },
-            // bac-credit-02-usd: saldo previo 153.18 USD → 70,156.44 CRC @ 458
+            // bac-credit-02-usd: saldo previo 153.18 USD → 70,156.44 CRC @ 458 — primer mov 13/05 en MAY-2026 → seed en ABR-2026
             new Transaction
             {
                 Id = Guid.Parse("A0000000-0000-0000-0000-000000000004"),
                 BankAccountId = Guid.Parse("40000000-0000-0000-0000-000000000004"),
-                PeriodId = periodMay2026,
-                TransactionDate = date,
+                PeriodId = periodAbr2026,
+                TransactionDate = dateAbr,
                 Description = "Saldo inicial",
                 CurrencyCode = "USD",
                 Amount = -153.18m,
@@ -545,20 +549,20 @@ public sealed class McpCatalogDbContext(DbContextOptions<McpCatalogDbContext> op
                 SourceFingerprint = "53414c494e4943494f340000000000000000000000000000000000000000004",
                 CreatedAt = createdAt,
             },
-            // bac-credit-04-crc: saldo previo 119,014.25 CRC
+            // bac-credit-03-crc: saldo previo 119,014.25 CRC (CR64, 3777-13**) — primer mov 19/05 en JUN-2026 → seed en MAY-2026
             new Transaction
             {
-                Id = Guid.Parse("A0000000-0000-0000-0000-000000000007"),
-                BankAccountId = Guid.Parse("40000000-0000-0000-0000-000000000007"),
+                Id = Guid.Parse("A0000000-0000-0000-0000-000000000005"),
+                BankAccountId = Guid.Parse("40000000-0000-0000-0000-000000000005"),
                 PeriodId = periodMay2026,
-                TransactionDate = date,
+                TransactionDate = dateMay,
                 Description = "Saldo inicial",
                 CurrencyCode = "CRC",
                 Amount = -119014.25m,
                 AmountCrc = -119014.25m,
                 ExchangeRate = 1m,
                 OperationType = "other-charge",
-                SourceFingerprint = "53414c494e4943494f370000000000000000000000000000000000000000007",
+                SourceFingerprint = "53414c494e4943494f350000000000000000000000000000000000000000005",
                 CreatedAt = createdAt,
             }
         );
