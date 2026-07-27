@@ -350,6 +350,7 @@ namespace Bancos.Mcp.Migrations
                             Code = "bn-debit-01-usd",
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
                             CurrencyCode = "USD",
+                            IdentifierHash = "BBAD6EA77F349D1265C4082AA7EBCD93D8F975221BE18D17720FA22027E06BA1",
                             IsEnabled = true
                         },
                         new
@@ -360,6 +361,7 @@ namespace Bancos.Mcp.Migrations
                             Code = "bcr-debit-01-crc",
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
                             CurrencyCode = "CRC",
+                            IdentifierHash = "A9A76820A1F0CEEA89995562122687A33EC9F971692DC4121E2A8D35CDE6343B",
                             IsEnabled = true
                         },
                         new
@@ -370,6 +372,7 @@ namespace Bancos.Mcp.Migrations
                             Code = "bac-debit-01-crc",
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
                             CurrencyCode = "CRC",
+                            IdentifierHash = "DAFC04C14315C23B1207A1D2CD70B60839F2821BFE2A245938FAB6F863AA9DB5",
                             IsEnabled = true
                         },
                         new
@@ -380,6 +383,7 @@ namespace Bancos.Mcp.Migrations
                             Code = "bn-debit-01-crc",
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
                             CurrencyCode = "CRC",
+                            IdentifierHash = "46995612194255ABF847233C41563CAFAA3EE6C77F5CBACF59DDA57F8BA34AAF",
                             IsEnabled = true
                         },
                         new
@@ -599,12 +603,17 @@ namespace Bancos.Mcp.Migrations
                         new
                         {
                             BankAccountId = new Guid("40000000-0000-0000-0000-000000000011"),
+                            ImportTemplateId = new Guid("10000000-0000-0000-0000-000000000010")
+                        },
+                        new
+                        {
+                            BankAccountId = new Guid("40000000-0000-0000-0000-000000000011"),
                             ImportTemplateId = new Guid("10000000-0000-0000-0000-000000000004")
                         },
                         new
                         {
                             BankAccountId = new Guid("40000000-0000-0000-0000-000000000014"),
-                            ImportTemplateId = new Guid("10000000-0000-0000-0000-000000000004")
+                            ImportTemplateId = new Guid("10000000-0000-0000-0000-000000000011")
                         },
                         new
                         {
@@ -1153,6 +1162,26 @@ namespace Bancos.Mcp.Migrations
                             IsEnabled = true,
                             Name = "Estado de cuenta de tarjeta Banco Nacional",
                             ParserKey = "bn-card-statement-pdf"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000010"),
+                            Code = "bn-debit-csv-v1",
+                            ContentKind = "csv",
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
+                            IsEnabled = true,
+                            Name = "Movimientos de cuenta BN USD",
+                            ParserKey = "bn-debit-csv"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000011"),
+                            Code = "bn-debit-csv-crc-v1",
+                            ContentKind = "csv",
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
+                            IsEnabled = true,
+                            Name = "Movimientos de cuenta BN CRC",
+                            ParserKey = "bn-debit-csv-crc"
                         });
                 });
 
@@ -1335,6 +1364,28 @@ namespace Bancos.Mcp.Migrations
                             IsApproved = true,
                             PatternKind = "content-terms",
                             RequiredTermsJson = "[\"banco nacional de costa rica\",\"estado de cuenta tarjetas de credito\",\"detalle de compras del periodo\",\"total pago de contado\"]"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000010"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
+                            DetectorVersion = (short)1,
+                            ImportTemplateId = new Guid("10000000-0000-0000-0000-000000000010"),
+                            IsActive = false,
+                            IsApproved = false,
+                            PatternKind = "content-terms",
+                            RequiredTermsJson = "[\"bn-debit-csv-v1\"]"
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000011"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
+                            DetectorVersion = (short)1,
+                            ImportTemplateId = new Guid("10000000-0000-0000-0000-000000000011"),
+                            IsActive = false,
+                            IsApproved = false,
+                            PatternKind = "content-terms",
+                            RequiredTermsJson = "[\"bn-debit-csv-crc-v1\"]"
                         });
                 });
 
@@ -1913,6 +1964,21 @@ namespace Bancos.Mcp.Migrations
                             PeriodId = new Guid("60000000-0000-0000-0000-000000000005"),
                             SourceFingerprint = "53414c494e4943494f350000000000000000000000000000000000000000005",
                             TransactionDate = new DateOnly(2026, 5, 18)
+                        },
+                        new
+                        {
+                            Id = new Guid("a0000000-0000-0000-0000-000000000013"),
+                            Amount = 10551.04m,
+                            AmountCrc = 10551.04m,
+                            BankAccountId = new Guid("40000000-0000-0000-0000-000000000013"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 7, 26, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, -6, 0, 0, 0)),
+                            CurrencyCode = "CRC",
+                            Description = "Saldo inicial",
+                            ExchangeRate = 1m,
+                            OperationType = "other-charge",
+                            PeriodId = new Guid("60000000-0000-0000-0000-000000000001"),
+                            SourceFingerprint = "53414c494e4943494f313300000000000000000000000000000000000000013",
+                            TransactionDate = new DateOnly(2025, 12, 19)
                         });
                 });
 

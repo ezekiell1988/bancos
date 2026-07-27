@@ -70,6 +70,23 @@ public sealed class AccountResolver(McpCatalogDbContext db)
         return account ?? throw new InvalidOperationException("No se encontró cuenta CRC para los IBANs del archivo. Verifique que los IBANs estén registrados en el catálogo.");
     }
 
+    public async Task<(Guid AccountId, Guid TemplateId)?> TryResolveAlternativeByIbanPathAsync(
+        string relativePath, Guid detectedTemplateId, CancellationToken ct)
+    {
+        var folder = relativePath.Replace('\\', '/').Split('/').Reverse().Skip(1).FirstOrDefault() ?? "";
+        var ibanHashes = IbanPattern.Matches(folder)
+            .Select(m => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(m.Value))))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (ibanHashes.Count == 0) return null;
+        var match = await db.BankAccountImportTemplates
+            .Where(x => x.BankAccount!.IdentifierHash != null
+                   && ibanHashes.Contains(x.BankAccount.IdentifierHash!)
+                   && x.ImportTemplateId != detectedTemplateId)
+            .Select(x => new { AccountId = x.BankAccountId, TemplateId = x.ImportTemplateId })
+            .FirstOrDefaultAsync(ct);
+        return match is null ? null : (match.AccountId, match.TemplateId);
+    }
+
     public async Task<FinancingAccountPair> ResolveFinancingPairByPathAsync(string relativePath, CancellationToken ct)
     {
         var folder = relativePath.Replace('\\', '/').Split('/').Reverse().Skip(1).FirstOrDefault() ?? "";

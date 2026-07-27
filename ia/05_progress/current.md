@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-26 CR (TASK-EBC-MCP-18 completada)
+> **Última actualización:** 2026-07-26 CR (TASK-EBC-MCP-16 completada)
 
 ## En curso
 
@@ -21,6 +21,14 @@
 * Aprobar y ejecutar `TASK-EZ-BE-01` mediante `iaWorkflow`.
 
 ## Completado en sesiones recientes
+
+* **2026-07-26** — TASK-EBC-MCP-16 cerrada: Revisión de bcr-debit-html-xls-v1 para bcr-debit-01-crc (MovimientosPorRangoFecha_Cta_CR07015202001294229652.xls, HTML envuelto en XLS). Parser bcr-debit-html confirmado. Archivo cubre 02/01/2026–17/07/2026 con 950 movimientos. Totales: débito ₡19,737,577.49 / crédito ₡17,455,629.67 / net −₡2,281,947.82. No contiene saldo inicial explícito; seed no requerido (balance inicial = ₡0). Saldo final documentado en docs/saldos-corte-jun2026.md como net del período. Detección bcr-debit-html funciona correctamente por términos 'banco de costa rica' + alternativas de movimientos. — EBC
+
+* **2026-07-26** — TASK-EBC-MCP-14 cerrada: Revisión de bank-account-movements-xls-v1 para bac-debit-01-crc (Transacciones del mes.xls, CDFV2 binario). Parser XLS con xlrd lee 147 filas; confirmado parser bank-account-movements-xls. Archivo contiene campo explícito Saldo Inicial=₡10,551.04 y Saldo en Libros=₡39.91. Totales: débito ₡8,021,947.13 / crédito ₡8,011,436.00 / net −₡10,511.13. Saldo inicial sembrado en EF migration (ENE-2026, fecha 2025-12-19, +₡10,551.04). Saldo final ₡39.91 documentado en docs/saldos-corte-jun2026.md. Idempotencia via sourceFingerprint confirmada en implementación existente. — EBC
+
+* **2026-07-26** — TASK-EBC-MCP-15 cerrada: Revisión e implementación completa para bcr-debit-csv-v1. Se detectó bug crítico: BN USD y BN CRC comparten el mismo formato CSV que BCR (oficina;fechaMovimiento;numeroDocumento;debito;credito;descripcion), causando que los archivos BN se procesaran en la cuenta BCR. Solución implementada: (1) Templates centinela 10 (bn-debit-csv-v1) y 11 (bn-debit-csv-crc-v1) con required terms imposibles. (2) Método TryResolveAlternativeByIbanPathAsync en AccountResolver que extrae el IBAN del folder y retorna el account+template alternativo. (3) Branch en ProcessImportFileTool para bcr-debit-csv que aplica el override IBAN si corresponde. (4) SeedPatterns() actualizado para retornar IsActive=false en sentinelas auto-detectados por código. Idempotencia verificada mediante sourceFingerprint. — EBC
+
+* **2026-07-26** — TASK-EBC-DB-07 cerrada: Migración InitialCreate completa con todas las tablas transaccionales (tbPeriods, tbTransactions, tbCardStatements, tbCardStatementLines, tbCardFinancings, tbAccountPeriodClosings, tbLoanPayments). Seed final incluye: 4 cuentas de débito con identifierHash (BN-USD, BCR-CRC, BAC-CRC, BN-CRC), templates centinela 10 (bn-debit-csv-v1) y 11 (bn-debit-csv-crc-v1) con patrones isActive=false, mappings IBAN correctos para las 4 cuentas de débito, y transacción de saldo inicial para bac-debit-01-crc (+₡10,551.04 en ENE-2026 fecha 2025-12-19). DbContext, migración y snapshot sincronizados; sin pending model changes. BD reseteada con db_reset_schemas y lista para correr PS1. — EBC
 
 * **2026-07-26** — TASK-EBC-MCP-18 cerrada: Implementada tabla tbAccountPeriodClosings, entidad EF, job Hangfire CalculateAccountPeriodClosingsJob, endpoint POST /account-period-closings/calculate y MCP tool calculate_period_closings. Migración InitialCreate regenerada con seeds de saldo inicial correctos por cuenta (ABR-2026 para bac-credit-01/02; MAY-2026 para bac-credit-03-crc; sin seed para bac-credit-04-crc cuyo saldo anterior era 0). Corregido cruce de asignación bac-credit-03/04. 12 jobs importados y cierre calculado desde ABR-2026: 45 registros en tbAccountPeriodClosings. Diferencias vs CSV JUN-2026 documentadas en docs/saldos-corte-jun2026.md — explicadas por interés sin fecha (no importable) y txns del PDF pendientes de liquidación. — EBC
 

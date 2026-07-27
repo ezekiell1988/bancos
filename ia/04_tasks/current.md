@@ -1,6 +1,6 @@
 # 04 — Tareas activas
 
-> **Última actualización:** 2026-07-26 CR (TASK-EBC-MCP-18 completada)
+> **Última actualización:** 2026-07-26 CR (TASK-EBC-MCP-16 completada)
 
 
 
@@ -146,12 +146,8 @@ Sin tareas.
 | ID | Título | Riesgo | Aprobación |
 |---|---|---|---|
 | `TASK-EBC-MCP-17` | Revisar implementación MCP — Estado de cuenta de tarjeta Banco Nacional | bajo | pendiente |
-| `TASK-EBC-MCP-16` | Revisar implementación MCP — Movimientos BCR HTML | bajo | pendiente |
-| `TASK-EBC-MCP-15` | Revisar implementación MCP — Movimientos de cuenta BCR | bajo | pendiente |
-| `TASK-EBC-MCP-14` | Revisar implementación MCP — Movimientos de cuenta XLS | bajo | pendiente |
 | `TASK-EBC-MCP-11` | Revisar implementación MCP — Resumen de tarjeta BAC | bajo | pendiente |
 | `TASK-EBC-MCP-10` | Revisar implementación MCP — Estado de cuenta consolidado BAC | bajo | pendiente |
-| `TASK-EBC-DB-07` | Agregar tablas transaccionales al MCP: tbTransactions, tbCardFinancings, tbLoanStatements y tbLoanPayments | medio | pendiente |
 | `TASK-EBC-FE-03` | Diseño de vista de préstamos: definir con el usuario qué información analizar y cómo presentarla | bajo | pendiente |
 | `TASK-EBC-FE-02` | Revisión interactiva de tarjetas de crédito: saldo al corte, gastos post-corte y ajuste contra cuentas por pagar | bajo | pendiente |
 | `TASK-EBC-FE-01` | Revisión interactiva de cuentas de débito: saldos y clasificación de movimientos | bajo | pendiente |

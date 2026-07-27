@@ -105,6 +105,20 @@ public sealed class ProcessImportFileTool(
                     primaryAccountId = pair.CrcAccountId;
                     secondaryAccountId = pair.UsdAccountId;
                 }
+                else if (definition.ParserKey == "bcr-debit-csv")
+                {
+                    var alt = await accountResolver.TryResolveAlternativeByIbanPathAsync(relativePath!, templateId, cancellationToken);
+                    if (alt.HasValue)
+                    {
+                        templateId = alt.Value.TemplateId;
+                        definition = ImportTemplateCatalog.Definitions.First(d => d.Id == templateId);
+                        primaryAccountId = alt.Value.AccountId;
+                    }
+                    else
+                    {
+                        primaryAccountId = await accountResolver.ResolveAsync(templateId, null, fileContent, cancellationToken);
+                    }
+                }
                 else
                 {
                     primaryAccountId = await accountResolver.ResolveAsync(templateId, null, fileContent, cancellationToken);

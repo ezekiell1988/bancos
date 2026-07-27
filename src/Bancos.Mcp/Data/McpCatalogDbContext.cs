@@ -405,10 +405,10 @@ public sealed class McpCatalogDbContext(DbContextOptions<McpCatalogDbContext> op
             Account(8, bac, "bac-credit-04-usd", "credit-card", "USD", "8E9F3E66F0952B0FEDD9A9CB2AB7C395811496C2FB948A1562FEC479A3C15A24"),
             Account(9, bn, "bn-credit-01-crc", "credit-card", "CRC"),
             Account(10, bn, "bn-credit-01-usd", "credit-card", "USD"),
-            Account(11, bn, "bn-debit-01-usd", "debit-card", "USD"),
-            Account(12, bcr, "bcr-debit-01-crc", "debit-card", "CRC"),
-            Account(13, bac, "bac-debit-01-crc", "debit-card", "CRC"),
-            Account(14, bn, "bn-debit-01-crc", "debit-card", "CRC"),
+            Account(11, bn, "bn-debit-01-usd", "debit-card", "USD", "BBAD6EA77F349D1265C4082AA7EBCD93D8F975221BE18D17720FA22027E06BA1"),
+            Account(12, bcr, "bcr-debit-01-crc", "debit-card", "CRC", "A9A76820A1F0CEEA89995562122687A33EC9F971692DC4121E2A8D35CDE6343B"),
+            Account(13, bac, "bac-debit-01-crc", "debit-card", "CRC", "DAFC04C14315C23B1207A1D2CD70B60839F2821BFE2A245938FAB6F863AA9DB5"),
+            Account(14, bn, "bn-debit-01-crc", "debit-card", "CRC", "46995612194255ABF847233C41563CAFAA3EE6C77F5CBACF59DDA57F8BA34AAF"),
             Account(15, coopealianza, "coopealianza-loan-01-crc", "loan", "CRC"));
 
         BankAccount Account(int accountNumber, Guid bankId, string code, string accountType, string currencyCode, string? identifierHash = null) => new()
@@ -454,11 +454,8 @@ public sealed class McpCatalogDbContext(DbContextOptions<McpCatalogDbContext> op
             .Select(accountNumber => Guid.Parse($"40000000-0000-0000-0000-{accountNumber:D12}"));
         var bnCreditAccounts = Enumerable.Range(9, 2)
             .Select(accountNumber => Guid.Parse($"40000000-0000-0000-0000-{accountNumber:D12}"));
-        var bnDebitAccounts = new[]
-        {
-            Guid.Parse("40000000-0000-0000-0000-000000000011"),
-            Guid.Parse("40000000-0000-0000-0000-000000000014")
-        };
+        var bnDebitUsd = Guid.Parse("40000000-0000-0000-0000-000000000011");
+        var bnDebitCrc = Guid.Parse("40000000-0000-0000-0000-000000000014");
         var bacDebit = Guid.Parse("40000000-0000-0000-0000-000000000013");
         var coopealianzaLoan = Guid.Parse("40000000-0000-0000-0000-000000000015");
 
@@ -466,7 +463,8 @@ public sealed class McpCatalogDbContext(DbContextOptions<McpCatalogDbContext> op
         links.AddRange(Links([bcrDebit], 1, 3));
         links.AddRange(Links(bacCreditAccounts, 2, 5, 6, 8));
         links.AddRange(Links(bnCreditAccounts, 9));
-        links.AddRange(Links(bnDebitAccounts, 4));
+        links.AddRange(Links([bnDebitUsd], 10, 4));  // BN USD: sentinel csv-v1 + XLS fallback
+        links.AddRange(Links([bnDebitCrc], 11));      // BN CRC: sentinel csv-crc-v1
         links.AddRange(Links([bacDebit], 4));
         links.AddRange(Links([coopealianzaLoan], 7));
 
@@ -495,8 +493,10 @@ public sealed class McpCatalogDbContext(DbContextOptions<McpCatalogDbContext> op
         // CR64 tiene movs desde JUN → saldo inicial en MAY-2026 (fin May 18).
         // CR63 tiene saldo anterior 0 → sin seed.
         var createdAt = new DateTimeOffset(2026, 7, 26, 0, 0, 0, TimeSpan.FromHours(-6));
+        var periodEne2026 = Guid.Parse("60000000-0000-0000-0000-000000000001");
         var periodAbr2026 = Guid.Parse("60000000-0000-0000-0000-000000000004");
         var periodMay2026 = Guid.Parse("60000000-0000-0000-0000-000000000005");
+        var dateEne = new DateOnly(2025, 12, 19);
         var dateAbr = new DateOnly(2026, 4, 18);
         var dateMay = new DateOnly(2026, 5, 18);
 
@@ -563,6 +563,22 @@ public sealed class McpCatalogDbContext(DbContextOptions<McpCatalogDbContext> op
                 ExchangeRate = 1m,
                 OperationType = "other-charge",
                 SourceFingerprint = "53414c494e4943494f350000000000000000000000000000000000000000005",
+                CreatedAt = createdAt,
+            },
+            // bac-debit-01-crc: saldo inicial 10,551.04 CRC — del campo "Saldo Inicial" del XLS — primer mov 02/01/2026 en ENE-2026
+            new Transaction
+            {
+                Id = Guid.Parse("A0000000-0000-0000-0000-000000000013"),
+                BankAccountId = Guid.Parse("40000000-0000-0000-0000-000000000013"),
+                PeriodId = periodEne2026,
+                TransactionDate = dateEne,
+                Description = "Saldo inicial",
+                CurrencyCode = "CRC",
+                Amount = 10551.04m,
+                AmountCrc = 10551.04m,
+                ExchangeRate = 1m,
+                OperationType = "other-charge",
+                SourceFingerprint = "53414c494e4943494f313300000000000000000000000000000000000000013",
                 CreatedAt = createdAt,
             }
         );

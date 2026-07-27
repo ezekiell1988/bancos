@@ -34,6 +34,12 @@ public sealed class ImportFileJob(
                 case "bcr-debit-csv":
                     await ProcessBankMovements(bankAccountId, bcrParser.Parse(await File.ReadAllTextAsync(filePath)), context);
                     break;
+                case "bn-debit-csv":
+                    await ProcessBankMovementsUsd(bankAccountId, bcrParser.Parse(await File.ReadAllTextAsync(filePath)), context);
+                    break;
+                case "bn-debit-csv-crc":
+                    await ProcessBankMovements(bankAccountId, bcrParser.Parse(await File.ReadAllTextAsync(filePath)), context);
+                    break;
                 case "bcr-debit-html":
                 case "bank-account-movements-xls":
                     await ProcessBankMovements(bankAccountId, spreadsheetParser.Parse(await File.ReadAllBytesAsync(filePath)), context);
@@ -81,6 +87,52 @@ public sealed class ImportFileJob(
             context?.WriteLine("Error: {0}", ex.Message);
             throw;
         }
+    }
+
+    private async Task ProcessBankMovementsUsd(Guid bankAccountId, IReadOnlyList<ParsedBankMovement> movements, PerformContext? context)
+    {
+        var allRates = await db.ExchangeRates
+            .Where(r => r.CurrencyCode == "USD")
+            .OrderByDescending(r => r.RateDate)
+            .Select(r => new { r.RateDate, r.CrcPerUnit })
+            .ToListAsync();
+        if (allRates.Count == 0)
+            throw new InvalidDataException("No existe ningún tipo de cambio USD disponible.");
+
+        var fingerprints = movements.Select(m => FingerprintHelper.ForBankMovement(bankAccountId, m)).ToArray();
+        var existing = await db.Transactions
+            .Where(t => t.BankAccountId == bankAccountId && fingerprints.Contains(t.SourceFingerprint))
+            .Select(t => t.SourceFingerprint).ToListAsync();
+
+        var movementDates = movements.Select(m => m.BookingDate).Distinct().ToArray();
+        var periods = await db.Periods
+            .Where(p => movementDates.Any(d => p.StartDate <= d && d <= p.EndDate))
+            .ToListAsync();
+
+        var inserted = 0;
+        foreach (var (movement, fingerprint) in movements.Zip(fingerprints))
+        {
+            if (existing.Contains(fingerprint)) continue;
+            var netUsd = movement.Credit - movement.Debit;
+            var rate = (allRates.FirstOrDefault(r => r.RateDate <= movement.BookingDate) ?? allRates[^1]).CrcPerUnit;
+            var period = periods.FirstOrDefault(p => p.StartDate <= movement.BookingDate && movement.BookingDate <= p.EndDate);
+            db.Transactions.Add(new Transaction
+            {
+                BankAccountId = bankAccountId,
+                PeriodId = period?.Id,
+                TransactionDate = movement.BookingDate,
+                ReferenceNumber = movement.ExternalReference,
+                Description = TextNormalizer.Normalize(movement.Description),
+                CurrencyCode = "USD",
+                Amount = netUsd,
+                AmountCrc = netUsd * rate,
+                ExchangeRate = rate,
+                OperationType = "purchase",
+                SourceFingerprint = fingerprint
+            });
+            inserted++;
+        }
+        context?.WriteLine("Movimientos USD: {0} insertados, {1} duplicados omitidos.", inserted, movements.Count - inserted);
     }
 
     private async Task ProcessBankMovements(Guid bankAccountId, IReadOnlyList<ParsedBankMovement> movements, PerformContext? context)

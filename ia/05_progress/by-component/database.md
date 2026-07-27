@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-22 CR (TASK-EBC-DB-09 completada)
+> **Última actualización:** 2026-07-26 CR (TASK-EBC-DB-07 completada)
 
 
 
 ## Completado
+
+* **2026-07-26** — TASK-EBC-DB-07: Migración InitialCreate completa con todas las tablas transaccionales (tbPeriods, tbTransactions, tbCardStatements, tbCardStatementLines, tbCardFinancings, tbAccountPeriodClosings, tbLoanPayments). Seed final incluye: 4 cuentas de débito con identifierHash (BN-USD, BCR-CRC, BAC-CRC, BN-CRC), templates centinela 10 (bn-debit-csv-v1) y 11 (bn-debit-csv-crc-v1) con patrones isActive=false, mappings IBAN correctos para las 4 cuentas de débito, y transacción de saldo inicial para bac-debit-01-crc (+₡10,551.04 en ENE-2026 fecha 2025-12-19). DbContext, migración y snapshot sincronizados; sin pending model changes. BD reseteada con db_reset_schemas y lista para correr PS1. — EBC
 
 * **2026-07-22** — TASK-EBC-DB-09: Se agregó y aplicó el índice no único IX_tbLoanPayments_installmentNumber. — EBC
 

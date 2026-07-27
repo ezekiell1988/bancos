@@ -27,7 +27,11 @@ public static class ImportTemplateCatalog
         Definition(6, "bac-credit-online-pdf-v1", "Tarjeta BAC en linea", "pdf", "bac-credit-online-pdf", ["tarjeta de credito", "saldo en colones", "saldo en dolares", "fecha de pago de contado"], null, ["total pago de contado"]),
         Definition(7, "coopealianza-loan-pdf-v1", "Prestamo Coopealianza", "pdf", "coopealianza-loan-pdf", ["ver detalles del prestamo", "capital", "interes", "mora", "otros", "total", "saldo"]),
         Definition(8, "bac-account-statement-pdf-v1", "Estado de cuenta consolidado BAC", "pdf", "bac-account-statement-pdf", ["numero de tarjeta", "marca de tarjeta", "plan de lealtad", "pagos vencidos", "pago de contado", "fecha de corte", "total pago de contado"]),
-        Definition(9, "bn-card-statement-pdf-v1", "Estado de cuenta de tarjeta Banco Nacional", "pdf", "bn-card-statement-pdf", ["banco nacional de costa rica", "estado de cuenta tarjetas de credito", "detalle de compras del periodo", "total pago de contado"])
+        Definition(9, "bn-card-statement-pdf-v1", "Estado de cuenta de tarjeta Banco Nacional", "pdf", "bn-card-statement-pdf", ["banco nacional de costa rica", "estado de cuenta tarjetas de credito", "detalle de compras del periodo", "total pago de contado"]),
+        Definition(10, "bn-debit-csv-v1", "Movimientos de cuenta BN USD", "csv", "bn-debit-csv",
+            ["bn-debit-csv-v1"]),  // sentinel: detectado por IBAN en path, no por contenido
+        Definition(11, "bn-debit-csv-crc-v1", "Movimientos de cuenta BN CRC", "csv", "bn-debit-csv-crc",
+            ["bn-debit-csv-crc-v1"])  // sentinel: detectado por IBAN en path, no por contenido
     ];
 
     public static IReadOnlyList<ImportTemplate> SeedTemplates() =>
@@ -38,12 +42,17 @@ public static class ImportTemplateCatalog
         })];
 
     public static IReadOnlyList<ImportTemplatePattern> SeedPatterns() =>
-        [.. Definitions.Select((definition, index) => new ImportTemplatePattern
+        [.. Definitions.Select((definition, index) =>
         {
-            Id = Guid.Parse($"20000000-0000-0000-0000-{index + 1:D12}"), ImportTemplateId = definition.Id,
-            PatternKind = "content-terms", RequiredTermsJson = System.Text.Json.JsonSerializer.Serialize(definition.RequiredTerms),
-            AlternativeTermGroupsJson = definition.AlternativeTermGroups is null ? null : System.Text.Json.JsonSerializer.Serialize(definition.AlternativeTermGroups),
-            IsApproved = true, IsActive = true, CreatedAt = SeededAt
+            // Sentinel patterns reference their own code as the sole required term — they never match real files
+            bool isSentinel = definition.RequiredTerms.Length == 1 && definition.RequiredTerms[0] == definition.Code;
+            return new ImportTemplatePattern
+            {
+                Id = Guid.Parse($"20000000-0000-0000-0000-{index + 1:D12}"), ImportTemplateId = definition.Id,
+                PatternKind = "content-terms", RequiredTermsJson = System.Text.Json.JsonSerializer.Serialize(definition.RequiredTerms),
+                AlternativeTermGroupsJson = definition.AlternativeTermGroups is null ? null : System.Text.Json.JsonSerializer.Serialize(definition.AlternativeTermGroups),
+                IsApproved = !isSentinel, IsActive = !isSentinel, CreatedAt = SeededAt
+            };
         })];
 
     private static ImportTemplateDefinition Definition(int number, string code, string name, string contentKind, string parserKey, string[] requiredTerms, string[][]? alternatives = null, string[]? excludedTerms = null) =>
