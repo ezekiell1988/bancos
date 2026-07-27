@@ -189,7 +189,7 @@ public sealed class ClassificationService(
             .Select(c => new { c.Id, c.Code, c.Name })
             .ToListAsync(ct);
 
-        var normalizedDescription = TextNormalizer.Normalize(transaction.Description);
+        var normalizedDescription = AiDescriptionSanitizer.Sanitize(TextNormalizer.Normalize(transaction.Description));
         var suggestion = await aiClassifier.ClassifyAsync(
             normalizedDescription,
             categories.Select(c => (c.Code, c.Name)).ToList(),

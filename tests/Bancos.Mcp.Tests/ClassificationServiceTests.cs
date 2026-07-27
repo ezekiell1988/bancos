@@ -124,6 +124,33 @@ public sealed class ClassificationServiceTests
         Assert.DoesNotContain("-10", handler.LastRequestBody);
     }
 
+    [Fact]
+    public async Task Ai_prompt_redacts_sensitive_identifiers_from_description()
+    {
+        await using var db = await CreateDbAsync();
+        var accountId = (await db.BankAccounts.FirstAsync()).Id;
+        const string sensitiveDescription = "PAGO A PROVEEDOR cuenta CR12345678901234567890 tarjeta 4111 1111 1111 1111 correo persona@example.com telefono 88887777 por ₡125000";
+        var transactionId = await AddTransactionAsync(db, accountId, sensitiveDescription);
+        await db.SaveChangesAsync();
+
+        var handler = FakeAiHttpMessageHandler.RespondingWith(GroceriesCategoryCode, confidence: 0.9);
+        var service = CreateServiceWithSimulatedAi(db, handler);
+
+        await service.ClassifyAsync(transactionId);
+
+        Assert.NotNull(handler.LastRequestBody);
+        Assert.Contains("pago a proveedor", handler.LastRequestBody);
+        Assert.Contains("[iban]", handler.LastRequestBody);
+        Assert.Contains("[identificador]", handler.LastRequestBody);
+        Assert.Contains("[correo]", handler.LastRequestBody);
+        Assert.Contains("[monto]", handler.LastRequestBody);
+        Assert.DoesNotContain("cr12345678901234567890", handler.LastRequestBody);
+        Assert.DoesNotContain("4111 1111 1111 1111", handler.LastRequestBody);
+        Assert.DoesNotContain("persona@example.com", handler.LastRequestBody);
+        Assert.DoesNotContain("88887777", handler.LastRequestBody);
+        Assert.DoesNotContain("125000", handler.LastRequestBody);
+    }
+
     private sealed class FakeAiHttpMessageHandler : HttpMessageHandler
     {
         private readonly Func<HttpResponseMessage> _responder;

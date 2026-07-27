@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-27 CR (progreso actualizado)
+> **Última actualización:** 2026-07-27 CR (TASK-EBC-MCP-33 completada)
 
 ## En curso
 
@@ -23,6 +23,8 @@
 ## Completado en sesiones recientes
 
 
+
+* **2026-07-27** — TASK-EBC-MCP-33 cerrada: Se completó el fallback de clasificación con Azure AI: se invoca únicamente tras no encontrar una regla determinista; el prompt usa descripción normalizada y sanitizada junto con el catálogo permitido; errores y baja confianza devuelven No clasificado. Se añadieron pruebas con cliente HTTP simulado, incluida la verificación de redacción de identificadores y montos. — EBC
 
 * **2026-07-27** — TASK-EBC-MCP-33: list_unclassified_transactions ahora pagina con page/itemsPerPage (máximo 200) y entrega el listado textual en TOON, con totalItems y totalPages. Pruebas de clasificación y paginación/TOON: 15 aprobadas. — EBC
 

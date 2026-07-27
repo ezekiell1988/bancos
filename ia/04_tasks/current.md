@@ -1,6 +1,6 @@
 # 04 — Tareas activas
 
-> **Última actualización:** 2026-07-27 CR (TASK-EBC-MCP-42 completada)
+> **Última actualización:** 2026-07-27 CR (TASK-EBC-MCP-33 completada)
 
 
 
@@ -186,7 +186,6 @@ Sin tareas.
 
 | ID | Área | Título | Prioridad |
 |---|---|---|---|
-| `TASK-EBC-MCP-33` | MCP | Clasificación MCP con Azure AI como fallback seguro | alta |
 
 ## Borradores
 
