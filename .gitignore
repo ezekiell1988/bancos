@@ -5,9 +5,5 @@ obj/
 .vs/
 .DS_Store
 .local-output/
-src/Bancos.Api/wwwroot/
-src/Bancos.Web/node_modules/
-src/Bancos.Web/dist/
-src/Bancos.Web/certs/
 .mcp/**/node_modules/
 src/input/

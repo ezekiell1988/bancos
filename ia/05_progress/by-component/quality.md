@@ -1,8 +1,16 @@
-> **Última actualización:** 2026-07-26 CR (TASK-EBC-MCP-30 completada)
+> **Última actualización:** 2026-07-26 CR (TASK-EBC-MCP-11 completada)
 
 
 
 ## Completado
+
+* **2026-07-26** — TASK-EBC-MCP-11: Se auditó la plantilla Resumen de tarjeta BAC. La detección resolvió la plantilla CSV esperada, el flujo asigna las cuentas CRC/USD y el job persiste movimientos con idempotencia por huella. — C
+
+* **2026-07-26** — TASK-EBC-MCP-10: Se auditó la plantilla de estado consolidado BAC: catálogo, detección, parser, job e idempotencia están conectados correctamente. El lote revisado no incluyó una muestra de esta plantilla, por lo que se documenta esa limitación de validación empírica. — C
+
+* **2026-07-26** — TASK-EBC-MCP-23: Se excluyeron los sondeos GET y DELETE de /mcp del rate limit global, manteniendo la política de concurrencia para las operaciones POST MCP. — C
+
+* **2026-07-26** — TASK-EBC-MCP-22: Se verificó la compatibilidad MCP HTTP con protocolo 2025-03-26 mediante una sesión real: initialize, tools/list y health_status respondieron correctamente. — C
 
 * **2026-07-26** — TASK-EBC-MCP-30: Se normalizaron como magnitudes positivas los valores de columnas separadas de débito y crédito en XLS/HTML, preservando la semántica de signo para columnas de monto único. — C
 

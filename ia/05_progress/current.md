@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-26 CR (TASK-EBC-MCP-31 completada)
+> **Última actualización:** 2026-07-26 CR (TASK-EBC-INF-12 completada)
 
 ## En curso
 
@@ -21,6 +21,28 @@
 * Aprobar y ejecutar `TASK-EZ-BE-01` mediante `iaWorkflow`.
 
 ## Completado en sesiones recientes
+
+* **2026-07-26** — TASK-EBC-INF-12 cerrada: Se retiraron Bancos.Api, Bancos.Web, sus pruebas y configuraciones asociadas. Bancos.Mcp queda como único proyecto funcional; las tareas frontend fueron archivadas como canceladas por cambio de arquitectura. — C
+
+* **2026-07-26** — TASK-EBC-FE-03 cerrada: Cancelada por decisión de arquitectura: Bancos operará exclusivamente mediante MCP y se retira el frontend Angular. — C
+
+* **2026-07-26** — TASK-EBC-FE-02 cerrada: Cancelada por decisión de arquitectura: Bancos operará exclusivamente mediante MCP y se retira el frontend Angular. — C
+
+* **2026-07-26** — TASK-EBC-FE-01 cerrada: Cancelada por decisión de arquitectura: Bancos operará exclusivamente mediante MCP y se retira el frontend Angular. — C
+
+* **2026-07-26** — TASK-EBC-MCP-11 cerrada: Se auditó la plantilla Resumen de tarjeta BAC. La detección resolvió la plantilla CSV esperada, el flujo asigna las cuentas CRC/USD y el job persiste movimientos con idempotencia por huella. — C
+
+* **2026-07-26** — TASK-EBC-MCP-10 cerrada: Se auditó la plantilla de estado consolidado BAC: catálogo, detección, parser, job e idempotencia están conectados correctamente. El lote revisado no incluyó una muestra de esta plantilla, por lo que se documenta esa limitación de validación empírica. — C
+
+* **2026-07-26** — TASK-EBC-MCP-27 cerrada: Se recalcularon los cierres después de asignar período a todos los movimientos; la conciliación final del corte coincide íntegramente con la documentación. — C
+
+* **2026-07-26** — TASK-EBC-MCP-24 cerrada: La carga final del lote completó las importaciones, la persistencia y el cierre; la conciliación contra la documentación de corte quedó exacta. — C
+
+* **2026-07-26** — TASK-EBC-MCP-23 cerrada: Se excluyeron los sondeos GET y DELETE de /mcp del rate limit global, manteniendo la política de concurrencia para las operaciones POST MCP. — C
+
+* **2026-07-26** — TASK-EBC-MCP-22 cerrada: Se verificó la compatibilidad MCP HTTP con protocolo 2025-03-26 mediante una sesión real: initialize, tools/list y health_status respondieron correctamente. — C
+
+* **2026-07-26** — TASK-EBC-MCP-21 cerrada: Se verificaron los registros nativos de VS Code, Claude y Codex para BancosMCP y los smoke tests MCP locales completaron correctamente. — C
 
 * **2026-07-26** — TASK-EBC-MCP-31 cerrada: El job de cierre ahora crea períodos faltantes, asigna cada movimiento a su período y luego calcula cierres desde el rango histórico necesario. — C
 

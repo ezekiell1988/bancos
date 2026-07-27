@@ -1,7 +1,7 @@
 # 00 — Contexto del Proyecto
 
-> Última actualización: 2026-07-24
-> Alcance activo: migración progresiva de Bancos.Api → Bancos.Mcp como único proyecto funcional.
+> Última actualización: 2026-07-26
+> Alcance activo: Bancos.Mcp es el único proyecto funcional.
 
 ## Identidad
 
@@ -12,14 +12,13 @@
 | Usuarios | Ezequiel Baltodano y Karen Soto. |
 | Despliegue actual | Local, sin autenticación. |
 | Despliegue futuro | Contenedor Azure; autenticación pendiente antes de exponerlo. |
-| Dirección estratégica | Migrar toda la funcionalidad de `Bancos.Api` a `Bancos.Mcp`; eliminar `Bancos.Api` cuando MCP tenga paridad funcional completa. |
+| Dirección estratégica | Operar exclusivamente mediante `Bancos.Mcp`. |
 
 ## Stack decidido
 
 | Capa | Tecnología |
 |---|---|
-| API y jobs | .NET 10, C# 14, Minimal APIs por features |
-| Frontend | Angular standalone compilado y servido por API |
+| MCP y jobs | .NET 10, C# 14, Minimal APIs por features |
 | Datos | Microsoft SQL Server |
 | Procesos | Hangfire SQL Server y Hangfire.Console |
 | Clasificación excepcional | Azure AI; solo descripción normalizada y catálogo de categorías |
@@ -28,10 +27,9 @@
 
 | Proyecto | Responsabilidad | Estado |
 |---|---|---|
-| `Bancos.Api` | Monolito funcional original: imports, contabilidad, clasificación y reportes | **En retiro progresivo** — funcionalidad se migra a MCP |
-| `Bancos.Mcp` | Servidor MCP destino final: acumula toda la funcionalidad del proyecto | **Proyecto principal activo** |
+| `Bancos.Mcp` | Servidor MCP para importaciones, cierres, conciliación y gestión financiera | **Único proyecto activo** |
 
-Los proyectos no comparten tablas, historial de EF Core ni cadenas de conexión. `Bancos.Api` se elimina cuando `Bancos.Mcp` tenga paridad funcional completa.
+`Bancos.Mcp` mantiene su propio contexto, migraciones y base de datos.
 
 ## Límites y constantes críticas
 
@@ -71,7 +69,5 @@ Requisitos: Docker Desktop corriendo y PowerShell (`pwsh`) instalado.
 
 | Alcance | Comando |
 |---|---|
-| API | `dotnet build` y `dotnet test` |
-| Frontend | `npm run build` y pruebas configuradas |
 | MCP | `pwsh .mcp/bancos-mcp.ps1` → `tools/list` responde con tools disponibles |
 | Datos | Consultas de conciliación vía MCP `dbquery` cuando esté disponible |

@@ -1,11 +1,10 @@
 # 03 — Plan de Desarrollo
 
-> Última actualización: 2026-07-24
+> Última actualización: 2026-07-26
 
 ## Dirección actual
 
-Migrar progresivamente toda la funcionalidad de `Bancos.Api` a tools de `Bancos.Mcp`.
-El objetivo final es que `Bancos.Mcp` sea el único proyecto activo y `Bancos.Api` pueda eliminarse.
+Bancos.Mcp es el único proyecto activo y concentra las operaciones mediante tools MCP.
 
 ---
 
@@ -52,15 +51,12 @@ Equivalente funcional de `Imports` + `Parsing` de la API, implementado como tool
 
 ---
 
-### Fase 5 — Eliminación de Bancos.Api ⏳
-
-Precondición: Fases 2–4 completas y verificadas.
+### Fase 5 — Consolidación MCP ✅
 
 | Componente | Estado |
 |---|---|
-| Auditoría de paridad funcional MCP vs API | ⏳ Pendiente |
-| Eliminación del proyecto `Bancos.Api` y su BD | ⏳ Pendiente |
-| Limpieza de `.vscode`, `.claude/launch.json` y scripts | ⏳ Pendiente |
+| Retiro de proyectos API y frontend | ✅ |
+| Limpieza de configuración de ejecución | ✅ |
 
 ---
 

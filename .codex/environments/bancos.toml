@@ -2,10 +2,7 @@
 version = "1"
 name = "Bancos"
 
-[setup]
-script = "npm --prefix src/Bancos.Web install"
-
 [[actions]]
-name = "Iniciar API + Web (HTTPS)"
+name = "Iniciar MCP"
 icon = "play"
-command = "pwsh -ExecutionPolicy Bypass -File ./.codex/start-dev.ps1"
+command = "pwsh -ExecutionPolicy Bypass -File ./.mcp/bancos-mcp.ps1"

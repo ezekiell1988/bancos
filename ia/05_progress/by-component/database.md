@@ -1,8 +1,12 @@
-> **Última actualización:** 2026-07-26 CR (TASK-EBC-MCP-31 completada)
+> **Última actualización:** 2026-07-26 CR (TASK-EBC-MCP-27 completada)
 
 
 
 ## Completado
+
+* **2026-07-26** — TASK-EBC-MCP-27: Se recalcularon los cierres después de asignar período a todos los movimientos; la conciliación final del corte coincide íntegramente con la documentación. — C
+
+* **2026-07-26** — TASK-EBC-MCP-24: La carga final del lote completó las importaciones, la persistencia y el cierre; la conciliación contra la documentación de corte quedó exacta. — C
 
 * **2026-07-26** — TASK-EBC-MCP-31: El job de cierre ahora crea períodos faltantes, asigna cada movimiento a su período y luego calcula cierres desde el rango histórico necesario. — C
 

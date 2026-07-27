@@ -1,8 +1,12 @@
-> **Última actualización:** 2026-07-21 CR (TASK-EBC-INF-11 completada)
+> **Última actualización:** 2026-07-26 CR (TASK-EBC-INF-12 completada)
 
 
 
 ## Completado
+
+* **2026-07-26** — TASK-EBC-INF-12: Se retiraron Bancos.Api, Bancos.Web, sus pruebas y configuraciones asociadas. Bancos.Mcp queda como único proyecto funcional; las tareas frontend fueron archivadas como canceladas por cambio de arquitectura. — C
+
+* **2026-07-26** — TASK-EBC-MCP-21: Se verificaron los registros nativos de VS Code, Claude y Codex para BancosMCP y los smoke tests MCP locales completaron correctamente. — C
 
 * **2026-07-21** — TASK-EBC-INF-11: Registrado Bancos.Mcp como servidor HTTP bancos_mcp en la configuración de Codex. — EBC
 

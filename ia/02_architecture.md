@@ -1,24 +1,17 @@
 # 02 — Arquitectura del Sistema
 
-> Última actualización: 2026-07-21
+> Última actualización: 2026-07-26
 
 ## Resumen
 
-**Dirección estratégica:** migrar toda la funcionalidad de `Bancos.Api` a `Bancos.Mcp`
-de forma progresiva. `Bancos.Api` está en retiro; `Bancos.Mcp` es el proyecto destino
-y será el único proyecto activo al completar la migración.
-
-`Bancos.Api` es el monolito funcional original (en retiro progresivo): recibe
-importaciones, ejecuta jobs Hangfire, persiste MSSQL y sirve el frontend Angular.
-
-`Bancos.Mcp` es el servidor MCP destino: acumula tools equivalentes a cada feature
-de la API. Usa `McpCatalogDbContext` y su propia base de datos (`dbbancosmcp`).
+**Dirección estratégica:** `Bancos.Mcp` es el único proyecto funcional y expone las
+operaciones financieras mediante tools MCP. Usa `McpCatalogDbContext` y su propia base
+de datos (`dbbancosmcp`).
 
 ## Límites de proyectos y datos
 
-`Bancos.Api` y `Bancos.Mcp` tienen bases de datos, cadenas de conexión, contextos y
-migraciones de EF Core distintos. No comparten tablas ni `__EFMigrationsHistory`.
-Las migraciones de un proyecto se aplican únicamente contra su propia base de datos.
+`Bancos.Mcp` conserva su propio contexto, migraciones y cadena de conexión; sus
+migraciones se aplican únicamente contra su base de datos.
 
 Las tablas del catálogo MCP usan el prefijo `tb` y lower camel case. Sus columnas
 usan lower camel case, con claves descriptivas como `idBanks` e
