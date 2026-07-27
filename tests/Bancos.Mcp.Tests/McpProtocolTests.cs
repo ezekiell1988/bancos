@@ -65,6 +65,15 @@ public sealed class McpProtocolTests : IClassFixture<McpWebApplicationFactory>
     }
 
     [Fact]
+    public async Task Tools_list_accepts_a_known_session_when_the_client_omits_the_protocol_header()
+    {
+        var sessionId = await GetSessionIdAsync();
+        using var response = await PostAsync("""{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}""", sessionId, includeProtocolVersion: false);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Tools_call_returns_text_and_structured_content()
     {
         var sessionId = await GetSessionIdAsync();
@@ -162,13 +171,14 @@ public sealed class McpProtocolTests : IClassFixture<McpWebApplicationFactory>
             @params = new { protocolVersion = version }
         }));
 
-    private Task<HttpResponseMessage> PostAsync(string json, string? sessionId = null, string protocolVersion = "2025-06-18")
+    private Task<HttpResponseMessage> PostAsync(string json, string? sessionId = null, string protocolVersion = "2025-06-18", bool includeProtocolVersion = true)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "/mcp") { Content = JsonContent.Create(JsonDocument.Parse(json).RootElement) };
         if (!string.IsNullOrWhiteSpace(sessionId))
         {
             request.Headers.Add("Mcp-Session-Id", sessionId);
-            request.Headers.Add("MCP-Protocol-Version", protocolVersion);
+            if (includeProtocolVersion)
+                request.Headers.Add("MCP-Protocol-Version", protocolVersion);
         }
 
         return client.SendAsync(request);

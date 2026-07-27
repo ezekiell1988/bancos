@@ -1,8 +1,14 @@
-> **Última actualización:** 2026-07-27 CR (TASK-EBC-MCP-41 completada)
+> **Última actualización:** 2026-07-27 CR (TASK-EBC-DOC-12 completada)
 
 
 
 ## Completado
+
+* **2026-07-27** — TASK-EBC-DOC-12: El tool export_unclassified_transactions_markdown regeneró el documento de pendientes con 410 movimientos. — EBC
+
+* **2026-07-27** — TASK-EBC-DOC-11: Se regeneró el listado de revisión con los 490 movimientos pendientes tras aplicar 49 clasificaciones confirmadas. — EBC
+
+* **2026-07-27** — TASK-EBC-DOC-10: Se generó el Markdown con los 539 movimientos pendientes, códigos locales y columnas para categoría y explicación manual. — EBC
 
 * **2026-07-27** — TASK-EBC-MCP-41: Importación BN PDF corregida y validada de extremo a extremo: detección, job Hangfire, persistencia del corte, movimientos, vínculos idempotentes y conciliación por moneda. — EBC
 

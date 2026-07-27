@@ -14,6 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddProblemDetails();
 builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<ILlmAuditService, LlmAuditService>();
 builder.Services.AddHealthModule();
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 if (!string.IsNullOrWhiteSpace(connectionString))

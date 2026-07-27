@@ -1,8 +1,12 @@
-> **Última actualización:** 2026-07-27 CR (TASK-EBC-MCP-33 completada)
+> **Última actualización:** 2026-07-27 CR (TASK-EBC-MCP-46 completada)
 
 
 
 ## Completado
+
+* **2026-07-27** — TASK-EBC-MCP-46: Se agregó el tool MCP export_unclassified_transactions_markdown para generar un Markdown determinista de movimientos pendientes bajo docs/. — EBC
+
+* **2026-07-27** — TASK-EBC-MCP-44: Se confirmaron 49 clasificaciones respaldadas por las descripciones del usuario; la cola bajó de 539 a 490. Las transferencias internas se mantuvieron pendientes. — EBC
 
 * **2026-07-27** — TASK-EBC-MCP-33: Se completó el fallback de clasificación con Azure AI: se invoca únicamente tras no encontrar una regla determinista; el prompt usa descripción normalizada y sanitizada junto con el catálogo permitido; errores y baja confianza devuelven No clasificado. Se añadieron pruebas con cliente HTTP simulado, incluida la verificación de redacción de identificadores y montos. — EBC
 

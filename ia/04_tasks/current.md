@@ -1,6 +1,20 @@
 # 04 — Tareas activas
 
-> **Última actualización:** 2026-07-27 CR (TASK-EBC-MCP-33 completada)
+> **Última actualización:** 2026-07-27 CR (TASK-EBC-DOC-12 completada)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -207,3 +221,4 @@ Sin tareas.
 
 Sin tareas.
 | TASK-EBC-DB-05 | DB | Estrategia de dos entornos de base de datos (dev y prod) | crítica |
+| TASK-EBC-MCP-45 | MCP | Aplicar patrones confirmados y actualizar pendientes | media |

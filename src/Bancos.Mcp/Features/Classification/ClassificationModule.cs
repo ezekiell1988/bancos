@@ -20,6 +20,7 @@ public static class ClassificationModule
         services.AddSingleton<IMcpTool, ClassifyPendingTransactionsTool>();
         services.AddSingleton<IMcpTool, ListUnclassifiedTransactionsTool>();
         services.AddSingleton<IMcpTool, ConfirmTransactionClassificationTool>();
+        services.AddSingleton<IMcpTool, ExportUnclassifiedTransactionsMarkdownTool>();
         return services;
     }
 }

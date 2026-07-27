@@ -17,6 +17,7 @@ public static class McpHandler
         ToolRegistry registry,
         IMemoryCache cache,
         IOptions<McpOptions> options,
+        ILlmAuditService audit,
         CancellationToken cancellationToken)
     {
         if (!IsOriginAllowed(context.Request, options.Value))
@@ -42,6 +43,9 @@ public static class McpHandler
             return TypedResults.StatusCode(StatusCodes.Status202Accepted);
 
         var method = methodElement.GetString()!;
+        var hasSessionHeader = !string.IsNullOrWhiteSpace(context.Request.Headers["Mcp-Session-Id"].FirstOrDefault());
+        var hasProtocolVersionHeader = !string.IsNullOrWhiteSpace(context.Request.Headers["MCP-Protocol-Version"].FirstOrDefault());
+        audit.LogEvent("MCP", "HTTP message", $"method={method}; hasSessionHeader={hasSessionHeader}; hasProtocolVersionHeader={hasProtocolVersionHeader}");
         if (method.StartsWith("notifications/", StringComparison.Ordinal))
             return TypedResults.StatusCode(StatusCodes.Status202Accepted);
 
@@ -53,7 +57,10 @@ public static class McpHandler
             : JsonDocument.Parse("{}").RootElement.Clone();
 
         if (method != "initialize" && !HasValidSession(context.Request, cache))
+        {
+            audit.LogEvent("MCP", "HTTP message rejected", $"method={method}; reason=invalidSessionOrProtocol; hasSessionHeader={hasSessionHeader}; hasProtocolVersionHeader={hasProtocolVersionHeader}");
             return TypedResults.BadRequest();
+        }
 
         return method switch
         {
@@ -146,9 +153,9 @@ public static class McpHandler
         var sessionId = request.Headers["Mcp-Session-Id"].FirstOrDefault();
         var protocolVersion = request.Headers["MCP-Protocol-Version"].FirstOrDefault();
         return !string.IsNullOrWhiteSpace(sessionId)
-            && !string.IsNullOrWhiteSpace(protocolVersion)
             && cache.TryGetValue<string>(SessionKey(sessionId), out var negotiatedVersion)
-            && string.Equals(negotiatedVersion, protocolVersion, StringComparison.Ordinal);
+            && (string.IsNullOrWhiteSpace(protocolVersion)
+                || string.Equals(negotiatedVersion, protocolVersion, StringComparison.Ordinal));
     }
 
     private static readonly JsonSerializerOptions CamelCase = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };

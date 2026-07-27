@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-27 CR (TASK-EBC-MCP-33 completada)
+> **Última actualización:** 2026-07-27 CR (TASK-EBC-DOC-12 completada)
 
 ## En curso
 
@@ -23,6 +23,18 @@
 ## Completado en sesiones recientes
 
 
+
+* **2026-07-27** — TASK-EBC-DOC-12 cerrada: El tool export_unclassified_transactions_markdown regeneró el documento de pendientes con 410 movimientos. — EBC
+
+* **2026-07-27** — TASK-EBC-MCP-46 cerrada: Se agregó el tool MCP export_unclassified_transactions_markdown para generar un Markdown determinista de movimientos pendientes bajo docs/. — EBC
+
+* **2026-07-27** — TASK-EBC-DOC-11 cerrada: Se regeneró el listado de revisión con los 490 movimientos pendientes tras aplicar 49 clasificaciones confirmadas. — EBC
+
+* **2026-07-27** — TASK-EBC-MCP-44 cerrada: Se confirmaron 49 clasificaciones respaldadas por las descripciones del usuario; la cola bajó de 539 a 490. Las transferencias internas se mantuvieron pendientes. — EBC
+
+* **2026-07-27** — TASK-EBC-DOC-10 cerrada: Se generó el Markdown con los 539 movimientos pendientes, códigos locales y columnas para categoría y explicación manual. — EBC
+
+* **2026-07-27** — TASK-EBC-MCP-43 cerrada: Corregida la compatibilidad Streamable HTTP con VS Code: el servidor valida la sesión cuando se recibe Mcp-Session-Id y usa la versión negociada si VS Code omite MCP-Protocol-Version. Se incorporó auditoría local segura del handshake. — EBC
 
 * **2026-07-27** — TASK-EBC-MCP-33 cerrada: Se completó el fallback de clasificación con Azure AI: se invoca únicamente tras no encontrar una regla determinista; el prompt usa descripción normalizada y sanitizada junto con el catálogo permitido; errores y baja confianza devuelven No clasificado. Se añadieron pruebas con cliente HTTP simulado, incluida la verificación de redacción de identificadores y montos. — EBC
 
