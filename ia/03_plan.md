@@ -4,7 +4,7 @@
 
 ## Dirección actual
 
-Bancos.Mcp es el único proyecto activo y concentra las operaciones mediante tools MCP.
+`Bancos.Mcp` es el único proyecto activo. Un LLM realiza todo el trabajo mediante tools MCP; no existen API HTTP ni interfaz web en la arquitectura activa.
 
 ---
 
@@ -13,58 +13,48 @@ Bancos.Mcp es el único proyecto activo y concentra las operaciones mediante too
 | Componente | Estado |
 |---|---|
 | `/ia` y reglas operativas | ✅ |
-| Inspección segura de formatos semilla | ✅ |
 | MCP `iaWorkflow` y `dbquery` | ✅ |
 
 ---
 
-### Fase 2 — Catálogo y parsers en MCP ⏳ En curso
-
-Equivalente funcional de `Imports` + `Parsing` de la API, implementado como tools MCP.
+### Fase 2 — Carga y cierres en MCP ⏳ En curso
 
 | Componente | Estado |
 |---|---|
-| Tablas catálogo (`tbBanks`, `tbBankAccounts`, `tbImportTemplates`) | ✅ |
-| Tablas transaccionales (`tbTransactions`, `tbCardStatements`, `tbLoanStatements`) | ✅ |
-| Tools MCP de extracción por formato (BAC, BCR, BN, Coopealianza) | ⏳ En revisión |
-| Idempotencia e importación con huella en MCP | ⏳ Pendiente |
+| Catálogo y tablas transaccionales MCP | ✅ |
+| Tools MCP de extracción por formato | ⏳ En revisión |
+| Idempotencia e importación con huella | ⏳ Pendiente |
+| Cierres y períodos | ✅ Implementado |
 
 ---
 
-### Fase 3 — Tipos de cambio, clasificación y movimientos en MCP ⏳
+### Fase 3 — Clasificación híbrida en MCP ⏳
 
 | Componente | Estado |
 |---|---|
-| Tool de tipos de cambio diarios | ⏳ Pendiente |
-| Tools de clasificación (reglas, categorías, IA) | ⏳ Pendiente |
-| Tools de consulta y gestión de movimientos | ⏳ Pendiente |
+| Categorías, reglas deterministas e historial | ⏳ Pendiente |
+| Tools de clasificación y revisión manual aprendible | ⏳ Pendiente |
+| Azure AI como fallback seguro | ⏳ Pendiente; riesgo alto |
+| Estado `No clasificado` y cola de revisión | ⏳ Pendiente |
+
+Orden obligatorio: reglas .NET → Azure AI → `No clasificado` → corrección del usuario → nueva regla .NET.
 
 ---
 
-### Fase 4 — Contabilidad y reportes en MCP ⏳
+### Fase 4 — Contabilidad y reportes HTML en MCP ⏳
 
 | Componente | Estado |
 |---|---|
-| Tools de libro mayor (cuentas, auxiliares, comprobantes) | ⏳ Pendiente |
-| Tool de diferencial cambiario (pasivos USD) | ⏳ Pendiente |
-| Tools de P&G y situación financiera | ⏳ Pendiente |
+| Tools de libro mayor y diferencial cambiario | ⏳ Pendiente |
+| Tool HTML de estado de resultados | ⏳ Pendiente |
+| Tool HTML de situación financiera | ⏳ Pendiente |
 
 ---
 
-### Fase 5 — Consolidación MCP ✅
+### Fase 5 — Operación MCP autónoma ⏳
 
-| Componente | Estado |
-|---|---|
-| Retiro de proyectos API y frontend | ✅ |
-| Limpieza de configuración de ejecución | ✅ |
-
----
+El LLM podrá cargar archivos, ejecutar cierres, resolver clasificaciones, solicitar revisión humana para excepciones y generar reportes HTML autocontenidos.
 
 ### Fase 6 — Preparación Azure ⏳
 
-Solo aplica después de eliminar la API.
-
-| Componente | Estado |
-|---|---|
-| Autenticación | ⏳ Pendiente |
-| Contenedor y secretos | ⏳ Pendiente |
+Aplicable solo tras una tarea de seguridad aprobada. Incluye autenticación del servidor MCP, secretos y plataforma de despliegue; no forma parte del alcance actual.

@@ -42,17 +42,27 @@ columna; los nombres físicos permanecen en inglés.
 
 Job recibe solo `ImportId`; bytes no viajan en argumentos Hangfire. Console registra inicio, plantilla, extracción, conciliación, clasificación, persistencia y fallo/éxito.
 
-## Reglas de clasificación
+## Clasificación híbrida y aprendizaje
 
-1. Misma cuenta y descripción normalizada: última clasificación aprobada.
-2. Regla determinística por patrón/tags.
-3. Azure AI con descripción y catálogo; sin archivo, identificador ni saldo.
-4. Categoría previamente asignada si descripción cambió.
-5. `General`, pendiente de revisión manual.
+La clasificación la orquesta `Bancos.Mcp`; un LLM invoca las tools, pero el motor decide con un orden fijo:
+
+1. .NET busca una regla determinista por cuenta, descripción normalizada y contexto del movimiento.
+2. Si no hay coincidencia, Azure AI recibe únicamente la descripción normalizada y el catálogo permitido; nunca archivo, cuenta, identificador, saldo ni credenciales.
+3. Si Azure AI falla o no alcanza el umbral de confianza, el movimiento queda `No clasificado` y se agrega a la cola de revisión.
+4. La tool de confirmación humana registra la categoría, conserva el origen y crea o actualiza una regla .NET. La próxima coincidencia no requiere IA.
+
+`tbCategories` modela el árbol de categorías con raíces Ingreso, Gasto, Activo, Pasivo y Capital. `tbClassificationRules` contiene las reglas reutilizables; `tbTransactionClassifications` conserva el historial, origen (`rule`, `ai`, `manual`, `unclassified`), confianza y explicación de cada decisión.
+
+## Tools MCP de reportes
+
+`Reports` expone tools que devuelven HTML autocontenido, no páginas web:
+
+* Estado de resultados: ingresos, gastos y resultado por período, con moneda, fecha de generación y advertencia de movimientos pendientes.
+* Situación financiera: activos, pasivos y capital para período o fecha, validando `activos = pasivos + capital`.
 
 ## Datos esenciales
 
-`Accounts`, `AccountAuxiliaries`, `Imports`, `ImportFingerprints`, `Transactions`, `JournalEntries`, `JournalLines`, `Categories`, `ClassificationRules`, `ClassificationTags`, `ExchangeRates`, `ForeignExchangeClosings`, `ForeignExchangeClosingLines`.
+`Accounts`, `AccountAuxiliaries`, `Imports`, `ImportFingerprints`, `Transactions`, `JournalEntries`, `JournalLines`, `Categories`, `ClassificationRules`, `TransactionClassifications`, `ClassificationTags`, `ExchangeRates`, `ForeignExchangeClosings`, `ForeignExchangeClosingLines`.
 
 `AccountAuxiliaries.Iban` es llave de negocio única cuando existe: identificador `CR...` normalizado, no número de tarjeta. `OwnerId` se resuelve desde documento; el fallback acordado es Ezequiel Baltodano.
 
@@ -107,4 +117,4 @@ Firmas, campos y reglas de detección: [`02_architecture/import-formats.md`](02_
 
 ## Seguridad
 
-Archivo `db.json` se carga solo desde configuración local; nunca se devuelve por API ni se versiona. API local no tiene auth; publicación requiere ADR y tarea de autenticación.
+Archivo `db.json` se carga solo desde configuración local; nunca se devuelve por una tool ni se versiona. El servidor MCP local no tiene autenticación; cualquier publicación requiere ADR y tarea de autenticación aprobada.

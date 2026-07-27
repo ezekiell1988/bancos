@@ -1,6 +1,9 @@
 # 04 — Tareas activas
 
-> **Última actualización:** 2026-07-26 CR (TASK-EBC-INF-03 completada)
+> **Última actualización:** 2026-07-26 CR (TASK-EBC-MCP-40 creada)
+
+
+
 
 
 
@@ -173,6 +176,16 @@ Sin tareas.
 
 | ID | Título | Riesgo | Aprobación |
 |---|---|---|---|
+| `TASK-EBC-MCP-40` | Tools MCP de consulta para cortes de tarjeta, financiamientos y préstamos | medio | pendiente |
+| `TASK-EBC-MCP-39` | Tools MCP de libro mayor, regeneración y diferencial cambiario | medio | pendiente |
+| `TASK-EBC-MCP-38` | Tools MCP de conciliación de pagos y transferencias | medio | pendiente |
+| `TASK-EBC-MCP-37` | Tools MCP para tipos de cambio y resolución de tasas | medio | pendiente |
+| `TASK-EBC-MCP-36` | Tools MCP de idempotencia y seguimiento de importaciones | medio | pendiente |
+| `TASK-EBC-MCP-35` | Tools MCP de consulta de catálogo, períodos y movimientos | medio | pendiente |
+| `TASK-EBC-MCP-34` | Tools MCP para reportes HTML de resultados y situación financiera | medio | pendiente |
+| `TASK-EBC-MCP-33` | Clasificación MCP con Azure AI como fallback seguro | alto | pendiente |
+| `TASK-EBC-MCP-32` | Tools MCP de clasificación determinista y revisión manual aprendible | medio | pendiente |
+| `TASK-EBC-DB-11` | Modelo MCP de categorías, reglas e historial de clasificación | medio | pendiente |
 | `TASK-EBC-MCP-17` | Revisar implementación MCP — Estado de cuenta de tarjeta Banco Nacional | bajo | pendiente |
 
 ## Bloqueadas

@@ -1,8 +1,12 @@
-> **Última actualización:** 2026-07-26 CR (TASK-EBC-DOC-07 completada)
+> **Última actualización:** 2026-07-26 CR (TASK-EBC-DOC-09 completada)
 
 
 
 ## Completado
+
+* **2026-07-26** — TASK-EBC-DOC-09: Documentada la regla operativa: el usuario levanta manualmente Bancos.Mcp con .mcp/bancos-mcp.ps1 y el agente debe solicitarlo cuando sea necesario reiniciar o levantar el proyecto. — EBC
+
+* **2026-07-26** — TASK-EBC-DOC-08: Documentación activa alineada a operación exclusiva mediante Bancos.Mcp; se definió el flujo .NET → Azure AI → No clasificado → corrección aprendible, los reportes HTML y el backlog técnico asociado. — EBC
 
 * **2026-07-26** — TASK-EBC-DOC-07: Se corrigieron las iniciales de las dos tareas MCP cerradas y sus referencias quedaron consistentes con el estándar TASK-EBC. — C
 

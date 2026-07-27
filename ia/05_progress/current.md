@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-26 CR (TASK-EBC-INF-03 completada)
+> **Última actualización:** 2026-07-26 CR (TASK-EBC-DOC-09 completada)
 
 ## En curso
 
@@ -21,6 +21,10 @@
 * Aprobar y ejecutar `TASK-EZ-BE-01` mediante `iaWorkflow`.
 
 ## Completado en sesiones recientes
+
+* **2026-07-26** — TASK-EBC-DOC-09 cerrada: Documentada la regla operativa: el usuario levanta manualmente Bancos.Mcp con .mcp/bancos-mcp.ps1 y el agente debe solicitarlo cuando sea necesario reiniciar o levantar el proyecto. — EBC
+
+* **2026-07-26** — TASK-EBC-DOC-08 cerrada: Documentación activa alineada a operación exclusiva mediante Bancos.Mcp; se definió el flujo .NET → Azure AI → No clasificado → corrección aprendible, los reportes HTML y el backlog técnico asociado. — EBC
 
 * **2026-07-26** — TASK-EBC-INF-03 cerrada: Cerrada como obsoleta por decisión explícita: se eliminó el alcance de API y el proyecto queda únicamente con MCP; no se realizaron trabajos de autenticación, contenedores, CI/CD ni despliegue. — EBC
 

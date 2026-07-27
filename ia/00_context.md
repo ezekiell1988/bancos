@@ -55,6 +55,8 @@
 
 El script `.mcp/bancos-mcp.ps1` arranca el contenedor Docker de SQL Server (si no está corriendo) y ejecuta `dotnet watch run` del proyecto `Bancos.Mcp` en el puerto 8000.
 
+**Regla operativa:** el usuario (Ezequiel) ejecuta este script manualmente. Cuando un cambio requiera levantar o reiniciar el MCP, el agente debe indicarle al usuario que ejecute `.mcp/bancos-mcp.ps1`; el agente no debe levantarlo por su cuenta.
+
 ```bash
 # macOS / Linux
 pwsh .mcp/bancos-mcp.ps1
