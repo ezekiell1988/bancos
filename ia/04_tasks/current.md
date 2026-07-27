@@ -1,6 +1,20 @@
 # 04 — Tareas activas
 
-> **Última actualización:** 2026-07-27 CR (TASK-EBC-DOC-12 completada)
+> **Última actualización:** 2026-07-27 CR (TASK-EBC-DOC-13 completada)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

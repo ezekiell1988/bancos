@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-27 CR (TASK-EBC-DOC-12 completada)
+> **Última actualización:** 2026-07-27 CR (TASK-EBC-DOC-13 completada)
 
 ## En curso
 
@@ -23,6 +23,20 @@
 ## Completado en sesiones recientes
 
 
+
+* **2026-07-27** — TASK-EBC-DOC-13 cerrada: Se creó una plantilla Power Query segura para ejecutar SELECTs parametrizados contra SQL Server. — EBC
+
+* **2026-07-27** — TASK-EBC-MCP-52 cerrada: Se aplicaron 18 clasificaciones inequívocas de la nueva tanda y el tool MCP regeneró el Markdown con 159 pendientes. — EBC
+
+* **2026-07-27** — TASK-EBC-MCP-51 cerrada: Se aplicaron 67 clasificaciones inequívocas de la nueva tanda de notas y el tool MCP regeneró el Markdown con 177 pendientes. — EBC
+
+* **2026-07-27** — TASK-EBC-MCP-50 cerrada: Se identificaron y confirmaron 2 coincidencias adicionales de alta confianza y el tool MCP regeneró el Markdown con 244 pendientes. — EBC
+
+* **2026-07-27** — TASK-EBC-MCP-49 cerrada: Se añadió Place a las reglas de clasificación, se propagó a movimientos futuros, se aplicaron 66 notas con lugares conocidos y se regeneró el Markdown a 246 pendientes. — EBC
+
+* **2026-07-27** — TASK-EBC-MCP-48 cerrada: Se confirmaron los 69 movimientos que coincidían con patrones reutilizables y el tool MCP regeneró el documento con 312 pendientes. — EBC
+
+* **2026-07-27** — TASK-EBC-MCP-47 cerrada: Se aplicaron 29 clasificaciones inequívocas desde las notas del usuario y el tool MCP regeneró el Markdown con 381 movimientos pendientes. — EBC
 
 * **2026-07-27** — TASK-EBC-DOC-12 cerrada: El tool export_unclassified_transactions_markdown regeneró el documento de pendientes con 410 movimientos. — EBC
 

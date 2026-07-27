@@ -19,7 +19,13 @@ public sealed class ConfirmTransactionClassificationTool(IServiceScopeFactory sc
             properties = new
             {
                 transactionId = new { type = "string", format = "uuid", description = "Movimiento a clasificar." },
-                categoryId = new { type = "string", format = "uuid", description = "Categoría confirmada por el usuario." }
+                categoryId = new { type = "string", format = "uuid", description = "Categoría confirmada por el usuario." },
+                place = new
+                {
+                    type = new[] { "string", "null" },
+                    maxLength = 120,
+                    description = "Lugar o comercio confirmado; se guarda en el movimiento y en la regla reutilizable."
+                }
             },
             required = new[] { "transactionId", "categoryId" },
             additionalProperties = false
@@ -43,6 +49,9 @@ public sealed class ConfirmTransactionClassificationTool(IServiceScopeFactory sc
             return McpToolResult.Error("Se requiere 'transactionId' como UUID válido.");
         if (!arguments.TryGetProperty("categoryId", out var categoryIdEl) || !Guid.TryParse(categoryIdEl.GetString(), out var categoryId))
             return McpToolResult.Error("Se requiere 'categoryId' como UUID válido.");
+        string? place = null;
+        if (arguments.TryGetProperty("place", out var placeEl) && placeEl.ValueKind == JsonValueKind.String)
+            place = placeEl.GetString();
 
         using var scope = scopeFactory.CreateScope();
         var service = scope.ServiceProvider.GetRequiredService<ClassificationService>();
@@ -50,9 +59,9 @@ public sealed class ConfirmTransactionClassificationTool(IServiceScopeFactory sc
         TransactionClassification classification;
         try
         {
-            classification = await service.ConfirmManualClassificationAsync(transactionId, categoryId, cancellationToken);
+            classification = await service.ConfirmManualClassificationAsync(transactionId, categoryId, place, cancellationToken);
         }
-        catch (InvalidOperationException ex)
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
         {
             return McpToolResult.Error(ex.Message);
         }

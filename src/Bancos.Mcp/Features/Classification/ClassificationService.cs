@@ -39,8 +39,16 @@ public sealed class ClassificationService(
 
         var match = ClassificationRuleMatcher.FindBestMatch(candidateRules, transaction.Description, transaction.OperationType);
 
-        var classification = match is not null
-            ? new TransactionClassification
+        TransactionClassification classification;
+        if (match is not null)
+        {
+            if (string.IsNullOrWhiteSpace(transaction.Place) && !string.IsNullOrWhiteSpace(match.Place))
+            {
+                transaction.Place = match.Place;
+                transaction.UpdatedAt = CostaRicaTime.Now;
+            }
+
+            classification = new TransactionClassification
             {
                 Id = Guid.NewGuid(),
                 TransactionId = transactionId,
@@ -49,8 +57,11 @@ public sealed class ClassificationService(
                 Source = ClassificationSource.Rule,
                 Confidence = 1m,
                 Explanation = $"Coincidencia determinista con la regla \"{match.DescriptionPattern}\" ({match.MatchType})."
-            }
-            : await TryClassifyWithAiAsync(transaction, ct) ?? new TransactionClassification
+            };
+        }
+        else
+        {
+            classification = await TryClassifyWithAiAsync(transaction, ct) ?? new TransactionClassification
             {
                 Id = Guid.NewGuid(),
                 TransactionId = transactionId,
@@ -59,6 +70,7 @@ public sealed class ClassificationService(
                     ? "Ninguna regla determinista coincidió y la clasificación por IA no alcanzó el umbral de confianza o falló."
                     : "Ninguna regla determinista coincidió; clasificación por IA deshabilitada."
             };
+        }
 
         db.TransactionClassifications.Add(classification);
         await db.SaveChangesAsync(ct);
@@ -129,13 +141,17 @@ public sealed class ClassificationService(
     }
 
     public async Task<TransactionClassification> ConfirmManualClassificationAsync(
-        Guid transactionId, Guid categoryId, CancellationToken ct = default)
+        Guid transactionId, Guid categoryId, string? place = null, CancellationToken ct = default)
     {
         var transaction = await db.Transactions.FindAsync([transactionId], ct)
             ?? throw new InvalidOperationException($"Movimiento {transactionId} no encontrado.");
 
         _ = await db.Categories.FindAsync([categoryId], ct)
             ?? throw new InvalidOperationException($"Categoría {categoryId} no encontrada.");
+
+        var normalizedPlace = string.IsNullOrWhiteSpace(place) ? null : place.Trim();
+        if (normalizedPlace?.Length > 120)
+            throw new ArgumentException("'place' no puede exceder 120 caracteres.");
 
         var rule = await db.ClassificationRules.FirstOrDefaultAsync(r =>
             r.BankAccountId == transaction.BankAccountId &&
@@ -153,6 +169,7 @@ public sealed class ClassificationService(
                 DescriptionPattern = transaction.Description,
                 MatchType = "exact",
                 OperationType = transaction.OperationType,
+                Place = normalizedPlace,
                 Priority = 10
             };
             db.ClassificationRules.Add(rule);
@@ -162,6 +179,14 @@ public sealed class ClassificationService(
             rule.CategoryId = categoryId;
             rule.IsEnabled = true;
             rule.UpdatedAt = CostaRicaTime.Now;
+            if (normalizedPlace is not null)
+                rule.Place = normalizedPlace;
+        }
+
+        if (normalizedPlace is not null)
+        {
+            transaction.Place = normalizedPlace;
+            transaction.UpdatedAt = CostaRicaTime.Now;
         }
 
         var classification = new TransactionClassification

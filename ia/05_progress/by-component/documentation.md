@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-27 CR (TASK-EBC-DOC-12 completada)
+> **Última actualización:** 2026-07-27 CR (TASK-EBC-DOC-13 completada)
 
 
 
 ## Completado
+
+* **2026-07-27** — TASK-EBC-DOC-13: Se creó una plantilla Power Query segura para ejecutar SELECTs parametrizados contra SQL Server. — EBC
 
 * **2026-07-27** — TASK-EBC-DOC-12: El tool export_unclassified_transactions_markdown regeneró el documento de pendientes con 410 movimientos. — EBC
 

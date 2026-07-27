@@ -420,6 +420,28 @@ public sealed class ClassificationServiceTests
         Assert.Equal(GroceriesCategoryId, rule.CategoryId);
     }
 
+    [Fact]
+    public async Task ConfirmManualClassificationAsync_learns_and_propagates_place()
+    {
+        await using var db = await CreateDbAsync();
+        var accountId = (await db.BankAccounts.FirstAsync()).Id;
+        var firstTransactionId = await AddTransactionAsync(db, accountId, "COMPRA FERIA CENTRAL");
+        var service = CreateService(db);
+
+        await service.ConfirmManualClassificationAsync(firstTransactionId, GroceriesCategoryId, "Feria Central");
+
+        var firstTransaction = await db.Transactions.FindAsync(firstTransactionId);
+        var rule = await db.ClassificationRules.SingleAsync();
+        Assert.Equal("Feria Central", firstTransaction!.Place);
+        Assert.Equal("Feria Central", rule.Place);
+
+        var futureTransactionId = await AddTransactionAsync(db, accountId, "COMPRA FERIA CENTRAL");
+        await service.ClassifyAsync(futureTransactionId);
+
+        var futureTransaction = await db.Transactions.FindAsync(futureTransactionId);
+        Assert.Equal("Feria Central", futureTransaction!.Place);
+    }
+
     private static async Task<McpCatalogDbContext> CreateDbAsync()
     {
         var options = new DbContextOptionsBuilder<McpCatalogDbContext>()

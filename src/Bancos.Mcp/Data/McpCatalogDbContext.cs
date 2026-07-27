@@ -406,6 +406,7 @@ public sealed class McpCatalogDbContext(DbContextOptions<McpCatalogDbContext> op
             entity.Property(r => r.DescriptionPattern).HasColumnName("descriptionPattern").HasMaxLength(200).HasComment("Texto normalizado a comparar contra la descripción del movimiento.");
             entity.Property(r => r.MatchType).HasColumnName("matchType").HasMaxLength(16).HasComment("Forma de comparar el patrón: exacto, contiene o empieza con.");
             entity.Property(r => r.OperationType).HasColumnName("operationType").HasMaxLength(32).HasComment("Tipo de operación requerido; null aplica a cualquier tipo.");
+            entity.Property(r => r.Place).HasColumnName("place").HasMaxLength(120).HasComment("Lugar o comercio conocido que se aplica a coincidencias de la regla.");
             entity.Property(r => r.Priority).HasColumnName("priority").HasComment("Prioridad para desempatar entre reglas igual de específicas; mayor gana.");
             entity.Property(r => r.IsEnabled).HasColumnName("isEnabled").HasComment("Indica si la regla participa en la clasificación automática.");
             entity.Property(r => r.CreatedAt).HasColumnName("createdAt").HasComment("Fecha y hora de creación del registro.");

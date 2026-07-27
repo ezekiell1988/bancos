@@ -8,6 +8,7 @@ public sealed class ClassificationRule
     public required string DescriptionPattern { get; set; }
     public required string MatchType { get; set; }
     public string? OperationType { get; set; }
+    public string? Place { get; set; }
     public int Priority { get; set; }
     public bool IsEnabled { get; set; } = true;
     public DateTimeOffset CreatedAt { get; set; } = CostaRicaTime.Now;

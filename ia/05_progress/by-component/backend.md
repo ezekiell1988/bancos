@@ -1,8 +1,20 @@
-> **Última actualización:** 2026-07-27 CR (TASK-EBC-MCP-46 completada)
+> **Última actualización:** 2026-07-27 CR (TASK-EBC-MCP-52 completada)
 
 
 
 ## Completado
+
+* **2026-07-27** — TASK-EBC-MCP-52: Se aplicaron 18 clasificaciones inequívocas de la nueva tanda y el tool MCP regeneró el Markdown con 159 pendientes. — EBC
+
+* **2026-07-27** — TASK-EBC-MCP-51: Se aplicaron 67 clasificaciones inequívocas de la nueva tanda de notas y el tool MCP regeneró el Markdown con 177 pendientes. — EBC
+
+* **2026-07-27** — TASK-EBC-MCP-50: Se identificaron y confirmaron 2 coincidencias adicionales de alta confianza y el tool MCP regeneró el Markdown con 244 pendientes. — EBC
+
+* **2026-07-27** — TASK-EBC-MCP-49: Se añadió Place a las reglas de clasificación, se propagó a movimientos futuros, se aplicaron 66 notas con lugares conocidos y se regeneró el Markdown a 246 pendientes. — EBC
+
+* **2026-07-27** — TASK-EBC-MCP-48: Se confirmaron los 69 movimientos que coincidían con patrones reutilizables y el tool MCP regeneró el documento con 312 pendientes. — EBC
+
+* **2026-07-27** — TASK-EBC-MCP-47: Se aplicaron 29 clasificaciones inequívocas desde las notas del usuario y el tool MCP regeneró el Markdown con 381 movimientos pendientes. — EBC
 
 * **2026-07-27** — TASK-EBC-MCP-46: Se agregó el tool MCP export_unclassified_transactions_markdown para generar un Markdown determinista de movimientos pendientes bajo docs/. — EBC
 
