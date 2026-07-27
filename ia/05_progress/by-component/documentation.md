@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-26 CR (TASK-EBC-DOC-06 completada)
+> **Última actualización:** 2026-07-26 CR (TASK-EBC-DOC-07 completada)
 
 
 
 ## Completado
+
+* **2026-07-26** — TASK-EBC-DOC-07: Se corrigieron las iniciales de las dos tareas MCP cerradas y sus referencias quedaron consistentes con el estándar TASK-EBC. — C
 
 * **2026-07-26** — TASK-EBC-DOC-06: Se documentó la negociación de versión MCP por sesión y la exclusión de GET/DELETE del limitador global. La copia canónica de mcp-vscode fue sincronizada hacia Claude y Codex. — EBC
 

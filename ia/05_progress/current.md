@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-26 CR (TASK-EBC-DOC-06 completada)
+> **Última actualización:** 2026-07-26 CR (TASK-EBC-DOC-07 completada)
 
 ## En curso
 
@@ -21,6 +21,20 @@
 * Aprobar y ejecutar `TASK-EZ-BE-01` mediante `iaWorkflow`.
 
 ## Completado en sesiones recientes
+
+* **2026-07-26** — TASK-EBC-DOC-07 cerrada: Se corrigieron las iniciales de las dos tareas MCP cerradas y sus referencias quedaron consistentes con el estándar TASK-EBC. — C
+
+* **2026-07-26** — TASK-EBC-DB-10 cerrada: Se reinició la BD, se reprocesaron los 19 archivos con sus plantillas y cuentas correctas, se calcularon los cierres y la conciliación completa contra el documento resultó exacta. — C
+
+* **2026-07-26** — TASK-EBC-MCP-30 cerrada: Se normalizaron como magnitudes positivas los valores de columnas separadas de débito y crédito en XLS/HTML, preservando la semántica de signo para columnas de monto único. — C
+
+* **2026-07-26** — TASK-EBC-MCP-29 cerrada: Se resolvieron las variantes CSV de débito por coincidencia única del identificador de carpeta, limitada a parsers CSV; la recarga limpia separó correctamente las cuentas y excluyó XLS. — C
+
+* **2026-07-26** — TASK-EBC-MCP-28 cerrada: Se agregó resolución única de cuenta por IBAN de carpeta para movimientos XLS, preservando la plantilla detectada. El archivo pendiente se encoló y su job terminó exitosamente. — C
+
+* **2026-07-26** — TASK-EBC-MCP-26 cerrada: Corregido y validado el reproceso de cinco imports. El parser Coopealianza ahora usa la misma extracción PDF que la detección; los cuatro jobs de préstamo concluyeron correctamente. El despacho de CSV BCR conserva la plantilla detectada y resuelve la cuenta desde esa plantilla, evitando sustituirla por XLS. Tras reiniciar BancosMCP, el CSV se encoló con el parser correcto y concluyó correctamente. — EBC
+
+* **2026-07-26** — TASK-EBC-MCP-25 cerrada: Diagnóstico completado sin mutaciones. Los cuatro PDFs Coopealianza son PDFs válidos y pasan detección de plantilla, pero el parser usa una extracción reconstruida distinta de la extracción de detección, provocando que la firma requerida no llegue intacta al parser. El CSV fallido es texto plano, pero su job histórico fue encolado con parser de XLS; el detector actual lo clasifica como BCR CSV. Hay una discrepancia de clasificación/despacho entre el job persistido y el detector actual. — EBC
 
 * **2026-07-26** — TASK-EBC-DOC-06 cerrada: Se documentó la negociación de versión MCP por sesión y la exclusión de GET/DELETE del limitador global. La copia canónica de mcp-vscode fue sincronizada hacia Claude y Codex. — EBC
 

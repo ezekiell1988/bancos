@@ -105,19 +105,26 @@ public sealed class ProcessImportFileTool(
                     primaryAccountId = pair.CrcAccountId;
                     secondaryAccountId = pair.UsdAccountId;
                 }
-                else if (definition.ParserKey == "bcr-debit-csv")
+                else if (definition.ParserKey is "bcr-debit-csv" or "bn-debit-csv" or "bn-debit-csv-crc")
                 {
-                    var alt = await accountResolver.TryResolveAlternativeByIbanPathAsync(relativePath!, templateId, cancellationToken);
-                    if (alt.HasValue)
+                    var resolved = await accountResolver.TryResolveDebitCsvByIbanPathAsync(
+                        relativePath!, cancellationToken);
+                    if (resolved.HasValue)
                     {
-                        templateId = alt.Value.TemplateId;
+                        primaryAccountId = resolved.Value.AccountId;
+                        templateId = resolved.Value.TemplateId;
                         definition = ImportTemplateCatalog.Definitions.First(d => d.Id == templateId);
-                        primaryAccountId = alt.Value.AccountId;
                     }
                     else
                     {
-                        primaryAccountId = await accountResolver.ResolveAsync(templateId, null, fileContent, cancellationToken);
+                        primaryAccountId = await accountResolver.ResolveAsync(
+                            templateId, null, fileContent, cancellationToken);
                     }
+                }
+                else if (definition.ParserKey == "bank-account-movements-xls")
+                {
+                    primaryAccountId = await accountResolver.ResolveLinkedAccountByIbanPathAsync(
+                        relativePath!, templateId, cancellationToken);
                 }
                 else
                 {

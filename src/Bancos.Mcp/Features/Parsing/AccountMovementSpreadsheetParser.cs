@@ -30,7 +30,8 @@ public sealed class AccountMovementSpreadsheetParser
             var date = Get(row, columns, DateHeaders); var description = Get(row, columns, DescriptionHeaders);
             if (string.IsNullOrWhiteSpace(date) && string.IsNullOrWhiteSpace(description)) continue;
             if (!DateOnly.TryParse(date, CultureInfo.GetCultureInfo("es-CR"), DateTimeStyles.AllowWhiteSpaces, out var bookingDate)) continue;
-            var debit = Amount(Get(row, columns, DebitHeaders)); var credit = Amount(Get(row, columns, CreditHeaders));
+            var debit = Math.Abs(Amount(Get(row, columns, DebitHeaders)));
+            var credit = Math.Abs(Amount(Get(row, columns, CreditHeaders)));
             if (debit == 0m && credit == 0m)
             {
                 var amount = Amount(Get(row, columns, AmountHeaders));

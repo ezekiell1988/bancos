@@ -9,9 +9,10 @@ public sealed partial class CoopealianzaLoanPdfParser
 
     public ParsedCoopealianzaLoan Parse(ReadOnlyMemory<byte> content)
     {
-        var extracted = ImportContentText.Extract(content);
-        if (extracted.Kind != "pdf") throw new InvalidDataException("Coopealianza loans must be imported from a PDF.");
-        return ParseText(extracted.Text);
+        // Keep this extraction identical to template detection. The generic PDF
+        // extractor reconstructs visual rows for statement parsers, which can
+        // split Coopealianza's signature and make a detected document fail later.
+        return ParseText(ImportContentText.ExtractPdfPageText(content));
     }
 
     internal static ParsedCoopealianzaLoan ParseText(string text)

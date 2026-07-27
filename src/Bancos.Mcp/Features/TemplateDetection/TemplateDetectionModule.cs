@@ -18,13 +18,18 @@ public static class TemplateDetectionModule
             var limits = configuration.GetSection(McpToolRateLimitOptions.Section).Get<McpToolRateLimitOptions>() ?? new();
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
-                RateLimitPartition.GetFixedWindowLimiter(context.Request.Path.Value ?? "/", _ => new FixedWindowRateLimiterOptions
+            {
+                if (context.Request.Path == "/mcp" && !HttpMethods.IsPost(context.Request.Method))
+                    return RateLimitPartition.GetNoLimiter("mcp-session");
+
+                return RateLimitPartition.GetFixedWindowLimiter(context.Request.Path.Value ?? "/", _ => new FixedWindowRateLimiterOptions
                 {
                     PermitLimit = limits.RequestPermitLimit,
                     QueueLimit = 0,
                     Window = TimeSpan.FromMinutes(1),
                     AutoReplenishment = true
-                }));
+                });
+            });
             options.AddPolicy(McpToolsRateLimitPolicy, _ => RateLimitPartition.GetConcurrencyLimiter("mcp", _ =>
                 new ConcurrencyLimiterOptions { PermitLimit = limits.PermitLimit, QueueLimit = limits.QueueLimit, QueueProcessingOrder = QueueProcessingOrder.OldestFirst }));
         });

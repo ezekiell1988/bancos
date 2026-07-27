@@ -16,6 +16,16 @@ internal static class ImportContentText
         return ("csv", text);
     }
 
+    public static string ExtractPdfPageText(ReadOnlyMemory<byte> content)
+    {
+        var bytes = content.ToArray();
+        if (!bytes.AsSpan().StartsWith("%PDF-"u8))
+            throw new InvalidDataException("El contenido no es un PDF.");
+
+        using var document = PdfDocument.Open(bytes);
+        return string.Join('\n', document.GetPages().Select(page => page.Text));
+    }
+
     private static string ExtractPdf(byte[] bytes)
     {
         using var document = PdfDocument.Open(bytes);

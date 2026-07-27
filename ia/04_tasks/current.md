@@ -1,6 +1,21 @@
 # 04 — Tareas activas
 
-> **Última actualización:** 2026-07-26 CR (TASK-EBC-MCP-23 aprobada)
+> **Última actualización:** 2026-07-26 CR (TASK-EBC-DOC-07 completada)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -171,3 +186,5 @@ Sin tareas.
 | TASK-EBC-DB-06 | DB | Auditoría de formatos de carga: verificar IBAN, banco y responsable por plantilla | alta |
 | TASK-EBC-DB-05 | DB | Estrategia de dos entornos de base de datos (dev y prod) | crítica |
 | TASK-EBC-MCP-21 | MCP | Habilitar y verificar MCP Bancos nativo en Codex, VS Code y Claude | media |
+| TASK-EBC-MCP-24 | MCP | Carga y conciliación de adjuntos bancarios 2026-07-17 | alta |
+| TASK-EBC-MCP-27 | MCP | Cierres y conciliación de saldos del lote 2026-07-17 | alta |

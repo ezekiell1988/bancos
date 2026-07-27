@@ -42,10 +42,10 @@ public static class McpHandler
             return TypedResults.StatusCode(StatusCodes.Status202Accepted);
 
         var method = methodElement.GetString()!;
-        if (method != "initialize" && !HasValidSessionAndVersion(context.Request, cache))
-            return TypedResults.StatusCode(StatusCodes.Status400BadRequest);
+        if (method.StartsWith("notifications/", StringComparison.Ordinal))
+            return TypedResults.StatusCode(StatusCodes.Status202Accepted);
 
-        if (method.StartsWith("notifications/", StringComparison.Ordinal) || !hasId)
+        if (!hasId)
             return TypedResults.StatusCode(StatusCodes.Status202Accepted);
 
         var parameters = body.TryGetProperty("params", out var paramsElement)
@@ -78,16 +78,6 @@ public static class McpHandler
     {
         var origin = request.Headers.Origin.FirstOrDefault();
         return string.IsNullOrWhiteSpace(origin) || options.AllowedOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase);
-    }
-
-    private static bool HasValidSessionAndVersion(HttpRequest request, IMemoryCache cache)
-    {
-        var sessionId = request.Headers["Mcp-Session-Id"].FirstOrDefault();
-        var protocolVersion = request.Headers["MCP-Protocol-Version"].FirstOrDefault();
-        return !string.IsNullOrWhiteSpace(sessionId)
-            && !string.IsNullOrWhiteSpace(protocolVersion)
-            && cache.TryGetValue<string>(SessionKey(sessionId), out var negotiatedVersion)
-            && string.Equals(protocolVersion, negotiatedVersion, StringComparison.Ordinal);
     }
 
     private static IResult Initialize(HttpResponse response, JsonElement id, JsonElement parameters, McpOptions options, IMemoryCache cache)

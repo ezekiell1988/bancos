@@ -12,6 +12,7 @@ public sealed record FinancingAccountPair(Guid CrcAccountId, Guid UsdAccountId);
 public sealed class AccountResolver(McpCatalogDbContext db)
 {
     private static readonly Regex IbanPattern = new(@"CR\d{20}", RegexOptions.Compiled);
+    private static readonly string[] DebitCsvParserKeys = ["bcr-debit-csv", "bn-debit-csv", "bn-debit-csv-crc"];
 
     public async Task<Guid> ResolveAsync(
         Guid templateId,
@@ -54,10 +55,7 @@ public sealed class AccountResolver(McpCatalogDbContext db)
 
     public async Task<Guid> ResolveCrcByPathAsync(string relativePath, CancellationToken ct)
     {
-        var folder = relativePath.Replace('\\', '/').Split('/').Reverse().Skip(1).FirstOrDefault() ?? "";
-        var ibanHashes = IbanPattern.Matches(folder)
-            .Select(m => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(m.Value))))
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var ibanHashes = ExtractIbanHashes(relativePath);
 
         if (ibanHashes.Count == 0)
             throw new InvalidOperationException("No se encontraron IBANs en el nombre de carpeta del archivo.");
@@ -70,13 +68,55 @@ public sealed class AccountResolver(McpCatalogDbContext db)
         return account ?? throw new InvalidOperationException("No se encontró cuenta CRC para los IBANs del archivo. Verifique que los IBANs estén registrados en el catálogo.");
     }
 
+    public async Task<Guid> ResolveLinkedAccountByIbanPathAsync(
+        string relativePath, Guid templateId, CancellationToken ct)
+    {
+        var ibanHashes = ExtractIbanHashes(relativePath);
+        if (ibanHashes.Count == 0)
+            throw new InvalidOperationException("No se encontraron IBANs en el nombre de carpeta del archivo.");
+
+        var matches = await db.BankAccountImportTemplates
+            .Where(x => x.ImportTemplateId == templateId
+                && x.BankAccount!.IdentifierHash != null
+                && ibanHashes.Contains(x.BankAccount.IdentifierHash!))
+            .Select(x => x.BankAccountId)
+            .Distinct()
+            .ToArrayAsync(ct);
+
+        return matches.Length switch
+        {
+            1 => matches[0],
+            0 => throw new InvalidOperationException("No se encontró una cuenta vinculada a la plantilla para los IBANs del archivo."),
+            _ => throw new InvalidOperationException("Los IBANs del archivo coinciden con más de una cuenta vinculada a la plantilla.")
+        };
+    }
+
+    public async Task<(Guid AccountId, Guid TemplateId)?> TryResolveDebitCsvByIbanPathAsync(
+        string relativePath, CancellationToken ct)
+    {
+        var ibanHashes = ExtractIbanHashes(relativePath);
+        if (ibanHashes.Count == 0) return null;
+
+        var matches = await db.BankAccountImportTemplates
+            .Where(x => x.BankAccount!.IdentifierHash != null
+                && ibanHashes.Contains(x.BankAccount.IdentifierHash!)
+                && DebitCsvParserKeys.Contains(x.ImportTemplate!.ParserKey))
+            .Select(x => new { AccountId = x.BankAccountId, TemplateId = x.ImportTemplateId })
+            .Distinct()
+            .ToArrayAsync(ct);
+
+        return matches.Length switch
+        {
+            0 => null,
+            1 => (matches[0].AccountId, matches[0].TemplateId),
+            _ => throw new InvalidOperationException("Los IBANs del archivo coinciden con más de una variante CSV de débito.")
+        };
+    }
+
     public async Task<(Guid AccountId, Guid TemplateId)?> TryResolveAlternativeByIbanPathAsync(
         string relativePath, Guid detectedTemplateId, CancellationToken ct)
     {
-        var folder = relativePath.Replace('\\', '/').Split('/').Reverse().Skip(1).FirstOrDefault() ?? "";
-        var ibanHashes = IbanPattern.Matches(folder)
-            .Select(m => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(m.Value))))
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var ibanHashes = ExtractIbanHashes(relativePath);
         if (ibanHashes.Count == 0) return null;
         var match = await db.BankAccountImportTemplates
             .Where(x => x.BankAccount!.IdentifierHash != null
@@ -89,10 +129,7 @@ public sealed class AccountResolver(McpCatalogDbContext db)
 
     public async Task<FinancingAccountPair> ResolveFinancingPairByPathAsync(string relativePath, CancellationToken ct)
     {
-        var folder = relativePath.Replace('\\', '/').Split('/').Reverse().Skip(1).FirstOrDefault() ?? "";
-        var ibanHashes = IbanPattern.Matches(folder)
-            .Select(m => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(m.Value))))
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var ibanHashes = ExtractIbanHashes(relativePath);
 
         if (ibanHashes.Count == 0)
             throw new InvalidOperationException("No se encontraron IBANs en el nombre de carpeta del archivo.");
@@ -108,5 +145,13 @@ public sealed class AccountResolver(McpCatalogDbContext db)
             ?? throw new InvalidOperationException("No se encontró cuenta USD para los IBANs del archivo. Verifique que los IBANs estén registrados en el catálogo.");
 
         return new FinancingAccountPair(crc, usd);
+    }
+
+    private static HashSet<string> ExtractIbanHashes(string relativePath)
+    {
+        var folder = relativePath.Replace('\\', '/').Split('/').Reverse().Skip(1).FirstOrDefault() ?? "";
+        return IbanPattern.Matches(folder)
+            .Select(m => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(m.Value))))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
     }
 }
