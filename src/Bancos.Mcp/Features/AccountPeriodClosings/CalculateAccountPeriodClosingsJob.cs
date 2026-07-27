@@ -10,21 +10,34 @@ namespace Bancos.Mcp.Features.AccountPeriodClosings;
 [AutomaticRetry(Attempts = 0, OnAttemptsExceeded = AttemptsExceededAction.Fail)]
 public sealed class CalculateAccountPeriodClosingsJob(McpCatalogDbContext db, ILogger<CalculateAccountPeriodClosingsJob> logger)
 {
+    private static readonly string[] MonthLabels = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
+
     [DisableConcurrentExecution(timeoutInSeconds: 600)]
     public async Task ExecuteAsync(Guid periodId, PerformContext? context)
     {
         logger.LogInformation("Calculando cierres desde periodo {PeriodId}", periodId);
 
-        var allPeriods = await db.Periods
-            .Where(p => p.StartDate >= db.Periods.Where(x => x.Id == periodId).Select(x => x.StartDate).First())
-            .OrderBy(p => p.StartDate)
-            .ToListAsync();
-
-        if (allPeriods.Count == 0)
+        var requestedPeriod = await db.Periods.SingleOrDefaultAsync(p => p.Id == periodId);
+        if (requestedPeriod is null)
         {
-            context?.WriteLine("No se encontró el periodo {0}.", periodId);
+            context?.WriteLine("No se encontró el periodo solicitado.");
             return;
         }
+
+        var earliestMovementPeriodStart = await EnsurePeriodsAndAssignTransactionsAsync();
+        if (earliestMovementPeriodStart is null)
+        {
+            context?.WriteLine("No hay movimientos para calcular cierres.");
+            return;
+        }
+
+        var closingStartDate = earliestMovementPeriodStart.Value < requestedPeriod.StartDate
+            ? earliestMovementPeriodStart.Value
+            : requestedPeriod.StartDate;
+        var allPeriods = await db.Periods
+            .Where(p => p.StartDate >= closingStartDate)
+            .OrderBy(p => p.StartDate)
+            .ToListAsync();
 
         context?.WriteLine("Periodos a procesar: {0}", allPeriods.Count);
 
@@ -85,4 +98,54 @@ public sealed class CalculateAccountPeriodClosingsJob(McpCatalogDbContext db, IL
         context?.WriteLine("Cierres calculados para {0} cuenta(s).", processed);
         logger.LogInformation("Cierres calculados para {Count} cuenta(s) desde periodo {PeriodId}", processed, periodId);
     }
+
+    private async Task<DateOnly?> EnsurePeriodsAndAssignTransactionsAsync()
+    {
+        var transactionDates = await db.Transactions
+            .Select(transaction => transaction.TransactionDate)
+            .ToListAsync();
+        if (transactionDates.Count == 0) return null;
+
+        var firstPeriodStart = GetPeriodStart(transactionDates.Min());
+        var lastPeriodStart = GetPeriodStart(transactionDates.Max());
+        var existingStarts = await db.Periods
+            .Select(period => period.StartDate)
+            .ToHashSetAsync();
+
+        for (var start = firstPeriodStart; start <= lastPeriodStart; start = start.AddMonths(1))
+        {
+            if (existingStarts.Contains(start)) continue;
+            var end = start.AddMonths(1).AddDays(-1);
+            db.Periods.Add(new Period
+            {
+                Id = Guid.NewGuid(),
+                Label = $"{MonthLabels[end.Month - 1]}-{end.Year}",
+                StartDate = start,
+                EndDate = end
+            });
+        }
+        await db.SaveChangesAsync();
+
+        var periods = await db.Periods
+            .OrderBy(period => period.StartDate)
+            .ToListAsync();
+        var transactions = await db.Transactions.ToListAsync();
+        var assigned = 0;
+        foreach (var transaction in transactions)
+        {
+            var period = periods.First(period =>
+                period.StartDate <= transaction.TransactionDate && transaction.TransactionDate <= period.EndDate);
+            if (transaction.PeriodId == period.Id) continue;
+            transaction.PeriodId = period.Id;
+            transaction.UpdatedAt = CostaRicaTime.Now;
+            assigned++;
+        }
+        if (assigned > 0) await db.SaveChangesAsync();
+
+        return firstPeriodStart;
+    }
+
+    private static DateOnly GetPeriodStart(DateOnly date) => date.Day >= 19
+        ? new DateOnly(date.Year, date.Month, 19)
+        : new DateOnly(date.Year, date.Month, 1).AddMonths(-1).AddDays(18);
 }

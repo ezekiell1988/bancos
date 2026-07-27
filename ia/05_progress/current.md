@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-26 CR (TASK-EBC-DOC-07 completada)
+> **Última actualización:** 2026-07-26 CR (TASK-EBC-MCP-31 completada)
 
 ## En curso
 
@@ -21,6 +21,8 @@
 * Aprobar y ejecutar `TASK-EZ-BE-01` mediante `iaWorkflow`.
 
 ## Completado en sesiones recientes
+
+* **2026-07-26** — TASK-EBC-MCP-31 cerrada: El job de cierre ahora crea períodos faltantes, asigna cada movimiento a su período y luego calcula cierres desde el rango histórico necesario. — C
 
 * **2026-07-26** — TASK-EBC-DOC-07 cerrada: Se corrigieron las iniciales de las dos tareas MCP cerradas y sus referencias quedaron consistentes con el estándar TASK-EBC. — C
 

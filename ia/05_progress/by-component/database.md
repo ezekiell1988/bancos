@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-26 CR (TASK-EBC-DB-10 completada)
+> **Última actualización:** 2026-07-26 CR (TASK-EBC-MCP-31 completada)
 
 
 
 ## Completado
+
+* **2026-07-26** — TASK-EBC-MCP-31: El job de cierre ahora crea períodos faltantes, asigna cada movimiento a su período y luego calcula cierres desde el rango histórico necesario. — C
 
 * **2026-07-26** — TASK-EBC-DB-10: Se reinició la BD, se reprocesaron los 19 archivos con sus plantillas y cuentas correctas, se calcularon los cierres y la conciliación completa contra el documento resultó exacta. — C
 
