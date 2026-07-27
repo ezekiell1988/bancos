@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-26 CR (TASK-EBC-DOC-09 completada)
+> **Última actualización:** 2026-07-26 CR (TASK-EBC-MCP-17 completada)
 
 ## En curso
 
@@ -21,6 +21,10 @@
 * Aprobar y ejecutar `TASK-EZ-BE-01` mediante `iaWorkflow`.
 
 ## Completado en sesiones recientes
+
+* **2026-07-26** — TASK-EBC-MCP-17 cerrada: Auditoría técnica completada sin cambios de código ni datos. La muestra PDF no coincide con la firma y los patrones requeridos; el flujo de cuenta falla para múltiples vínculos y no persiste asociaciones entre corte y movimientos. ISSUE-006 abierto. — EBC
+
+* **2026-07-26** — TASK-EBC-MCP-17: auditoría de plantilla/parser BN completada sin cambios de código ni datos. ISSUE-006 abierto: detección no reconoce la muestra, resolución de cuenta usa extractor XLS para PDF con múltiples cuentas y faltan vínculos corte-movimientos. La suite no ejecuta por errores preexistentes xUnit1001/xUnit1002 en McpProtocolTests. — EBC
 
 * **2026-07-26** — TASK-EBC-DOC-09 cerrada: Documentada la regla operativa: el usuario levanta manualmente Bancos.Mcp con .mcp/bancos-mcp.ps1 y el agente debe solicitarlo cuando sea necesario reiniciar o levantar el proyecto. — EBC
 

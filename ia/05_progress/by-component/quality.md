@@ -1,8 +1,12 @@
-> **Última actualización:** 2026-07-26 CR (TASK-EBC-MCP-11 completada)
+> **Última actualización:** 2026-07-26 CR (TASK-EBC-MCP-17 completada)
 
 
 
 ## Completado
+
+* **2026-07-26** — TASK-EBC-MCP-17: Auditoría técnica completada sin cambios de código ni datos. La muestra PDF no coincide con la firma y los patrones requeridos; el flujo de cuenta falla para múltiples vínculos y no persiste asociaciones entre corte y movimientos. ISSUE-006 abierto. — EBC
+
+* **2026-07-26** — TASK-EBC-MCP-17: auditoría de plantilla/parser BN completada sin cambios de código ni datos. ISSUE-006 abierto: detección no reconoce la muestra, resolución de cuenta usa extractor XLS para PDF con múltiples cuentas y faltan vínculos corte-movimientos. La suite no ejecuta por errores preexistentes xUnit1001/xUnit1002 en McpProtocolTests. — EBC
 
 * **2026-07-26** — TASK-EBC-MCP-11: Se auditó la plantilla Resumen de tarjeta BAC. La detección resolvió la plantilla CSV esperada, el flujo asigna las cuentas CRC/USD y el job persiste movimientos con idempotencia por huella. — C
 

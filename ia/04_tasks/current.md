@@ -1,6 +1,7 @@
 # 04 — Tareas activas
 
-> **Última actualización:** 2026-07-26 CR (TASK-EBC-MCP-40 creada)
+> **Última actualización:** 2026-07-26 CR (TASK-EBC-MCP-17 completada)
+
 
 
 
@@ -186,7 +187,6 @@ Sin tareas.
 | `TASK-EBC-MCP-33` | Clasificación MCP con Azure AI como fallback seguro | alto | pendiente |
 | `TASK-EBC-MCP-32` | Tools MCP de clasificación determinista y revisión manual aprendible | medio | pendiente |
 | `TASK-EBC-DB-11` | Modelo MCP de categorías, reglas e historial de clasificación | medio | pendiente |
-| `TASK-EBC-MCP-17` | Revisar implementación MCP — Estado de cuenta de tarjeta Banco Nacional | bajo | pendiente |
 
 ## Bloqueadas
 
