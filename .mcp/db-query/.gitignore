@@ -1,0 +1,11 @@
+# Dependencias instaladas localmente
+node_modules/
+
+# Reportes y configuración local generados durante la ejecución
+reports/
+.env
+.env.*
+
+# Archivos temporales del entorno
+*.log
+.DS_Store

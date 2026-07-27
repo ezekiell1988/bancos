@@ -1,6 +1,6 @@
 # 04 — Tareas activas
 
-> **Última actualización:** 2026-07-27 CR (TASK-EBC-DB-11 completada)
+> **Última actualización:** 2026-07-27 CR (TASK-EBC-MCP-32 aprobada)
 
 
 
@@ -179,6 +179,7 @@ Sin tareas.
 
 | ID | Área | Título | Prioridad |
 |---|---|---|---|
+| `TASK-EBC-MCP-32` | MCP | Tools MCP de clasificación determinista y revisión manual aprendible | alta |
 
 ## Borradores
 
@@ -192,7 +193,6 @@ Sin tareas.
 | `TASK-EBC-MCP-35` | Tools MCP de consulta de catálogo, períodos y movimientos | medio | pendiente |
 | `TASK-EBC-MCP-34` | Tools MCP para reportes HTML de resultados y situación financiera | medio | pendiente |
 | `TASK-EBC-MCP-33` | Clasificación MCP con Azure AI como fallback seguro | alto | pendiente |
-| `TASK-EBC-MCP-32` | Tools MCP de clasificación determinista y revisión manual aprendible | medio | pendiente |
 
 ## Bloqueadas
 

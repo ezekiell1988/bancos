@@ -1,22 +1,36 @@
-# DB Query MCP — Bancos
+---
+title: DB Query MCP
+description: Referencia del MCP SQL de desarrollo consolidado en db_exec
+---
 
-MCP local de solo lectura para consultar `dbbancos` sin exponer credenciales. Lee configuración desde `.local-secrets/db.json`; nunca retorna servidor, usuario, contraseña ni base configurada.
+## DB Query MCP
 
-## Tools
+Servidor MCP local para SQL Server de **desarrollo** (EvistaDev). Usa
+`.local-secrets/sqlserver.json` sin devolver valores sensibles. Para producción usar
+`db-query-pro`.
+
+Este directorio es el paquete base portable: contiene protocolo, ejecución SQL,
+reportes, discovery de tools y smoke bajo `src/`. Puede copiarse completo a otro
+proyecto; solo requiere crear `.local-secrets/sqlserver.json` en la raíz del proyecto
+destino. Este perfil fija la identidad del servidor, el archivo local de secretos y
+la política de desarrollo.
+
+## Tool
 
 | Tool | Uso |
 |---|---|
-| `db_status` | Verifica configuración y conexión sin revelar secretos. |
-| `db_list_tables` | Lista tablas y vistas accesibles. |
-| `db_describe_table` | Describe columnas de una tabla. |
-| `db_query` | Ejecuta una única consulta `SELECT`/CTE con máximo, timeout y saneamiento de campos sensibles. |
+| `db_exec` | Ejecuta bloques T-SQL ordenados y reemplaza un reporte Markdown. |
 
-Todas las consultas son de solo lectura. DDL, DML, procedimientos, múltiples sentencias, comentarios SQL y columnas sensibles son rechazados. El resultado llega saneado al agente y se guarda localmente bajo `.local-output/db-query/` con permisos restringidos para auditoría.
+`db_exec` es la única tool expuesta. Cada módulo en `tools/` exporta únicamente
+`definition` y `execute`. Cada resultado se guarda bajo `.mcp/db-query/reports/`
+sin exponer valores sensibles.
 
-## Ejecución y validación
+## Ejecución
 
 ```bash
+npm --prefix .mcp/db-query install
+node .mcp/db-query/server.mjs --project-root .
 node .mcp/db-query/tests/smoke.mjs
 ```
 
-Configuraciones de cliente: `.vscode/mcp.json`, `.mcp.json` y ejemplos. Codex requiere abrir una sesión nueva después de actualizar `~/.codex/config.toml`.
+Nunca colocar secretos en `.vscode/mcp.json`, `.mcp.json`, prompts, logs ni reportes.

@@ -1,6 +1,6 @@
 # TASK-EBC-MCP-32 — Tools MCP de clasificación determinista y revisión manual aprendible
 
-**Estado:** Borrador
+**Estado:** Lista
 **Autor:** Ezequiel Baltodano Cubillo `<pendiente>`
 **Rama:** `dev`
 **Fecha inicio:** 2026-07-26 23:47 CR
@@ -8,7 +8,7 @@
 **Área:** MCP
 **Prioridad:** alta
 **Riesgo:** medio
-**Aprobación:** pendiente
+**Aprobación:** aprobada
 
 ---
 
@@ -90,6 +90,8 @@ Revertir cambios de feature y contratos MCP.
 * [ ] Progreso/documentación actualizado
 
 ## Notas / contexto adicional
+
+* Aprobada por Ezequiel Baltodano Cubillo el 2026-07-27 08:22 CR.
 
 Sin notas adicionales.
 
