@@ -6,9 +6,13 @@ using Bancos.Mcp.Features.TemplateDetection;
 using Bancos.Mcp.Features.AccountPeriodClosings;
 using Bancos.Mcp.Features.Accounts;
 using Bancos.Mcp.Features.Classification;
+using Bancos.Mcp.Features.CardStatements;
 using Bancos.Mcp.Features.FileProcessing;
 using Bancos.Mcp.Features.Imports;
 using Bancos.Mcp.Features.ExchangeRates;
+using Bancos.Mcp.Features.ForeignExchange;
+using Bancos.Mcp.Features.Ledger;
+using Bancos.Mcp.Features.Loans;
 using Bancos.Mcp.Features.Reports;
 using Bancos.Mcp.Features.Transactions;
 using Hangfire;
@@ -35,9 +39,13 @@ builder.Services.AddImportsModule();
 builder.Services.AddAccountPeriodClosingsModule();
 builder.Services.AddClassificationModule();
 builder.Services.AddExchangeRatesModule(builder.Configuration);
+builder.Services.AddLedgerModule();
+builder.Services.AddForeignExchangeModule();
 builder.Services.AddReportsModule();
 builder.Services.AddAccountsModule();
 builder.Services.AddTransactionsModule();
+builder.Services.AddCardStatementsModule();
+builder.Services.AddLoansModule();
 
 var app = builder.Build();
 

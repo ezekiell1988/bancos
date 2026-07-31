@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-31 CR (TASK-EBC-MCP-55 completada)
+> **Última actualización:** 2026-07-31 CR (TASK-EBC-MCP-40 completada)
 
 ## En curso
 
@@ -23,6 +23,12 @@
 ## Completado en sesiones recientes
 
 
+
+* **2026-07-31** — TASK-EBC-MCP-40 cerrada: Implementadas tres tools MCP de solo lectura: list_card_statements con filtros de cuenta/período/fechas, saldos y líneas vinculadas; list_card_financings con financiamientos activos y filtro de moneda; y list_loan_statements con extractos, saldos y cuotas ordenadas. Se añadieron servicios scoped, DTOs seguros sin SourceFingerprint, módulos DI y registro en Program. Se agregaron pruebas de consultas, relaciones, filtros, orden y descubrimiento en tools/list. — EBC
+
+* **2026-07-31** — TASK-EBC-MCP-39 cerrada: Implementadas las tools MCP de Ledger y ForeignExchange. Ledger consulta comprobantes por período con advertencias; calculate_period_closings encola regeneración Hangfire y devuelve estado, período, jobId y warnings; calculate_foreign_exchange_closing calcula diferencial de pasivos USD, excluye activos y reporta tasas faltantes o fallback. — EBC
+
+* **2026-07-31** — TASK-EBC-MCP-37 cerrada: Implementada la gestión MCP de tipos de cambio USD/CRC: listar tasas por fecha, registrar o corregir tasas manualmente mediante upsert y resolver la tasa exacta o el último valor anterior disponible. Se añadió señalización de intervención humana cuando no existe una tasa aplicable y se publicaron las tres tools en tools/list. Las pruebas cubren resolución exacta con 458 CRC/USD, fallback, intervención humana, upsert manual, resultado estructurado y exposición MCP. — GC
 
 * **2026-07-31** — TASK-EBC-MCP-55 cerrada: finish_task(review) conserva las tareas en Borrador y exige nueva aprobación; se eliminó el alias operativo En revisión y el smoke cubre la transición. — EBC
 

@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using Bancos.Mcp.Tools;
 using Hangfire;
 using Microsoft.Extensions.Options;
 
@@ -11,6 +12,10 @@ public static class ExchangeRatesModule
 
     public static IServiceCollection AddExchangeRatesModule(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddScoped<ExchangeRateService>();
+        services.AddSingleton<IMcpTool, ListExchangeRatesTool>();
+        services.AddSingleton<IMcpTool, RecordExchangeRateTool>();
+        services.AddSingleton<IMcpTool, ResolveExchangeRateTool>();
         services.AddOptions<BccrOptions>().Bind(configuration.GetSection(BccrOptions.Section));
         services.AddHttpClient<BccrExchangeRateClient>((serviceProvider, client) =>
         {

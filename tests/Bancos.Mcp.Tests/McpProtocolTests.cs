@@ -50,6 +50,15 @@ public sealed class McpProtocolTests : IClassFixture<McpWebApplicationFactory>
         Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "classify_pending_transactions");
         Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "list_unclassified_transactions");
         Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "confirm_transaction_classification");
+        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "list_exchange_rates");
+        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "record_exchange_rate");
+        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "resolve_exchange_rate");
+        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "get_ledger_period");
+        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "calculate_period_closings");
+        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "calculate_foreign_exchange_closing");
+        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "list_card_statements");
+        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "list_card_financings");
+        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "list_loan_statements");
     }
 
     [Theory]

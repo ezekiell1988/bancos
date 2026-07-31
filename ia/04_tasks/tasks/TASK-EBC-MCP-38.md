@@ -1,6 +1,6 @@
 # TASK-EBC-MCP-38 — Tools MCP de conciliación de pagos y transferencias
 
-**Estado:** Borrador
+**Estado:** Lista
 **Autor:** Ezequiel Baltodano Cubillo `<pendiente>`
 **Rama:** `dev`
 **Fecha inicio:** 2026-07-26 23:51 CR
@@ -8,7 +8,7 @@
 **Área:** MCP
 **Prioridad:** alta
 **Riesgo:** medio
-**Aprobación:** pendiente
+**Aprobación:** aprobada
 
 ---
 
@@ -92,6 +92,8 @@ Revertir feature Reconciliation.
 * [ ] Progreso/documentación actualizado
 
 ## Notas / contexto adicional
+
+* Aprobada por Ezequiel Baltodano Cubillo el 2026-07-31 16:32 CR.
 
 Sin notas adicionales.
 
