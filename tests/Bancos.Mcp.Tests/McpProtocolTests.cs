@@ -59,6 +59,11 @@ public sealed class McpProtocolTests : IClassFixture<McpWebApplicationFactory>
         Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "list_card_statements");
         Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "list_card_financings");
         Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "list_loan_statements");
+        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "list_unreconciled_transactions");
+        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "propose_reconciliation");
+        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "confirm_reconciliation");
+        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "correct_reconciliation");
+        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "delete_reconciliation");
     }
 
     [Theory]

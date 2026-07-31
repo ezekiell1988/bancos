@@ -14,6 +14,7 @@ using Bancos.Mcp.Features.ForeignExchange;
 using Bancos.Mcp.Features.Ledger;
 using Bancos.Mcp.Features.Loans;
 using Bancos.Mcp.Features.Reports;
+using Bancos.Mcp.Features.Reconciliation;
 using Bancos.Mcp.Features.Transactions;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
@@ -46,6 +47,7 @@ builder.Services.AddAccountsModule();
 builder.Services.AddTransactionsModule();
 builder.Services.AddCardStatementsModule();
 builder.Services.AddLoansModule();
+builder.Services.AddReconciliationModule();
 
 var app = builder.Build();
 

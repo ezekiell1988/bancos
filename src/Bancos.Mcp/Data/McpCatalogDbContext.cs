@@ -1,5 +1,6 @@
 using Bancos.Mcp.Domain;
 using Bancos.Mcp.Catalog;
+using Bancos.Mcp.Features.Reconciliation;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bancos.Mcp.Data;
@@ -193,6 +194,68 @@ public sealed class McpCatalogDbContext(DbContextOptions<McpCatalogDbContext> op
                 .WithMany(p => p.Transactions)
                 .HasForeignKey(t => t.PeriodId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        builder.Entity<Reconciliation>(entity =>
+        {
+            entity.ToTable("tbReconciliations", table =>
+            {
+                table.HasComment("Grupos auditables de partidas conciliadas entre pagos y transferencias.");
+                table.HasCheckConstraint("CK_tbReconciliations_status", "[status] IN ('proposed', 'confirmed', 'deleted')");
+                table.HasCheckConstraint("CK_tbReconciliations_confidence", "[confidence] >= 0 AND [confidence] <= 1");
+            });
+            entity.HasIndex(reconciliation => reconciliation.Status);
+            entity.Property(reconciliation => reconciliation.Id).HasColumnName("idReconciliations").HasComment("Identificador único de la conciliación.");
+            entity.Property(reconciliation => reconciliation.Status).HasColumnName("status").HasMaxLength(16).HasComment("Estado de la conciliación: propuesta, confirmada o eliminada.");
+            entity.Property(reconciliation => reconciliation.Confidence).HasColumnName("confidence").HasPrecision(5, 4).HasComment("Confianza determinista calculada entre cero y uno.");
+            entity.Property(reconciliation => reconciliation.Explanation).HasColumnName("explanation").HasMaxLength(1000).HasComment("Explicación de montos, fechas y confianza de la propuesta.");
+            entity.Property(reconciliation => reconciliation.CreatedAt).HasColumnName("createdAt").HasComment("Fecha y hora de creación de la conciliación.");
+            entity.Property(reconciliation => reconciliation.UpdatedAt).HasColumnName("updatedAt").HasComment("Fecha y hora de la última modificación.");
+            entity.Property(reconciliation => reconciliation.ConfirmedAt).HasColumnName("confirmedAt").HasComment("Fecha y hora de confirmación manual.");
+            entity.Property(reconciliation => reconciliation.ConfirmedBy).HasColumnName("confirmedBy").HasMaxLength(120).HasComment("Actor que confirmó la conciliación.");
+        });
+
+        builder.Entity<ReconciliationItem>(entity =>
+        {
+            entity.ToTable("tbReconciliationItems", table =>
+            {
+                table.HasComment("Partidas que forman cada conciliación N:N.");
+                table.HasCheckConstraint("CK_tbReconciliationItems_side", "[side] IN ('payment', 'transfer')");
+                table.HasCheckConstraint("CK_tbReconciliationItems_amountCrc", "[amountCrc] >= 0");
+            });
+            entity.HasIndex(item => new { item.ReconciliationId, item.TransactionId }).IsUnique();
+            entity.HasIndex(item => item.TransactionId);
+            entity.Property(item => item.Id).HasColumnName("idReconciliationItems").HasComment("Identificador único de la línea de conciliación.");
+            entity.Property(item => item.ReconciliationId).HasColumnName("idReconciliations").HasComment("Conciliación a la que pertenece la partida.");
+            entity.Property(item => item.TransactionId).HasColumnName("idTransactions").HasComment("Movimiento original asociado; nunca se elimina al conciliar.");
+            entity.Property(item => item.Side).HasColumnName("side").HasMaxLength(16).HasComment("Lado de la relación: pago o transferencia.");
+            entity.Property(item => item.AmountCrc).HasColumnName("amountCrc").HasPrecision(18, 2).HasComment("Valor absoluto en CRC usado para comparar ambos lados.");
+            entity.Property(item => item.CreatedAt).HasColumnName("createdAt").HasComment("Fecha y hora de asociación de la partida.");
+            entity.HasOne(item => item.Reconciliation)
+                .WithMany(reconciliation => reconciliation.Items)
+                .HasForeignKey(item => item.ReconciliationId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(item => item.Transaction)
+                .WithMany()
+                .HasForeignKey(item => item.TransactionId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<ReconciliationAudit>(entity =>
+        {
+            entity.ToTable("tbReconciliationAudits", table => table.HasComment("Auditoría inmutable de propuestas, confirmaciones, correcciones y eliminaciones de conciliaciones."));
+            entity.HasIndex(audit => new { audit.ReconciliationId, audit.CreatedAt });
+            entity.Property(audit => audit.Id).HasColumnName("idReconciliationAudits").HasComment("Identificador único del evento de auditoría.");
+            entity.Property(audit => audit.ReconciliationId).HasColumnName("idReconciliations").HasComment("Conciliación afectada por el evento.");
+            entity.Property(audit => audit.Action).HasColumnName("action").HasMaxLength(16).HasComment("Acción registrada sobre la conciliación.");
+            entity.Property(audit => audit.Actor).HasColumnName("actor").HasMaxLength(120).HasComment("Actor que ejecutó la acción.");
+            entity.Property(audit => audit.Reason).HasColumnName("reason").HasMaxLength(500).HasComment("Motivo declarado para la acción.");
+            entity.Property(audit => audit.SnapshotJson).HasColumnName("snapshotJson").HasComment("Estado anterior serializado para auditoría.");
+            entity.Property(audit => audit.CreatedAt).HasColumnName("createdAt").HasComment("Fecha y hora del evento de auditoría.");
+            entity.HasOne(audit => audit.Reconciliation)
+                .WithMany(reconciliation => reconciliation.AuditEntries)
+                .HasForeignKey(audit => audit.ReconciliationId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<CardStatement>(entity =>

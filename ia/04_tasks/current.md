@@ -1,6 +1,7 @@
 # 04 — Tareas activas
 
-> **Última actualización:** 2026-07-31 CR (TASK-EBC-MCP-38 aprobada)
+> **Última actualización:** 2026-07-31 CR (TASK-EBC-MCP-38 completada)
+
 
 
 
@@ -231,7 +232,6 @@ Sin tareas.
 
 | ID | Área | Título | Prioridad |
 |---|---|---|---|
-| `TASK-EBC-MCP-38` | MCP | Tools MCP de conciliación de pagos y transferencias | alta |
 
 ## Borradores
 

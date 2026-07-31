@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-31 CR (TASK-GC-MCP-01 completada)
+> **Última actualización:** 2026-07-31 CR (TASK-EBC-MCP-38 completada)
 
 
 
 ## Completado
+
+* **2026-07-31** — TASK-EBC-MCP-38: Implementadas las tools MCP de conciliación N:N entre pagos y transferencias, con propuesta explicable, confirmación/corrección/eliminación auditables y preservación de movimientos originales. Se agregó el modelo EF Core y su migración, registro de las cinco tools y pruebas de servicio/protocolo. — EBC
 
 * **2026-07-31** — TASK-GC-MCP-01: Se corrigió iaWorkflow para que ia_validate informe remediation accionable ante rutas faltantes y se reparó la carpeta ia/07_issues/open/. Se actualizaron los nombres reales de lectura en ia-workflow, las referencias documentales y el smoke test de migrate_task; se sincronizaron los skills desde .agents hacia .claude y .codex. — E
 
