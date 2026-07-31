@@ -8,9 +8,7 @@ public static class AccountPeriodClosingsModule
     // ENE-2026 — primer período sembrado; el job calcula desde aquí hacia adelante.
     private static readonly Guid EarliestPeriodId = Guid.Parse("60000000-0000-0000-0000-000000000001");
 
-    // Cron "0 0 31 2 *" = 31 de febrero → fecha imposible; nunca dispara automáticamente.
-    // Activar manualmente desde Hangfire Dashboard.
-    private const string NeverFiresCron = "0 0 31 2 *";
+    private const string MonthlyClosingCron = "0 2 19 * *";
 
     public static IServiceCollection AddAccountPeriodClosingsModule(this IServiceCollection services)
     {
@@ -24,7 +22,7 @@ public static class AccountPeriodClosingsModule
         RecurringJob.AddOrUpdate<CalculateAccountPeriodClosingsJob>(
             "calculate-period-closings",
             job => job.ExecuteAsync(EarliestPeriodId, null!),
-            NeverFiresCron);
+            MonthlyClosingCron);
         return app;
     }
 }

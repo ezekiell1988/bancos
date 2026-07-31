@@ -1,4 +1,5 @@
 using Bancos.Mcp.Data;
+using Bancos.Mcp.Domain;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bancos.Mcp.Features.Reports;
@@ -15,6 +16,8 @@ public sealed record IncomeStatementReport(
     decimal TotalExpense,
     int PendingClassificationCount)
 {
+    public Guid PeriodId { get; init; }
+    public IncomeStatementReport? PreviousPeriod { get; init; }
     public decimal NetResult => TotalIncome - TotalExpense;
 }
 
@@ -29,7 +32,10 @@ public sealed record BalanceSheetReport(
     decimal TotalLiabilities,
     int AccountsMissingClosingCount)
 {
+    public Guid PeriodId { get; init; }
+    public BalanceSheetReport? PreviousPeriod { get; init; }
     public decimal Equity => TotalAssets - TotalLiabilities;
+    public decimal BalanceDifference => TotalAssets - TotalLiabilities - Equity;
 }
 
 public sealed class ReportingService(McpCatalogDbContext db)
@@ -39,8 +45,32 @@ public sealed class ReportingService(McpCatalogDbContext db)
         var period = await db.Periods.FindAsync([periodId], ct)
             ?? throw new InvalidOperationException($"Período {periodId} no encontrado.");
 
+        var report = await BuildIncomeStatementAsync(period, ct);
+        var previousPeriod = await FindPreviousPeriodAsync(period, ct);
+        if (previousPeriod is null)
+            return report;
+
+        return report with { PreviousPeriod = await BuildIncomeStatementAsync(previousPeriod, ct) };
+    }
+
+    public async Task<BalanceSheetReport> GetBalanceSheetAsync(Guid periodId, CancellationToken ct = default)
+    {
+        var period = await db.Periods.FindAsync([periodId], ct)
+            ?? throw new InvalidOperationException($"Período {periodId} no encontrado.");
+
+        var report = await BuildBalanceSheetAsync(period, ct);
+        var previousPeriod = await FindPreviousPeriodAsync(period, ct);
+        if (previousPeriod is null)
+            return report;
+
+        return report with { PreviousPeriod = await BuildBalanceSheetAsync(previousPeriod, ct) };
+    }
+
+    private async Task<IncomeStatementReport> BuildIncomeStatementAsync(Period period, CancellationToken ct)
+    {
+
         var transactions = await db.Transactions
-            .Where(t => t.PeriodId == periodId)
+            .Where(t => t.PeriodId == period.Id)
             .Select(t => new { t.Id, t.AmountCrc })
             .ToListAsync(ct);
         var transactionIds = transactions.Select(t => t.Id).ToList();
@@ -100,16 +130,16 @@ public sealed class ReportingService(McpCatalogDbContext db)
             expenseLines,
             incomeLines.Sum(line => line.AmountCrc),
             expenseLines.Sum(line => line.AmountCrc),
-            pending);
+            pending)
+        {
+            PeriodId = period.Id
+        };
     }
 
-    public async Task<BalanceSheetReport> GetBalanceSheetAsync(Guid periodId, CancellationToken ct = default)
+    private async Task<BalanceSheetReport> BuildBalanceSheetAsync(Period period, CancellationToken ct)
     {
-        var period = await db.Periods.FindAsync([periodId], ct)
-            ?? throw new InvalidOperationException($"Período {periodId} no encontrado.");
-
         var closings = await db.AccountPeriodClosings
-            .Where(c => c.PeriodId == periodId)
+            .Where(c => c.PeriodId == period.Id)
             .Include(c => c.BankAccount)
                 .ThenInclude(a => a!.Bank)
             .ToListAsync(ct);
@@ -145,6 +175,14 @@ public sealed class ReportingService(McpCatalogDbContext db)
             liabilityLines.OrderByDescending(line => line.AmountCrc).ToList(),
             assetLines.Sum(line => line.AmountCrc),
             liabilityLines.Sum(line => line.AmountCrc),
-            missingClosingCount);
+            missingClosingCount)
+        {
+            PeriodId = period.Id
+        };
     }
+
+    private Task<Period?> FindPreviousPeriodAsync(Period period, CancellationToken ct) => db.Periods
+        .Where(candidate => candidate.StartDate < period.StartDate)
+        .OrderByDescending(candidate => candidate.StartDate)
+        .FirstOrDefaultAsync(ct);
 }

@@ -22,12 +22,17 @@ public sealed class ReportingServiceTests
     private static readonly Guid SalaryCategoryId = Guid.Parse("70000000-0000-0000-0000-000000000006"); // income.salary
     private static readonly Guid GroceriesCategoryId = Guid.Parse("70000000-0000-0000-0000-000000000008"); // expense.groceries
 
-    private static Transaction NewTransaction(Guid accountId, decimal amountCrc, string operationType = "purchase") => new()
+    private static Transaction NewTransaction(
+        Guid accountId,
+        decimal amountCrc,
+        string operationType = "purchase",
+        Guid? periodId = null,
+        DateOnly? transactionDate = null) => new()
     {
         Id = Guid.NewGuid(),
         BankAccountId = accountId,
-        PeriodId = PeriodId,
-        TransactionDate = new DateOnly(2026, 7, 1),
+        PeriodId = periodId ?? PeriodId,
+        TransactionDate = transactionDate ?? new DateOnly(2026, 7, 1),
         Description = "Movimiento de prueba",
         CurrencyCode = "CRC",
         Amount = amountCrc,
@@ -82,6 +87,59 @@ public sealed class ReportingServiceTests
         Assert.Equal(30000m, report.TotalLiabilities);
         Assert.Equal(70000m, report.Equity);
         Assert.Equal(report.TotalAssets, report.TotalLiabilities + report.Equity);
+    }
+
+    [Fact]
+    public async Task Income_statement_includes_previous_period_and_toon_variances()
+    {
+        await using var db = await CreateDbAsync();
+        var accountId = (await db.BankAccounts.FirstAsync()).Id;
+        var currentPeriod = await db.Periods.SingleAsync(period => period.Id == PeriodId);
+        var previousPeriod = await db.Periods
+            .Where(period => period.StartDate < currentPeriod.StartDate)
+            .OrderByDescending(period => period.StartDate)
+            .FirstAsync();
+        var currentSalary = NewTransaction(accountId, 500000m, "payment");
+        var previousSalary = NewTransaction(accountId, 400000m, "payment", previousPeriod.Id, previousPeriod.EndDate);
+        db.Transactions.AddRange(currentSalary, previousSalary);
+        db.TransactionClassifications.AddRange(
+            new TransactionClassification { Id = Guid.NewGuid(), TransactionId = currentSalary.Id, CategoryId = SalaryCategoryId, Source = "manual" },
+            new TransactionClassification { Id = Guid.NewGuid(), TransactionId = previousSalary.Id, CategoryId = SalaryCategoryId, Source = "manual" });
+        await db.SaveChangesAsync();
+
+        var report = await new ReportingService(db).GetIncomeStatementAsync(PeriodId);
+        var toon = ReportToonFormatter.FormatIncomeStatement(report);
+
+        Assert.NotNull(report.PreviousPeriod);
+        Assert.Equal(previousPeriod.Id, report.PreviousPeriod!.PeriodId);
+        Assert.Contains($"previousPeriodId:{previousPeriod.Id}", toon);
+        Assert.Contains("incomeLines[1]{categoryCode,categoryName,amountCrc,previousAmountCrc,varianceCrc}:", toon);
+        Assert.Contains("500000,400000,100000", toon);
+    }
+
+    [Fact]
+    public async Task Balance_sheet_includes_previous_period_and_toon_variances()
+    {
+        await using var db = await CreateDbAsync();
+        var accounts = await db.BankAccounts.Take(2).ToListAsync();
+        var currentPeriod = await db.Periods.SingleAsync(period => period.Id == PeriodId);
+        var previousPeriod = await db.Periods
+            .Where(period => period.StartDate < currentPeriod.StartDate)
+            .OrderByDescending(period => period.StartDate)
+            .FirstAsync();
+        db.AccountPeriodClosings.AddRange(
+            new AccountPeriodClosing { Id = Guid.NewGuid(), BankAccountId = accounts[0].Id, PeriodId = PeriodId, Balance = 100000m },
+            new AccountPeriodClosing { Id = Guid.NewGuid(), BankAccountId = accounts[0].Id, PeriodId = previousPeriod.Id, Balance = 80000m });
+        await db.SaveChangesAsync();
+
+        var report = await new ReportingService(db).GetBalanceSheetAsync(PeriodId);
+        var toon = ReportToonFormatter.FormatBalanceSheet(report);
+
+        Assert.NotNull(report.PreviousPeriod);
+        Assert.Contains($"previousPeriodId:{previousPeriod.Id}", toon);
+        Assert.Contains("assetLines[1]{bankName,accountCode,amountCrc,previousAmountCrc,varianceCrc}:", toon);
+        Assert.Contains("100000,80000,20000", toon);
+        Assert.Equal(0m, report.BalanceDifference);
     }
 
     [Fact]

@@ -9,9 +9,9 @@ public sealed class GetBalanceSheetReportTool(IServiceScopeFactory scopeFactory)
 {
     public McpToolDefinition Definition { get; } = new(
         Name: "get_balance_sheet_report",
-        Title: "Reporte HTML de situación financiera",
-        Description: "Genera un HTML autocontenido con activos, pasivos y capital al cierre de un período, "
-                   + "validando que activos = pasivos + capital e incluyendo advertencia si faltan cierres por calcular.",
+        Title: "Situación financiera en TOON",
+        Description: "Devuelve en TOON los listados de activos, pasivos y capital de un único período, "
+                   + "comparado contra el período anterior si existe, validando el equilibrio e incluyendo advertencia si faltan cierres.",
         InputSchema: new
         {
             type = "object",
@@ -32,13 +32,16 @@ public sealed class GetBalanceSheetReportTool(IServiceScopeFactory scopeFactory)
             type = "object",
             properties = new
             {
+                toon = new { type = "string" },
                 html = new { type = "string" },
                 totalAssets = new { type = "number" },
                 totalLiabilities = new { type = "number" },
                 equity = new { type = "number" },
-                accountsMissingClosingCount = new { type = "integer" }
+                balanceDifference = new { type = "number" },
+                accountsMissingClosingCount = new { type = "integer" },
+                previousPeriod = new { type = new[] { "object", "null" } }
             },
-            required = new[] { "html", "totalAssets", "totalLiabilities", "equity", "accountsMissingClosingCount" },
+            required = new[] { "toon", "html", "totalAssets", "totalLiabilities", "equity", "balanceDifference", "accountsMissingClosingCount", "previousPeriod" },
             additionalProperties = false
         });
 
@@ -60,15 +63,28 @@ public sealed class GetBalanceSheetReportTool(IServiceScopeFactory scopeFactory)
             return McpToolResult.Error(exception.Message);
         }
 
+        var toon = ReportToonFormatter.FormatBalanceSheet(report);
         var html = ReportHtmlRenderer.RenderBalanceSheet(report, CostaRicaTime.Now);
         var structured = new
         {
+            toon,
             html,
             totalAssets = report.TotalAssets,
             totalLiabilities = report.TotalLiabilities,
             equity = report.Equity,
-            accountsMissingClosingCount = report.AccountsMissingClosingCount
+            balanceDifference = report.BalanceDifference,
+            accountsMissingClosingCount = report.AccountsMissingClosingCount,
+            previousPeriod = report.PreviousPeriod is null ? null : new
+            {
+                periodId = report.PreviousPeriod.PeriodId,
+                periodLabel = report.PreviousPeriod.PeriodLabel,
+                totalAssets = report.PreviousPeriod.TotalAssets,
+                totalLiabilities = report.PreviousPeriod.TotalLiabilities,
+                equity = report.PreviousPeriod.Equity,
+                balanceDifference = report.PreviousPeriod.BalanceDifference,
+                accountsMissingClosingCount = report.PreviousPeriod.AccountsMissingClosingCount
+            }
         };
-        return new McpToolResult([McpContent.FromText(html)], structured);
+        return new McpToolResult([McpContent.FromText(toon)], structured);
     }
 }

@@ -9,9 +9,9 @@ public sealed class GetIncomeStatementReportTool(IServiceScopeFactory scopeFacto
 {
     public McpToolDefinition Definition { get; } = new(
         Name: "get_income_statement_report",
-        Title: "Reporte HTML de estado de resultados",
-        Description: "Genera un HTML autocontenido con ingresos, gastos y resultado neto de un período, "
-                   + "incluyendo advertencia si hay movimientos sin clasificar.",
+        Title: "Estado de resultados en TOON",
+        Description: "Devuelve en TOON los listados de ingresos, gastos y resultado neto de un único período, "
+                   + "comparado contra el período anterior si existe, incluyendo advertencia si hay movimientos sin clasificar.",
         InputSchema: new
         {
             type = "object",
@@ -32,13 +32,15 @@ public sealed class GetIncomeStatementReportTool(IServiceScopeFactory scopeFacto
             type = "object",
             properties = new
             {
+                toon = new { type = "string" },
                 html = new { type = "string" },
                 totalIncome = new { type = "number" },
                 totalExpense = new { type = "number" },
                 netResult = new { type = "number" },
-                pendingClassificationCount = new { type = "integer" }
+                pendingClassificationCount = new { type = "integer" },
+                previousPeriod = new { type = new[] { "object", "null" } }
             },
-            required = new[] { "html", "totalIncome", "totalExpense", "netResult", "pendingClassificationCount" },
+            required = new[] { "toon", "html", "totalIncome", "totalExpense", "netResult", "pendingClassificationCount", "previousPeriod" },
             additionalProperties = false
         });
 
@@ -60,15 +62,26 @@ public sealed class GetIncomeStatementReportTool(IServiceScopeFactory scopeFacto
             return McpToolResult.Error(exception.Message);
         }
 
+        var toon = ReportToonFormatter.FormatIncomeStatement(report);
         var html = ReportHtmlRenderer.RenderIncomeStatement(report, CostaRicaTime.Now);
         var structured = new
         {
+            toon,
             html,
             totalIncome = report.TotalIncome,
             totalExpense = report.TotalExpense,
             netResult = report.NetResult,
-            pendingClassificationCount = report.PendingClassificationCount
+            pendingClassificationCount = report.PendingClassificationCount,
+            previousPeriod = report.PreviousPeriod is null ? null : new
+            {
+                periodId = report.PreviousPeriod.PeriodId,
+                periodLabel = report.PreviousPeriod.PeriodLabel,
+                totalIncome = report.PreviousPeriod.TotalIncome,
+                totalExpense = report.PreviousPeriod.TotalExpense,
+                netResult = report.PreviousPeriod.NetResult,
+                pendingClassificationCount = report.PreviousPeriod.PendingClassificationCount
+            }
         };
-        return new McpToolResult([McpContent.FromText(html)], structured);
+        return new McpToolResult([McpContent.FromText(toon)], structured);
     }
 }

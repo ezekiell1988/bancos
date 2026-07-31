@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-29 CR (TASK-EBC-MCP-36 completada)
+> **Última actualización:** 2026-07-31 CR (TASK-EBC-MCP-53 completada)
 
 ## En curso
 
@@ -23,6 +23,8 @@
 ## Completado en sesiones recientes
 
 
+
+* **2026-07-31** — TASK-EBC-MCP-53 cerrada: Se ajustaron los reportes de estado de resultados y situación financiera para recibir un único periodId, devolver TOON como contenido principal y comparar automáticamente contra el período anterior cuando existe. Se corrigió el cálculo de cierres para procesar desde el período solicitado, conservar saldos de cuentas sin movimientos y usar un cron mensual válido. Se añadieron pruebas de comparación, variaciones y arrastre de saldos. — GC
 
 * **2026-07-29** — TASK-EBC-MCP-36 cerrada: Se completó el seguimiento de importaciones apoyándose en el propio almacenamiento de Hangfire (sin tabla nueva): process_import_file ahora devuelve en TOON archivo+jobId+estado; ImportFileJob.ExecuteAsync retorna un resumen (Task&lt;string&gt;) que Hangfire guarda como Result del job, visible junto al historial de estados. Se agregaron tres tools nuevas en Features/Imports/: get_import_job_status (estado, resumen o error con mensaje/detalle, siguiente paso), list_recent_import_jobs (TOON, en cola/procesando/completado/error, incluye duplicados detectados vía el resumen 'Duplicado detectado…') y retry_import_job (solo permite reintentar jobs en estado 'error', reencola con los mismos identificadores sin bytes; seguro porque ExecuteAsync solo llama SaveChangesAsync al final). — EBC
 

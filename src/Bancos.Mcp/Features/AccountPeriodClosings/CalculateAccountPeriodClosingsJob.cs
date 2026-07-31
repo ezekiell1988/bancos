@@ -31,9 +31,7 @@ public sealed class CalculateAccountPeriodClosingsJob(McpCatalogDbContext db, IL
             return;
         }
 
-        var closingStartDate = earliestMovementPeriodStart.Value < requestedPeriod.StartDate
-            ? earliestMovementPeriodStart.Value
-            : requestedPeriod.StartDate;
+        var closingStartDate = requestedPeriod.StartDate;
         var allPeriods = await db.Periods
             .Where(p => p.StartDate >= closingStartDate)
             .OrderBy(p => p.StartDate)
@@ -42,11 +40,19 @@ public sealed class CalculateAccountPeriodClosingsJob(McpCatalogDbContext db, IL
         context?.WriteLine("Periodos a procesar: {0}", allPeriods.Count);
 
         var periodIds = allPeriods.Select(p => p.Id).ToList();
-        var accountIds = await db.Transactions
+        var accountsWithMovements = await db.Transactions
             .Where(t => t.PeriodId != null && periodIds.Contains(t.PeriodId!.Value))
             .Select(t => t.BankAccountId)
             .Distinct()
             .ToListAsync();
+        var accountsWithClosings = await db.AccountPeriodClosings
+            .Select(c => c.BankAccountId)
+            .Distinct()
+            .ToListAsync();
+        var accountIds = accountsWithMovements
+            .Concat(accountsWithClosings)
+            .Distinct()
+            .ToList();
 
         context?.WriteLine("Cuentas con movimientos: {0}", accountIds.Count);
 
@@ -59,8 +65,12 @@ public sealed class CalculateAccountPeriodClosingsJob(McpCatalogDbContext db, IL
                 .Join(db.Periods, c => c.PeriodId, p => p.Id, (c, p) => new { c.Balance, p.StartDate })
                 .Where(x => x.StartDate < previousPeriodStart)
                 .OrderByDescending(x => x.StartDate)
-                .Select(x => x.Balance)
+                .Select(x => (decimal?)x.Balance)
                 .FirstOrDefaultAsync();
+
+            previousBalance ??= await db.Transactions
+                .Where(t => t.BankAccountId == accountId && t.TransactionDate < previousPeriodStart)
+                .SumAsync(t => (decimal?)t.AmountCrc) ?? 0m;
 
             foreach (var period in allPeriods)
             {
@@ -68,7 +78,7 @@ public sealed class CalculateAccountPeriodClosingsJob(McpCatalogDbContext db, IL
                     .Where(t => t.BankAccountId == accountId && t.PeriodId == period.Id)
                     .SumAsync(t => (decimal?)t.AmountCrc) ?? 0m;
 
-                var balance = previousBalance + movements;
+                var balance = previousBalance.Value + movements;
 
                 var existing = await db.AccountPeriodClosings
                     .FirstOrDefaultAsync(c => c.BankAccountId == accountId && c.PeriodId == period.Id);
