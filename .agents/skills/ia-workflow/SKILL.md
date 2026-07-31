@@ -24,8 +24,10 @@ Cuando el proyecto habilita el MCP `iaWorkflow`, los archivos de instrucciones g
 
 * Para cualquier tarea, consulta, planificación, diagnóstico, revisión, implementación o cierre, empezar con `ia_validate` e `ia_get_context` según la intención.
 * Para una tarea concreta, usar `work_task` antes de editar y `finish_task` al cerrarla; usar las demás acciones MCP para el ciclo de vida correspondiente.
-* Usar `ia_inspect` únicamente para lecturas puntuales enrutadas por el contexto MCP o necesarias para el trabajo actual.
+* Usar `ia_read_file`, `ia_read_task` o `ia_search` únicamente para lecturas puntuales enrutadas por el contexto MCP o necesarias para el trabajo actual.
 * No indicar que el LLM debe abrir directamente `ia/README.md` ni recorrer manualmente `/ia` para reconstruir contexto. El README permanece como documentación y punto de navegación humano.
+
+Cuando `ia_validate` encuentre una ruta requerida faltante, mantener `valid: false`, leer `missingFiles`, `missingDirs` y `remediation`, crear únicamente las rutas indicadas y volver a validar. No ignorar el resultado ni sustituir la validación por una lectura manual de `/ia`.
 
 Si el proyecto no instala ni expone `iaWorkflow`, las instrucciones pueden usar `ia/README.md` como fallback explícito. No mezclar ambos contratos en un proyecto que sí tiene el MCP configurado.
 
@@ -157,8 +159,9 @@ el riesgo y la aprobación de tareas tienen una única fuente en
 10. Crear los tres skills de workflow que operan `/ia` usando [references/skill-task-management.md](references/skill-task-management.md), [references/skill-code-review.md](references/skill-code-review.md) y [references/skill-session-closeout.md](references/skill-session-closeout.md).
 11. Crear o actualizar los archivos de instrucciones de asistentes para GitHub Copilot, Claude y Codex usando [references/assistant-instructions.md](references/assistant-instructions.md). Si `iaWorkflow` está habilitado, generar obligatoriamente el contrato MCP de contexto y tareas; no indicar lectura directa de `ia/README.md`.
 12. Si el proyecto quiere que clientes LLM locales operen `/ia` a través de MCP, agregar el servidor opcional `.mcp/ia-workflow` y ejemplos para VS Code/Codex usando [references/local-mcp-vscode.md](references/local-mcp-vscode.md). Al implementar `validateIa`, incluir obligatoriamente checks de tamaño para los cuatro archivos de contexto: `00_context.md` (> 20 000 chars), `01_requirements.md` (> 24 000 chars), `02_architecture.md` (> 24 000 chars) y `03_plan.md` (> 20 000 chars); cada warning debe indicar el conteo actual y la acción correctiva específica. Para una tool con acciones mutuamente excluyentes, publicar un schema `oneOf` discriminado por `action` y derivar de una sola definición tanto el schema como los campos permitidos por el handler. La lectura de una tarea por ID debe resolver primero `04_tasks/tasks/{id}.md` y, si no existe, buscar secciones exactas en todos los archivos de `04_tasks/done/` desde el mes más reciente al más antiguo; la respuesta histórica debe marcar `archived: true` e informar la ruta mensual de origen.
-13. Mantener los hechos específicos del proyecto en los archivos de componentes y skills del proyecto, no en este skill.
-14. Si los flujos de trabajo delegados están habilitados, aplicar el ciclo de vida de tareas de [references/04-tasks.md](references/04-tasks.md).
+13. Cuando `ia_validate` reporte rutas faltantes, incluir en la respuesta una acción correctiva concreta y cubrir en el smoke test ambos estados: contrato incompleto y contrato reparado. En particular, `07_issues/open/` es una carpeta requerida aunque no tenga issues abiertos.
+14. Mantener los hechos específicos del proyecto en los archivos de componentes y skills del proyecto, no en este skill.
+15. Si los flujos de trabajo delegados están habilitados, aplicar el ciclo de vida de tareas de [references/04-tasks.md](references/04-tasks.md).
 
 ## Procedimiento: auditar /ia
 

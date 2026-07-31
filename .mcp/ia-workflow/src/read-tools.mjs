@@ -153,6 +153,12 @@ export function createReadTools({ iaRoot, iaFs, scanForPotentialSecrets }) {
     }
     const warnings = [];
     const errors = [];
+    const remediation = [
+      ...missingFiles.map((file) => `Crear el archivo requerido ia/${file} y volver a ejecutar ia_validate.`),
+      ...missingDirs.map((dir) => `Crear el directorio requerido ia/${dir}/ y volver a ejecutar ia_validate.`),
+    ];
+    for (const file of missingFiles) warnings.push(`Falta el archivo requerido ia/${file}; acción: crear el archivo y volver a validar.`);
+    for (const dir of missingDirs) warnings.push(`Falta el directorio requerido ia/${dir}/; acción: crearlo y volver a validar.`);
     const readmeText = await optionalText("README.md");
     if (readmeText && readmeText.length > 12000) warnings.push("README.md parece grande; debe ser router.");
     const decisionIndex = await optionalText("06_decisions.md");
@@ -176,7 +182,7 @@ export function createReadTools({ iaRoot, iaFs, scanForPotentialSecrets }) {
     }
     const progressCurrent = await optionalText("05_progress/current.md");
     if (progressCurrent && progressCurrent.length > 12000) warnings.push(`05_progress/current.md tiene ${progressCurrent.length} chars (> 12 000): ejecutar archive_progress para mover entradas antiguas a 05_progress/archive/.`);
-    return { iaRoot, valid: missingFiles.length === 0 && missingDirs.length === 0 && errors.length === 0, missingFiles, missingDirs, errors, warnings };
+    return { iaRoot, valid: missingFiles.length === 0 && missingDirs.length === 0 && errors.length === 0, missingFiles, missingDirs, errors, warnings, remediation };
   }
 
   async function readFile(input) {

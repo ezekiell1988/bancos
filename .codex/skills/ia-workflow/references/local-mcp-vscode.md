@@ -71,7 +71,7 @@ El servidor debe:
 
 ## Schema de parámetros por acción
 
-Una tool que multiplexa acciones, por ejemplo `ia_inspect` con `action: "list_tasks"` o
+Una tool que multiplexa acciones, por ejemplo una tool con `action: "list_tasks"` o
 `action: "search"`, debe publicar un contrato distinto por cada acción. No declarar una unión
 plana de todos los parámetros como opcionales cuando el handler rechaza campos ajenos a la acción.
 Esa divergencia permite que el cliente construya llamadas que el propio MCP considera inválidas.

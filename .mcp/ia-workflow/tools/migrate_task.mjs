@@ -16,7 +16,19 @@ export default {
     additionalProperties: false,
   },
   handler: (args) => runtime.write.runWriteOperation("migrate_task", args),
-  async smoke({ callTool, check, toolJson }) {
+  async smoke({ callTool, check, toolJson, state }) {
+    await state.fs.writeFile(`${state.iaRoot}/04_tasks/tasks/TASK-EZ-BE-01.md`, `# TASK-EZ-BE-01 — Tarea heredada
+
+**Estado:** Borrador
+**Área:** BE
+**Prioridad:** media
+**Riesgo:** bajo
+**Aprobación:** pendiente
+
+## Contexto
+
+Tarea creada con el formato anterior.
+`, "utf8");
     const result = toolJson(await callTool("migrate_task", {
       id: "TASK-EZ-BE-01",
       area: "BE",

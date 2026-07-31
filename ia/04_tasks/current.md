@@ -1,6 +1,8 @@
 # 04 — Tareas activas
 
-> **Última actualización:** 2026-07-31 CR (TASK-EBC-MCP-53 completada)
+> **Última actualización:** 2026-07-31 CR (TASK-GC-MCP-01 completada)
+
+
 
 
 

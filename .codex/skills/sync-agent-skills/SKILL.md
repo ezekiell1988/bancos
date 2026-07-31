@@ -27,21 +27,21 @@ modificación más reciente, se pide aprobación antes de adoptarla como fuente.
 ## Script principal
 
 [examples/sync-skills.ps1](./examples/sync-skills.ps1) — comparación por hash MD5 de
-contenido + espejo con `robocopy /MIR` por skill.
+contenido y copia espejo cross-platform por skill.
 
 ```powershell
 # Solo reporte, no modifica nada (dry-run)
-.\scripts\sync-skills.ps1
+.\examples\sync-skills.ps1
 
 # Interactivo: aplica cambios y pide aprobación en conflictos
-.\scripts\sync-skills.ps1 -Apply
+.\examples\sync-skills.ps1 -Apply
 
 # Sin preguntas: siempre gana .agents (útil para CI o post-edición masiva)
-.\scripts\sync-skills.ps1 -Apply -AutoBase
+.\examples\sync-skills.ps1 -Apply -AutoBase
 ```
 
-El script canónico está en `scripts/sync-skills.ps1`; la copia en `examples/` es
-referencia si el original se pierde.
+El script ejecutable está en `examples/sync-skills.ps1`. En macOS y Linux se usa
+PowerShell 7 (`pwsh`); no depende de `robocopy`.
 
 ### Lógica de decisión por skill
 
@@ -87,8 +87,9 @@ Para propagar a las **dos** carpetas a la vez, preferir `sync-skills.ps1 -Apply 
 
 ## Precauciones
 
-- `robocopy /MIR` **borra** en destino lo que no existe en la fuente: revisar el
-  dry-run antes de `-Apply` si hubo trabajo en progreso en `.claude` o `.codex`.
+- En modo `-Apply` el script elimina y vuelve a copiar el skill destino para dejarlo
+  idéntico a la fuente elegida: revisar el dry-run antes de aplicarlo si hubo trabajo
+  en progreso en `.claude` o `.codex`.
 - Después de crear o editar un skill en `.agents`, correr el sync para que Claude
   Code y Codex vean la misma versión.
-- Exit codes de robocopy `>= 8` son error; `0-7` son éxito (el script ya lo maneja).
+- Comparar hashes después de la aplicación; los tres resultados deben coincidir.

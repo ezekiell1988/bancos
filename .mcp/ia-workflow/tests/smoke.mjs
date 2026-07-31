@@ -71,7 +71,7 @@ try {
   const modules = [];
   for (const file of files) modules.push((await import(pathToFileURL(path.join(toolsDir, file)).href)).default);
   modules.sort((a, b) => (a.order ?? 100) - (b.order ?? 100) || a.name.localeCompare(b.name));
-  const state = { iaRoot: tempIaRoot };
+  const state = { iaRoot: tempIaRoot, fs };
   const ctx = { rpc, notify, callTool, check, toolJson, toolText, state };
   for (const tool of modules) {
     check(`${tool.name} tiene smoke co-ubicado`, typeof tool.smoke === "function");

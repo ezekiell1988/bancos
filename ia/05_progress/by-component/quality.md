@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-27 CR (TASK-EBC-MCP-42 completada)
+> **Última actualización:** 2026-07-31 CR (TASK-GC-MCP-01 completada)
 
 
 
 ## Completado
+
+* **2026-07-31** — TASK-GC-MCP-01: Se corrigió iaWorkflow para que ia_validate informe remediation accionable ante rutas faltantes y se reparó la carpeta ia/07_issues/open/. Se actualizaron los nombres reales de lectura en ia-workflow, las referencias documentales y el smoke test de migrate_task; se sincronizaron los skills desde .agents hacia .claude y .codex. — E
 
 * **2026-07-27** — TASK-EBC-MCP-42: Corregida la validación de sesión y versión negociada para tools/list y tools/call; actualizadas las expectativas del catálogo para 11 plantillas, 41 relaciones y 9 patrones activos. ISSUE-008 resuelto. — EBC
 

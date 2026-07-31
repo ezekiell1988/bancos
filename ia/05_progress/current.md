@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-31 CR (TASK-EBC-MCP-53 completada)
+> **Última actualización:** 2026-07-31 CR (TASK-GC-MCP-01 completada)
 
 ## En curso
 
@@ -23,6 +23,8 @@
 ## Completado en sesiones recientes
 
 
+
+* **2026-07-31** — TASK-GC-MCP-01 cerrada: Se corrigió iaWorkflow para que ia_validate informe remediation accionable ante rutas faltantes y se reparó la carpeta ia/07_issues/open/. Se actualizaron los nombres reales de lectura en ia-workflow, las referencias documentales y el smoke test de migrate_task; se sincronizaron los skills desde .agents hacia .claude y .codex. — E
 
 * **2026-07-31** — TASK-EBC-MCP-53 cerrada: Se ajustaron los reportes de estado de resultados y situación financiera para recibir un único periodId, devolver TOON como contenido principal y comparar automáticamente contra el período anterior cuando existe. Se corrigió el cálculo de cierres para procesar desde el período solicitado, conservar saldos de cuentas sin movimientos y usar un cron mensual válido. Se añadieron pruebas de comparación, variaciones y arrastre de saldos. — GC
 
