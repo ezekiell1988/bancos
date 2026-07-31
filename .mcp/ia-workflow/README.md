@@ -27,7 +27,10 @@ El servidor expone una fachada publica para usuarios no tecnicos y mantiene prim
 | `approve_task` | Validar campos obligatorios y mover a `Lista`. |
 | `work_task` | Trabajar solo una tarea `Lista`, con rechazo seguro para borradores o riesgo alto sin aprobacion. |
 | `finish_task` | Cerrar o devolver a Borrador para revisión; al completar sincroniza `03`, `04` y `05`. |
+| `return_task_to_draft` | Devolver explícitamente una TASK a `Borrador` para corregirla antes de aprobarla de nuevo. |
 | `close_issue` | Resolver y archivar un issue sincronizando `05` y `07`. |
+| `archive_progress` | Archivar entradas antiguas o reducir `05_progress/current.md` cuando supera 12.000 caracteres. |
+| `ia_inspect` | Consultar lecturas unificadas y métricas de tareas sin modificar `/ia`. |
 
 Reglas:
 
@@ -211,6 +214,7 @@ Primitivas avanzadas:
 | `ia_search` | Busqueda textual local en Markdown. |
 | `ia_validate` | Valida archivos y carpetas obligatorias del contrato `/ia`. |
 | `ia_read_file` | Lee un archivo puntual dentro de `/ia`. |
+| `ia_inspect` | Fachada `oneOf` para listar/leer tareas, decisiones, issues, archivos, búsquedas y métricas. |
 
 ## Tools de escritura segura
 
@@ -222,6 +226,8 @@ La V2 agrega escritura declarativa. No existe `ia_write_file` ni escritura raw: 
 | `ia_create_task` | Primitiva interna compatible con `create_task`: crea TASK desde template y actualiza `04_tasks/current.md`. |
 | `ia_close_task` | Cierra TASK activa: `03` plan, `04` current/done y `05` current/componente. |
 | `ia_add_progress_entry` | Agrega una entrada de progreso actual y opcionalmente por componente. |
+| `archive_progress` | Mueve entradas antiguas o excedentes a `05_progress/archive/YYYY-MM.md`; es idempotente. |
+| `return_task_to_draft` | Devuelve una TASK a `Borrador` y limpia sus referencias activas con preview por defecto. |
 | `ia_create_issue` | Crea ISSUE abierto y actualiza `07_issues/current.md`. |
 | `ia_close_issue` | Cierra ISSUE abierto: actualiza `05`, `07/current`, `07/archive` y elimina el archivo activo. |
 | `ia_create_decision` | Crea ADR individual y actualiza `06_decisions.md`. |

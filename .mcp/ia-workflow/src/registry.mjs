@@ -31,8 +31,19 @@ function validateTool(tool, expectedName, file) {
   if (tool.name !== expectedName) fail(`name debe ser ${expectedName}`);
   if (!/^[a-z][a-z0-9_]*$/.test(tool.name)) fail("name debe ser snake_case");
   if (typeof tool.description !== "string" || !tool.description.trim()) fail("description requerida");
-  if (tool.inputSchema?.type !== "object") fail("inputSchema.type debe ser object");
-  if (tool.inputSchema.additionalProperties !== false) fail("additionalProperties debe ser false");
+  if (tool.inputSchema?.type !== "object" && !Array.isArray(tool.inputSchema?.oneOf)) fail("inputSchema debe ser object o oneOf");
+  if (Array.isArray(tool.inputSchema?.oneOf)) {
+    if (tool.inputSchema.oneOf.length === 0) fail("oneOf no puede estar vacio");
+    for (const [index, variant] of tool.inputSchema.oneOf.entries()) {
+      if (variant?.type !== "object") fail(`oneOf[${index}].type debe ser object`);
+      if (variant.additionalProperties !== false) fail(`oneOf[${index}].additionalProperties debe ser false`);
+      if (!Object.entries(variant.properties ?? {}).some(([, definition]) => Object.hasOwn(definition ?? {}, "const"))) {
+        fail(`oneOf[${index}] debe tener una propiedad discriminadora const`);
+      }
+    }
+  } else if (tool.inputSchema.additionalProperties !== false) {
+    fail("additionalProperties debe ser false");
+  }
   if (typeof tool.handler !== "function") fail("handler debe ser función");
   if (tool.format !== undefined && !FORMATS.has(tool.format)) fail("format inválido");
   if (tool.order !== undefined && typeof tool.order !== "number") fail("order debe ser número");

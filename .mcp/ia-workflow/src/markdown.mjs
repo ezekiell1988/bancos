@@ -161,6 +161,20 @@ export function insertAfterHeading(text, heading, entry) {
   return lines.join("\n");
 }
 
+export function trimCompletedHeaderLines(text, maxLines = 5) {
+  if (!text) return text;
+  const lines = text.split(/\r?\n/);
+  const historyIndices = [];
+  for (let index = 0; index < lines.length; index += 1) {
+    if (/^> \*\*/.test(lines[index]) && !/^> \*\*Última actualización:/.test(lines[index])) historyIndices.push(index);
+  }
+  const completedIndices = historyIndices.filter((index) => /^> \*\*Completado/.test(lines[index]));
+  const keepSet = new Set(completedIndices.slice(-maxLines));
+  const removeSet = new Set(historyIndices.filter((index) => !keepSet.has(index)));
+  if (removeSet.size === 0) return text;
+  return lines.filter((_, index) => !removeSet.has(index)).join("\n");
+}
+
 export function removeTaskRows(text, id) {
   return text
     .split(/\r?\n/)

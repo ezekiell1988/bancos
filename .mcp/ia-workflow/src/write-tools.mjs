@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { capitalize, clampInteger, escapeRegExp, initialsFromName, looksMostlyEnglish, normalizePriority, requireEnum, requireSpanishText, requireString, requireStringArray, rpcError, sanitizeIssueId, sanitizeTaskId, slugify } from "./common.mjs";
-import { componentFromArea, ensureTrailingNewline, insertAfterHeading, insertAfterTableHeader, insertTableRow, markPlanTaskDone, removeTaskRows, simpleDiff, summarizeMarkdown, updateLastUpdatedLine } from "./markdown.mjs";
+import { componentFromArea, ensureTrailingNewline, insertAfterHeading, insertAfterTableHeader, insertTableRow, markPlanTaskDone, removeTaskRows, simpleDiff, summarizeMarkdown, trimCompletedHeaderLines, updateLastUpdatedLine } from "./markdown.mjs";
 import { currentCrTimestamp, todayCrDate, todayCrMonth } from "./time.mjs";
 import { scanTextForSecrets } from "./secrets.mjs";
 
@@ -71,6 +71,10 @@ async function buildOperationChanges(operation, input) {
       return buildCreateDecisionChanges(input);
     case "archive_progress":
       return buildArchiveProgressChanges(input);
+    case "work_task_transition":
+      return buildWorkTaskTransitionChanges(input);
+    case "return_task_to_draft":
+      return buildReturnTaskToDraftChanges(input);
     default:
       throw rpcError(-32602, `Operacion no soportada: ${operation}`);
   }
@@ -406,7 +410,19 @@ async function workTask(input) {
   }
 
   const contract = inspectTaskContract(taskText);
-  assertTaskCanBeWorked(contract);
+  const transition = input.transition ?? (input.apply === true ? "start" : undefined);
+  if (transition === "resumed") {
+    if (contract.status !== "Bloqueada") {
+      throw rpcError(-32602, `Solo se puede reanudar una tarea Bloqueada; estado actual: ${contract.status}`);
+    }
+  } else if (transition) {
+    assertTaskCanBeWorked(contract);
+  } else {
+    assertTaskCanBeWorked(contract);
+  }
+  const transitionResult = transition
+    ? await runWriteOperation("work_task_transition", { ...input, transition })
+    : undefined;
 
   const contextPaths = [
     "00_context.md",
@@ -437,17 +453,232 @@ async function workTask(input) {
     allowed: true,
     readonly: true,
     note: "work_task valida gates y devuelve contexto. La edicion de codigo ocurre en el workspace del agente, no dentro del MCP.",
-    status: contract.status,
+    status: transitionResult?.applied ? taskStatusForTransition(transition) : contract.status,
     risk: contract.risk,
     approval: contract.approval,
     likelyFiles: contract.likelyFiles,
     files,
+    ...(transitionResult ? { transition: transitionResult } : {}),
     nextSteps: [
       "Implementar solo dentro del alcance permitido de la TASK.",
       "Ejecutar las validaciones declaradas en la TASK.",
       "Usar finish_task con outcome=review o outcome=done al terminar.",
     ],
   };
+}
+
+async function buildWorkTaskTransitionChanges(input) {
+  const id = sanitizeTaskId(requireString(input.id, "id"));
+  const transition = requireEnum(input.transition, "transition", ["start", "blocked", "resumed"]);
+  const taskPath = `04_tasks/tasks/${id}.md`;
+  const taskText = await optionalText(taskPath);
+  if (!taskText) throw rpcError(-32602, `No existe la tarea activa ${id}`);
+
+  const contract = inspectTaskContract(taskText);
+  const targetStatus = taskStatusForTransition(transition);
+  if (transition === "start" && contract.status !== "Lista") {
+    if (contract.status === "En progreso") return [];
+    throw rpcError(-32602, `Solo se puede iniciar una tarea Lista; estado actual: ${contract.status}`);
+  }
+  if (transition === "blocked" && contract.status !== "En progreso") {
+    throw rpcError(-32602, `Solo se puede bloquear una tarea En progreso; estado actual: ${contract.status}`);
+  }
+  if (transition === "resumed" && contract.status !== "Bloqueada") {
+    throw rpcError(-32602, `Solo se puede reanudar una tarea Bloqueada; estado actual: ${contract.status}`);
+  }
+
+  const reason = transition === "start" ? undefined : requireSpanishText(input.reason, "reason");
+  const nextTask = updateTaskHistory(
+    replaceTaskField(taskText, "Estado", targetStatus),
+    transition === "start" ? "started" : transition,
+    reason
+  );
+  const currentPath = "04_tasks/current.md";
+  const currentText = await optionalText(currentPath);
+  const updatedCurrent = synchronizeCurrentTask(
+    updateLastUpdatedLine(currentText, `${todayCrDate()} CR (${id} ${transitionLabel(transition)})`),
+    id,
+    targetStatus,
+    contract
+  );
+  const changes = [
+    { action: "update", path: taskPath, before: taskText, after: nextTask },
+    { action: "update", path: currentPath, before: currentText, after: updatedCurrent },
+  ];
+
+  const blockedPath = "04_tasks/blocked.md";
+  const blockedText = await optionalText(blockedPath);
+  const updatedBlocked = synchronizeBlockedTasks(blockedText, id, targetStatus, contract.title, reason);
+  if (updatedBlocked !== blockedText) {
+    changes.push({ action: "update", path: blockedPath, before: blockedText, after: updatedBlocked });
+  }
+
+  return changes;
+}
+
+async function buildReturnTaskToDraftChanges(input) {
+  const id = sanitizeTaskId(requireString(input.id, "id"));
+  const reason = requireSpanishText(input.reason, "reason");
+  const taskPath = `04_tasks/tasks/${id}.md`;
+  const taskText = await optionalText(taskPath);
+  if (!taskText) throw rpcError(-32602, `No existe la tarea activa ${id}`);
+
+  const contract = inspectTaskContract(taskText);
+  if (!["Lista", "En progreso", "Bloqueada"].includes(contract.status)) {
+    throw rpcError(-32602, `No se puede devolver a Borrador una tarea ${contract.status}`);
+  }
+
+  const nextTask = updateTaskHistory(
+    replaceTaskField(
+      replaceTaskField(
+        replaceTaskField(taskText, "Estado", "Borrador"),
+        "Aprobación",
+        "pendiente"
+      ),
+      "Fecha inicio",
+      "—"
+    ),
+    "returned_to_draft",
+    reason
+  );
+  const currentPath = "04_tasks/current.md";
+  const currentText = await optionalText(currentPath);
+  const updatedCurrent = synchronizeCurrentTask(
+    updateLastUpdatedLine(currentText, `${todayCrDate()} CR (${id} devuelta a borrador)`),
+    id,
+    "Borrador",
+    contract
+  );
+  const changes = [
+    { action: "update", path: taskPath, before: taskText, after: nextTask },
+    { action: "update", path: currentPath, before: currentText, after: updatedCurrent },
+  ];
+  const blockedPath = "04_tasks/blocked.md";
+  const blockedText = await optionalText(blockedPath);
+  const updatedBlocked = synchronizeBlockedTasks(blockedText, id, "Borrador", contract.title);
+  if (updatedBlocked !== blockedText) {
+    changes.push({ action: "update", path: blockedPath, before: blockedText, after: updatedBlocked });
+  }
+  return changes;
+}
+
+function taskStatusForTransition(transition) {
+  return { start: "En progreso", blocked: "Bloqueada", resumed: "En progreso" }[transition];
+}
+
+function transitionLabel(transition) {
+  return { start: "iniciada", blocked: "bloqueada", resumed: "reanudada" }[transition];
+}
+
+function readTaskHistory(text) {
+  const match = text.match(/^## Historial V2\s*\n+```json\s*\n([\s\S]*?)\n```/m);
+  if (!match) return { version: 2, startedAt: null, events: [], metrics: emptyMetrics() };
+  try {
+    const parsed = JSON.parse(match[1]);
+    return {
+      version: 2,
+      startedAt: parsed.startedAt ?? null,
+      events: Array.isArray(parsed.events) ? parsed.events : [],
+      metrics: parsed.metrics ?? emptyMetrics(),
+    };
+  } catch {
+    return { version: 2, startedAt: null, events: [], metrics: emptyMetrics() };
+  }
+}
+
+function updateTaskHistory(text, eventType, reason) {
+  const history = readTaskHistory(text);
+  const at = new Date().toISOString();
+  if (eventType === "started" && !history.startedAt) history.startedAt = at;
+  history.events.push({ type: eventType, at, ...(reason ? { reason } : {}) });
+  history.metrics = calculateHistoryMetrics(history, at);
+  const block = `## Historial V2\n\n\`\`\`json\n${JSON.stringify(history, null, 2)}\n\`\`\``;
+  const pattern = /^## Historial V2\s*\n+```json\s*\n[\s\S]*?\n```/m;
+  if (pattern.test(text)) return text.replace(pattern, block);
+  return `${text.trimEnd()}\n\n${block}\n`;
+}
+
+function emptyMetrics() {
+  return { cycleTimeMs: 0, blockedTimeMs: 0, activeTimeMs: 0 };
+}
+
+function calculateHistoryMetrics(history, nowValue) {
+  const now = Date.parse(nowValue) || Date.now();
+  const started = history.startedAt ? Date.parse(history.startedAt) : NaN;
+  if (Number.isNaN(started)) return emptyMetrics();
+  let blockedTimeMs = 0;
+  let blockedAt = null;
+  for (const event of history.events) {
+    const eventAt = Date.parse(event.at);
+    if (Number.isNaN(eventAt)) continue;
+    if (event.type === "blocked") blockedAt = eventAt;
+    if (event.type === "resumed" && blockedAt !== null) {
+      blockedTimeMs += Math.max(0, eventAt - blockedAt);
+      blockedAt = null;
+    }
+  }
+  if (blockedAt !== null) blockedTimeMs += Math.max(0, now - blockedAt);
+  const cycleTimeMs = Math.max(0, now - started);
+  return { cycleTimeMs, blockedTimeMs, activeTimeMs: Math.max(0, cycleTimeMs - blockedTimeMs) };
+}
+
+function synchronizeCurrentTask(text, id, status, contract) {
+  let current = ensureOperationalSections(text ?? "");
+  current = removeTaskRows(current, id);
+  current = restoreEmptyOperationalSections(current);
+  const row = status === "Borrador"
+    ? `| ${id} | ${contract.title} | ${contract.risk} | pendiente |`
+    : `| ${id} | ${contract.area} | ${contract.title} | ${contract.priority} |`;
+  return insertCurrentTaskRow(current, status, row);
+}
+
+function ensureOperationalSections(text) {
+  let result = String(text ?? "").trimEnd();
+  const sections = ["## En progreso", "## Lista", "## Borradores", "## Bloqueadas"];
+  for (const heading of sections) {
+    if (!result.split(/\r?\n/).some((line) => line.trim() === heading)) {
+      const marker = heading === "## Borradores" ? "" : "\nSin tareas registradas.";
+      result += `\n\n${heading}\n${marker}`;
+    }
+  }
+  return `${result}\n`;
+}
+
+function restoreEmptyOperationalSections(text) {
+  const lines = text.split(/\r?\n/);
+  for (const heading of ["## En progreso", "## Lista", "## Bloqueadas"]) {
+    const headingIndex = lines.findIndex((line) => line.trim() === heading);
+    if (headingIndex === -1) continue;
+    let sectionEnd = lines.findIndex((line, index) => index > headingIndex && /^##\s+/.test(line));
+    if (sectionEnd === -1) sectionEnd = lines.length;
+    const body = lines.slice(headingIndex + 1, sectionEnd);
+    const hasEntry = body.some((line) => {
+      const value = line.trim();
+      return value && value !== "Sin tareas." && value !== "Sin tareas registradas.";
+    });
+    if (!hasEntry) lines.splice(headingIndex + 1, sectionEnd - headingIndex - 1, "", "Sin tareas registradas.");
+  }
+  return lines.join("\n");
+}
+
+function synchronizeBlockedTasks(text, id, status, title, reason) {
+  let result = String(text ?? "").trimEnd() || "# Tareas bloqueadas\n\nSin tareas bloqueadas.";
+  const lines = result.split(/\r?\n/).filter((line) => !line.includes(id));
+  result = lines.join("\n").trimEnd();
+  if (status === "Bloqueada") {
+    const entry = `* \`${id}\` — ${title}${reason ? `: ${reason}` : ""}`;
+    if (/Sin tareas bloqueadas\./.test(result)) return `${result.replace(/Sin tareas bloqueadas\./, entry)}\n`;
+    const headingIndex = result.split(/\r?\n/).findIndex((line) => line.trim() === "# Tareas bloqueadas");
+    if (headingIndex !== -1) {
+      const blockedLines = result.split(/\r?\n/);
+      blockedLines.splice(headingIndex + 1, 0, "", entry);
+      return `${blockedLines.join("\n")}\n`;
+    }
+    return `${result}\n\n${entry}\n`;
+  }
+  const hasEntry = result.split(/\r?\n/).some((line) => /^\s*[*-]\s+/.test(line));
+  if (!hasEntry) return `${result.replace(/\n+$/, "")}\n\nSin tareas bloqueadas.\n`;
+  return `${result}\n`;
 }
 
 async function buildCloseTaskChanges(input) {
@@ -478,6 +709,7 @@ async function buildCloseTaskChanges(input) {
     removeTaskRows(currentText, id),
     `${todayCrDate()} CR (${id} completada)`
   );
+  const trimmedCurrent = trimCompletedHeaderLines(updatedCurrent);
 
   const donePath = `04_tasks/done/${todayCrMonth()}.md`;
   const doneText = await optionalText(donePath);
@@ -523,7 +755,7 @@ ${rollbackNotes}
   );
 
   const changes = [
-    { action: "update", path: currentPath, before: currentText, after: updatedCurrent },
+    { action: "update", path: currentPath, before: currentText, after: trimmedCurrent },
     { action: doneText ? "update" : "create", path: donePath, before: doneText || undefined, after: updatedDone },
     { action: "update", path: progressPath, before: progressText, after: updatedProgress },
     { action: "delete", path: taskPath, before: taskText },
@@ -818,6 +1050,7 @@ async function validatePlannedChanges(changes) {
   const allowedRoots = [
     "03_plan.md",
     "04_tasks/current.md",
+    "04_tasks/blocked.md",
     "04_tasks/tasks/",
     "04_tasks/done/",
     "05_progress/current.md",
@@ -914,7 +1147,6 @@ function normalizeTaskStatus(value) {
     "in progress": "En progreso",
     bloqueada: "Bloqueada",
     blocked: "Bloqueada",
-    "en revision": "Borrador",
     review: "Borrador",
     completada: "Completada",
     done: "Completada",
@@ -933,6 +1165,7 @@ function currentHeadingForStatus(status) {
     Borrador: "## Borradores",
     Lista: "## Lista",
     "En progreso": "## En progreso",
+    Bloqueada: "## Bloqueadas",
   };
 
   return map[status] ?? "## Próximas (Lista / ready to start — en orden de implementación)";
@@ -955,7 +1188,7 @@ function insertCurrentTaskRow(text, status, row) {
     return lines.join("\n");
   }
 
-  const emptyIndex = lines.findIndex((line, index) => index > headingIndex && index < sectionEnd && line.trim() === "Sin tareas.");
+  const emptyIndex = lines.findIndex((line, index) => index > headingIndex && index < sectionEnd && ["Sin tareas.", "Sin tareas registradas."].includes(line.trim()));
   if (emptyIndex !== -1) {
     lines.splice(emptyIndex, 1, header, row);
     return lines.join("\n");
@@ -1240,7 +1473,21 @@ async function nextAdrNumber() {
         if (!toArchive.has(month)) toArchive.set(month, []);
         toArchive.get(month).push(entry);
       } else {
-        toKeep.push(entry);
+        toKeep.push({ entry, date: entryDate });
+      }
+    }
+
+    if (currentText.length > 12000 && toKeep.length > 0) {
+      const oldestFirst = [...toKeep].sort((a, b) => a.date - b.date);
+      const currentWithoutSection = currentText.length - sectionBody.length;
+      while (toKeep.length > 0 && currentWithoutSection + sectionHeader.length + toKeep.map((item) => item.entry).join("\n\n").length + 1 > 12000) {
+        const oldest = oldestFirst.shift();
+        if (!oldest) break;
+        const index = toKeep.indexOf(oldest);
+        if (index !== -1) toKeep.splice(index, 1);
+        const month = oldest.date.toISOString().slice(0, 7);
+        if (!toArchive.has(month)) toArchive.set(month, []);
+        toArchive.get(month).push(oldest.entry);
       }
     }
 
@@ -1248,7 +1495,7 @@ async function nextAdrNumber() {
 
     const changes = [];
 
-    const newBody = toKeep.length > 0 ? toKeep.join("\n\n") + "\n" : "\n";
+    const newBody = toKeep.length > 0 ? toKeep.map((item) => item.entry).join("\n\n") + "\n" : "\n";
     const newSection = sectionHeader + newBody;
     const newCurrent = currentText.slice(0, sectionOffset) + newSection + currentText.slice(sectionOffset + sectionMatch[0].length);
     changes.push({ action: "update", path: currentPath, before: currentText, after: ensureTrailingNewline(newCurrent) });

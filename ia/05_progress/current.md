@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-31 CR (TASK-GC-MCP-01 completada)
+> **Última actualización:** 2026-07-31 CR (TASK-EBC-MCP-55 completada)
 
 ## En curso
 
@@ -23,6 +23,12 @@
 ## Completado en sesiones recientes
 
 
+
+* **2026-07-31** — TASK-EBC-MCP-55 cerrada: finish_task(review) conserva las tareas en Borrador y exige nueva aprobación; se eliminó el alias operativo En revisión y el smoke cubre la transición. — EBC
+
+* **2026-07-31** — TASK-EBC-MCP-54 cerrada: Configuración local de db-query alineada con .local-secrets/db.json y documentación consistente; sintaxis y smoke verificados sin conexión SQL. — EBC
+
+* **2026-07-31** — TASK-EBC-MCP-56 cerrada: Se completaron las capacidades del MCP iaWorkflow exigidas por el skill: transiciones de tareas con historial y sincronización, retorno a Borrador, inspección unificada con métricas, schemas oneOf cerrados, validación recursiva compatible con objetos abiertos, archivado progresivo e idempotente de progreso, documentación y smoke tests ampliados. — E
 
 * **2026-07-31** — TASK-GC-MCP-01 cerrada: Se corrigió iaWorkflow para que ia_validate informe remediation accionable ante rutas faltantes y se reparó la carpeta ia/07_issues/open/. Se actualizaron los nombres reales de lectura en ia-workflow, las referencias documentales y el smoke test de migrate_task; se sincronizaron los skills desde .agents hacia .claude y .codex. — E
 
@@ -80,16 +86,6 @@
 
 ### Nota operativa
 **Cada vez que Claude haga cambios en Bancos.Mcp, el usuario debe correr `.mcp/bancos-mcp.ps1` para que el servidor MCP tome los cambios compilados.** El script mata el proceso en puerto 8000, levanta Docker si no está corriendo, aplica migraciones y reinicia con `dotnet watch run`. — EBC
-
-* **2026-07-27** — TASK-EBC-DOC-13 cerrada: Se creó una plantilla Power Query segura para ejecutar SELECTs parametrizados contra SQL Server. — EBC
-
-* **2026-07-27** — TASK-EBC-MCP-52 cerrada: Se aplicaron 18 clasificaciones inequívocas de la nueva tanda y el tool MCP regeneró el Markdown con 159 pendientes. — EBC
-
-* **2026-07-27** — TASK-EBC-MCP-51 cerrada: Se aplicaron 67 clasificaciones inequívocas de la nueva tanda de notas y el tool MCP regeneró el Markdown con 177 pendientes. — EBC
-
-* **2026-07-27** — TASK-EBC-MCP-50 cerrada: Se identificaron y confirmaron 2 coincidencias adicionales de alta confianza y el tool MCP regeneró el Markdown con 244 pendientes. — EBC
-
-* **2026-07-27** — TASK-EBC-MCP-49 cerrada: Se añadió Place a las reglas de clasificación, se propagó a movimientos futuros, se aplicaron 66 notas con lugares conocidos y se regeneró el Markdown a 246 pendientes. — EBC
 
 * **2026-07-27** — TASK-EBC-MCP-48 cerrada: Se confirmaron los 69 movimientos que coincidían con patrones reutilizables y el tool MCP regeneró el documento con 312 pendientes. — EBC
 

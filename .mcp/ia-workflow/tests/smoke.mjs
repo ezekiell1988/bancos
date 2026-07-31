@@ -65,8 +65,14 @@ try {
   const names = listed.result.tools.map((tool) => tool.name);
   check("tools/list coincide con tools/", names.length === expected.length && expected.every((name) => names.includes(name)), `tools=${names.length}`);
   check("ia_validate aparece primero", names[0] === "ia_validate", `primero=${names[0]}`);
+  const inspectSchema = listed.result.tools.find((tool) => tool.name === "ia_inspect")?.inputSchema;
+  check("ia_inspect publica variantes oneOf cerradas", Array.isArray(inspectSchema?.oneOf) && inspectSchema.oneOf.length >= 8 && inspectSchema.oneOf.every((variant) => variant.additionalProperties === false));
   const missing = toolJson(await callTool("ia_read_task", {}));
   check("argumento requerido devuelve error de negocio", typeof missing.error === "string" && missing.error.includes("id"));
+  const extraProperty = toolJson(await callTool("ia_inspect", { action: "metrics", extra: true }));
+  check("schema cerrado rechaza propiedad ajena", typeof extraProperty.error === "string" && extraProperty.error.includes("no permitido"));
+  const unknownAction = toolJson(await callTool("ia_inspect", { action: "unknown" }));
+  check("oneOf rechaza acción desconocida", typeof unknownAction.error === "string");
 
   const modules = [];
   for (const file of files) modules.push((await import(pathToFileURL(path.join(toolsDir, file)).href)).default);

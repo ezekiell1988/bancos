@@ -85,12 +85,55 @@ function textResultFor(tool, payload) {
 
 function validateArgs(schema, args) {
   if (!args || typeof args !== "object" || Array.isArray(args)) throw new ToolError("arguments debe ser objeto");
-  const properties = schema.properties ?? {};
+  const selectedSchema = selectSchemaVariant(schema, args);
+  const properties = selectedSchema.properties ?? {};
   for (const key of Object.keys(args)) if (!Object.hasOwn(properties, key)) throw new ToolError(`argumento no permitido: ${key}`);
-  for (const key of schema.required ?? []) if (args[key] === undefined || args[key] === null || args[key] === "") throw new ToolError(`${key} requerido`);
+  for (const key of selectedSchema.required ?? []) if (args[key] === undefined || args[key] === null || args[key] === "") throw new ToolError(`${key} requerido`);
   for (const [key, value] of Object.entries(args)) {
     const definition = properties[key];
-    if (definition?.enum && !definition.enum.includes(value)) throw new ToolError(`${key} debe ser uno de: ${definition.enum.join(", ")}`);
+    validateValue(key, value, definition);
+  }
+}
+
+function selectSchemaVariant(schema, args) {
+  if (!Array.isArray(schema.oneOf)) return schema;
+
+  const matching = schema.oneOf.filter((variant) => matchesConstProperties(variant, args));
+  if (matching.length !== 1) throw new ToolError("los argumentos no coinciden con una variante valida");
+  return matching[0];
+}
+
+function matchesConstProperties(schema, args) {
+  const properties = schema.properties ?? {};
+  return Object.entries(properties)
+    .filter(([, definition]) => Object.hasOwn(definition ?? {}, "const"))
+    .every(([key, definition]) => args[key] === definition.const);
+}
+
+function validateValue(key, value, definition) {
+  if (!definition) return;
+  if (definition.const !== undefined && value !== definition.const) {
+    throw new ToolError(`${key} debe ser ${definition.const}`);
+  }
+  if (definition.enum && !definition.enum.includes(value)) {
+    throw new ToolError(`${key} debe ser uno de: ${definition.enum.join(", ")}`);
+  }
+  if (definition.type === "array") {
+    if (!Array.isArray(value)) throw new ToolError(`${key} debe ser un array`);
+    if (definition.items) value.forEach((item, index) => validateValue(`${key}[${index}]`, item, definition.items));
+  }
+  if (definition.type === "object") {
+    if (!value || typeof value !== "object" || Array.isArray(value)) throw new ToolError(`${key} debe ser un objeto`);
+    if (definition.additionalProperties === false || definition.properties) validateArgs(definition, value);
+  }
+  if (definition.type === "boolean" && typeof value !== "boolean") throw new ToolError(`${key} debe ser booleano`);
+  if (definition.type === "integer" && (!Number.isInteger(value) || (definition.minimum !== undefined && value < definition.minimum))) {
+    throw new ToolError(`${key} debe ser un entero valido`);
+  }
+  if (definition.type === "string") {
+    if (typeof value !== "string") throw new ToolError(`${key} debe ser texto`);
+    if (definition.minLength !== undefined && value.length < definition.minLength) throw new ToolError(`${key} no puede estar vacio`);
+    if (definition.maxLength !== undefined && value.length > definition.maxLength) throw new ToolError(`${key} excede la longitud maxima`);
   }
 }
 

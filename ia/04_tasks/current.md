@@ -1,6 +1,8 @@
 # 04 — Tareas activas
 
-> **Última actualización:** 2026-07-31 CR (TASK-EBC-MCP-55 en borrador)
+> **Última actualización:** 2026-07-31 CR (TASK-EBC-MCP-55 completada)
+
+
 
 
 
@@ -226,13 +228,11 @@ Sin tareas.
 
 | ID | Área | Título | Prioridad |
 |---|---|---|---|
-| `TASK-EBC-MCP-54` | MCP | Ajustar db-query MCP para usar db.json | alta |
 
 ## Borradores
 
 | ID | Título | Riesgo | Aprobación |
 |---|---|---|---|
-| TASK-EBC-MCP-55 | MCP | Corregir estado de revisión en iaWorkflow | alta |
 | `TASK-EBC-MCP-40` | Tools MCP de consulta para cortes de tarjeta, financiamientos y préstamos | medio | pendiente |
 | `TASK-EBC-MCP-39` | Tools MCP de libro mayor, regeneración y diferencial cambiario | medio | pendiente |
 | `TASK-EBC-MCP-38` | Tools MCP de conciliación de pagos y transferencias | medio | pendiente |

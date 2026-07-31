@@ -1,8 +1,14 @@
-> **Última actualización:** 2026-07-31 CR (TASK-EBC-MCP-53 completada)
+> **Última actualización:** 2026-07-31 CR (TASK-EBC-MCP-55 completada)
 
 
 
 ## Completado
+
+* **2026-07-31** — TASK-EBC-MCP-55: finish_task(review) conserva las tareas en Borrador y exige nueva aprobación; se eliminó el alias operativo En revisión y el smoke cubre la transición. — EBC
+
+* **2026-07-31** — TASK-EBC-MCP-54: Configuración local de db-query alineada con .local-secrets/db.json y documentación consistente; sintaxis y smoke verificados sin conexión SQL. — EBC
+
+* **2026-07-31** — TASK-EBC-MCP-56: Se completaron las capacidades del MCP iaWorkflow exigidas por el skill: transiciones de tareas con historial y sincronización, retorno a Borrador, inspección unificada con métricas, schemas oneOf cerrados, validación recursiva compatible con objetos abiertos, archivado progresivo e idempotente de progreso, documentación y smoke tests ampliados. — E
 
 * **2026-07-31** — TASK-EBC-MCP-53: Se ajustaron los reportes de estado de resultados y situación financiera para recibir un único periodId, devolver TOON como contenido principal y comparar automáticamente contra el período anterior cuando existe. Se corrigió el cálculo de cierres para procesar desde el período solicitado, conservar saldos de cuentas sin movimientos y usar un cron mensual válido. Se añadieron pruebas de comparación, variaciones y arrastre de saldos. — GC
 
