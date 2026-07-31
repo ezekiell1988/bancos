@@ -4,9 +4,13 @@ using Bancos.Mcp.Data;
 using Bancos.Mcp.Features.Health;
 using Bancos.Mcp.Features.TemplateDetection;
 using Bancos.Mcp.Features.AccountPeriodClosings;
+using Bancos.Mcp.Features.Accounts;
 using Bancos.Mcp.Features.Classification;
 using Bancos.Mcp.Features.FileProcessing;
+using Bancos.Mcp.Features.Imports;
 using Bancos.Mcp.Features.ExchangeRates;
+using Bancos.Mcp.Features.Reports;
+using Bancos.Mcp.Features.Transactions;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,9 +31,13 @@ builder.Services.AddSingleton<IMcpTool, StatusTool>();
 builder.Services.AddSingleton<ToolRegistry>();
 builder.Services.AddTemplateDetectionModule(builder.Configuration);
 builder.Services.AddFileProcessingModule(builder.Configuration);
+builder.Services.AddImportsModule();
 builder.Services.AddAccountPeriodClosingsModule();
 builder.Services.AddClassificationModule();
 builder.Services.AddExchangeRatesModule(builder.Configuration);
+builder.Services.AddReportsModule();
+builder.Services.AddAccountsModule();
+builder.Services.AddTransactionsModule();
 
 var app = builder.Build();
 

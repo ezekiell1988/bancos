@@ -13,7 +13,9 @@ public sealed record UnclassifiedTransactionSummary(
     string Description,
     decimal Amount,
     string CurrencyCode,
-    string Explanation);
+    string Explanation,
+    string BankName,
+    string AccountCode);
 
 public sealed record ClassifyBatchSummary(int Processed, int Rule, int Ai, int Unclassified);
 
@@ -105,16 +107,23 @@ public sealed class ClassificationService(
     }
 
     public async Task<UnclassifiedTransactionsPage> ListUnclassifiedAsync(
-        Guid? bankAccountId, int page, int itemsPerPage, CancellationToken ct = default)
+        Guid? bankAccountId, int page, int itemsPerPage, CancellationToken ct = default,
+        string sortBy = "amount")
     {
         var query = db.Transactions.Where(t => !t.Classifications.Any(c => c.Source != ClassificationSource.Unclassified));
         if (bankAccountId is not null)
             query = query.Where(t => t.BankAccountId == bankAccountId);
 
         var totalItems = await query.CountAsync(ct);
-        var transactions = await query
-            .OrderBy(t => t.TransactionDate)
-            .ThenBy(t => t.Id)
+        var withIncludes = query
+            .Include(t => t.BankAccount)
+                .ThenInclude(a => a!.Bank);
+        var ordered = sortBy == "date"
+            ? withIncludes.OrderBy(t => t.TransactionDate).ThenBy(t => t.Id)
+            : withIncludes.OrderBy(t => t.CurrencyCode)
+                          .ThenByDescending(t => t.Amount < 0 ? -t.Amount : t.Amount)
+                          .ThenBy(t => t.Id);
+        var transactions = await ordered
             .Skip((page - 1) * itemsPerPage)
             .Take(itemsPerPage)
             .ToListAsync(ct);
@@ -134,7 +143,9 @@ public sealed class ClassificationService(
                 t.Description,
                 t.Amount,
                 t.CurrencyCode,
-                latestExplanationByTransaction.GetValueOrDefault(t.Id) ?? "Sin intento de clasificación registrado."))
+                latestExplanationByTransaction.GetValueOrDefault(t.Id) ?? "Sin intento de clasificación registrado.",
+                t.BankAccount?.Bank?.Name ?? "Desconocido",
+                t.BankAccount?.Code ?? "Desconocido"))
             .ToList();
 
         return new UnclassifiedTransactionsPage(items, page, itemsPerPage, totalItems);
@@ -237,4 +248,12 @@ public sealed class ClassificationService(
             Explanation = $"Clasificado por IA (confianza {suggestion.Confidence:P0}): {suggestion.Reasoning}"
         };
     }
+
+    public async Task<IReadOnlyList<CategorySummary>> GetCategoriesAsync(CancellationToken ct = default) =>
+        await db.Categories
+            .Where(c => c.IsEnabled && c.ParentId != null)
+            .Select(c => new CategorySummary(c.Id, c.Code, c.Name))
+            .ToListAsync(ct);
 }
+
+public sealed record CategorySummary(Guid Id, string Code, string Name);

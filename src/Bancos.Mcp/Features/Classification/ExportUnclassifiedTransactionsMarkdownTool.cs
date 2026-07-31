@@ -22,6 +22,12 @@ public sealed class ExportUnclassifiedTransactionsMarkdownTool(
                 {
                     type = "string",
                     description = "Ruta relativa dentro de docs, por ejemplo: revisiones/pendientes.md."
+                },
+                sortBy = new
+                {
+                    type = "string",
+                    @enum = new[] { "amount", "date" },
+                    description = "Criterio de ordenamiento: 'amount' (moneda y luego importe absoluto desc, por defecto) o 'date' (fecha asc)."
                 }
             },
             required = new[] { "relativePath" },
@@ -56,6 +62,10 @@ public sealed class ExportUnclassifiedTransactionsMarkdownTool(
             return McpToolResult.Error(exception.Message);
         }
 
+        var sortBy = "amount";
+        if (arguments.TryGetProperty("sortBy", out var sortEl) && sortEl.ValueKind == JsonValueKind.String)
+            sortBy = sortEl.GetString() == "date" ? "date" : "amount";
+
         using var scope = scopeFactory.CreateScope();
         var service = scope.ServiceProvider.GetRequiredService<ClassificationService>();
         const int itemsPerPage = 200;
@@ -63,7 +73,7 @@ public sealed class ExportUnclassifiedTransactionsMarkdownTool(
         var transactions = new List<UnclassifiedTransactionSummary>();
         while (true)
         {
-            var result = await service.ListUnclassifiedAsync(null, page, itemsPerPage, cancellationToken);
+            var result = await service.ListUnclassifiedAsync(null, page, itemsPerPage, cancellationToken, sortBy);
             transactions.AddRange(result.Items);
             if (transactions.Count >= result.TotalItems)
                 break;

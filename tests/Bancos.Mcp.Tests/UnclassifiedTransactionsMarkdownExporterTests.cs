@@ -6,7 +6,7 @@ namespace Bancos.Mcp.Tests;
 public sealed class UnclassifiedTransactionsMarkdownExporterTests
 {
     [Fact]
-    public void BuildMarkdown_creates_review_rows_without_internal_identifiers()
+    public void BuildMarkdown_creates_review_rows_without_account_identifiers()
     {
         var transactions = new[]
         {
@@ -17,13 +17,16 @@ public sealed class UnclassifiedTransactionsMarkdownExporterTests
                 "COMPRA | PRUEBA",
                 -1_250.5m,
                 "CRC",
-                "Pendiente")
+                "Pendiente",
+                "BAC Credomatic",
+                "bac-credit-01-crc")
         };
 
         var markdown = UnclassifiedTransactionsMarkdownExporter.BuildMarkdown(transactions);
 
-        Assert.Contains("| M-001 | 2026-01-02 | COMPRA \\| PRUEBA | -1,250.50 | CRC |  |  |", markdown);
-        Assert.DoesNotContain(transactions[0].TransactionId.ToString(), markdown);
+        Assert.Contains(
+            $"| {transactions[0].TransactionId} | 2026-01-02 | BAC Credomatic | bac-credit-01-crc | COMPRA \\| PRUEBA | -1,250.50 | CRC |  |",
+            markdown);
         Assert.DoesNotContain(transactions[0].BankAccountId.ToString(), markdown);
     }
 

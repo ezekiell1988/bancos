@@ -1,6 +1,11 @@
 # 04 — Tareas activas
 
-> **Última actualización:** 2026-07-27 CR (TASK-EBC-DOC-13 completada)
+> **Última actualización:** 2026-07-29 CR (TASK-EBC-MCP-36 completada)
+
+
+
+
+
 
 
 
@@ -223,9 +228,6 @@ Sin tareas.
 | `TASK-EBC-MCP-39` | Tools MCP de libro mayor, regeneración y diferencial cambiario | medio | pendiente |
 | `TASK-EBC-MCP-38` | Tools MCP de conciliación de pagos y transferencias | medio | pendiente |
 | `TASK-EBC-MCP-37` | Tools MCP para tipos de cambio y resolución de tasas | medio | pendiente |
-| `TASK-EBC-MCP-36` | Tools MCP de idempotencia y seguimiento de importaciones | medio | pendiente |
-| `TASK-EBC-MCP-35` | Tools MCP de consulta de catálogo, períodos y movimientos | medio | pendiente |
-| `TASK-EBC-MCP-34` | Tools MCP para reportes HTML de resultados y situación financiera | medio | pendiente |
 
 ## Bloqueadas
 
@@ -235,4 +237,3 @@ Sin tareas.
 
 Sin tareas.
 | TASK-EBC-DB-05 | DB | Estrategia de dos entornos de base de datos (dev y prod) | crítica |
-| TASK-EBC-MCP-45 | MCP | Aplicar patrones confirmados y actualizar pendientes | media |

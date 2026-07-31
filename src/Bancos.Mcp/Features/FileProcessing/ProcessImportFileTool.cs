@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using Bancos.Mcp.Catalog;
 using Bancos.Mcp.Features.TemplateDetection;
@@ -16,7 +17,7 @@ public sealed class ProcessImportFileTool(
         Title: "Procesar archivos de importación bancaria",
         Description: "Recibe una lista de rutas relativas de archivos bancarios (CSV, XLS, PDF, HTML). "
                    + "Detecta automáticamente la plantilla, resuelve la cuenta bancaria y encola un job de Hangfire por archivo para parsear y persistir los datos. "
-                   + "Retorna el ID de cada job encolado. No requiere ningún parámetro adicional.",
+                   + "Devuelve en TOON el archivo y el jobId de cada job encolado; use get_import_job_status con ese jobId para saber si terminó o falló.",
         InputSchema: new
         {
             type = "object",
@@ -48,9 +49,10 @@ public sealed class ProcessImportFileTool(
                             file = new { type = "string" },
                             jobId = new { type = new[] { "string", "null" } },
                             template = new { type = new[] { "string", "null" } },
-                            status = new { type = "string" }
+                            status = new { type = "string" },
+                            error = new { type = new[] { "string", "null" } }
                         },
-                        required = new[] { "file", "jobId", "template", "status" }
+                        required = new[] { "file", "jobId", "template", "status", "error" }
                     }
                 }
             },
@@ -75,7 +77,7 @@ public sealed class ProcessImportFileTool(
         var accountResolver = scope.ServiceProvider.GetRequiredService<AccountResolver>();
         var jobClient = scope.ServiceProvider.GetRequiredService<IBackgroundJobClient>();
 
-        var jobs = new List<object>();
+        var jobs = new List<ProcessedFileJob>();
         foreach (var relativePath in relativePaths)
         {
             try
@@ -141,15 +143,44 @@ public sealed class ProcessImportFileTool(
                 var jobId = jobClient.Enqueue<ImportFileJob>(job =>
                     job.ExecuteAsync(fullPath, definition.ParserKey, primaryAccountId, secondaryAccountId, null!));
 
-                jobs.Add(new { file = relativePath, jobId, template = definition.Code, status = "enqueued" });
+                jobs.Add(new ProcessedFileJob(relativePath!, jobId, definition.Code, "enqueued", null));
             }
             catch (Exception ex)
             {
-                jobs.Add(new { file = relativePath, jobId = (string?)null, template = (string?)null, status = "error", error = ex.Message });
+                jobs.Add(new ProcessedFileJob(relativePath!, null, null, "error", ex.Message));
             }
         }
 
-        var json = JsonSerializer.Serialize(jobs, new JsonSerializerOptions { WriteIndented = true });
-        return new McpToolResult([McpContent.FromText(json)], new { jobs });
+        var toon = FormatToon(jobs);
+        var structured = new
+        {
+            jobs = jobs.Select(j => new { j.File, j.JobId, j.Template, j.Status, j.Error })
+        };
+        return new McpToolResult([McpContent.FromText(toon)], structured);
     }
+
+    private sealed record ProcessedFileJob(string File, string? JobId, string? Template, string Status, string? Error);
+
+    private static string FormatToon(IReadOnlyList<ProcessedFileJob> jobs)
+    {
+        var output = new StringBuilder()
+            .AppendLine("format:toon")
+            .AppendLine($"jobs[{jobs.Count}]{{file,jobId,template,status,error}}:");
+
+        foreach (var job in jobs)
+        {
+            output.Append(Value(job.File)).Append(',')
+                .Append(Value(job.JobId ?? "")).Append(',')
+                .Append(Value(job.Template ?? "")).Append(',')
+                .Append(Value(job.Status)).Append(',')
+                .Append(Value(job.Error ?? "")).AppendLine();
+        }
+
+        return output.ToString();
+    }
+
+    private static string Value(string value) =>
+        value.IndexOfAny([',', '"', '\\', '\n', '\r']) >= 0 || value.StartsWith(' ') || value.EndsWith(' ')
+            ? $"\"{value.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r")}\""
+            : value;
 }

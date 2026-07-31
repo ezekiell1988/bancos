@@ -12,30 +12,34 @@ public static class UnclassifiedTransactionsMarkdownExporter
             .AppendLine()
             .AppendLine($"Total: **{transactions.Count}** movimientos.")
             .AppendLine()
-            .AppendLine("| Ref. | Fecha | Descripción | Importe | Moneda | Categoría propuesta | Explicación / nota |")
-            .AppendLine("|---:|---|---|---:|---|---|---|");
+            .AppendLine("| ID | Fecha | Banco | Cuenta | Descripción | Importe | Moneda | Nota |")
+            .AppendLine("|---|---|---|---|---|---:|---|---|");
 
-        for (var index = 0; index < transactions.Count; index++)
+        foreach (var transaction in transactions)
         {
-            var transaction = transactions[index];
-            markdown.Append("| M-")
-                .Append((index + 1).ToString("D3", CultureInfo.InvariantCulture))
+            markdown.Append("| ")
+                .Append(transaction.TransactionId.ToString())
                 .Append(" | ")
                 .Append(transaction.TransactionDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture))
+                .Append(" | ")
+                .Append(EscapeCell(transaction.BankName))
+                .Append(" | ")
+                .Append(EscapeCell(transaction.AccountCode))
                 .Append(" | ")
                 .Append(EscapeCell(transaction.Description))
                 .Append(" | ")
                 .Append(transaction.Amount.ToString("N2", CultureInfo.InvariantCulture))
                 .Append(" | ")
                 .Append(EscapeCell(transaction.CurrencyCode))
-                .AppendLine(" |  |  |");
+                .AppendLine(" |  |");
         }
 
         markdown.AppendLine()
             .AppendLine("## Cómo completar")
             .AppendLine()
-            .AppendLine("- Anota la categoría o una explicación breve en las dos últimas columnas.")
-            .AppendLine("- Conserva los códigos M-### para revisarlos después.");
+            .AppendLine("- Escribe una nota breve en la columna **Nota** para los movimientos que reconoces.")
+            .AppendLine("- Claude leerá las notas, deducirá la categoría y aplicará las clasificaciones en BD.")
+            .AppendLine("- No es necesario anotar todos: los que quedan vacíos permanecen pendientes para la siguiente ronda.");
 
         return markdown.ToString();
     }

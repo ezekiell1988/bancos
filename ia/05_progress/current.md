@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-27 CR (TASK-EBC-DOC-13 completada)
+> **Última actualización:** 2026-07-29 CR (TASK-EBC-MCP-36 completada)
 
 ## En curso
 
@@ -23,6 +23,59 @@
 ## Completado en sesiones recientes
 
 
+
+* **2026-07-29** — TASK-EBC-MCP-36 cerrada: Se completó el seguimiento de importaciones apoyándose en el propio almacenamiento de Hangfire (sin tabla nueva): process_import_file ahora devuelve en TOON archivo+jobId+estado; ImportFileJob.ExecuteAsync retorna un resumen (Task&lt;string&gt;) que Hangfire guarda como Result del job, visible junto al historial de estados. Se agregaron tres tools nuevas en Features/Imports/: get_import_job_status (estado, resumen o error con mensaje/detalle, siguiente paso), list_recent_import_jobs (TOON, en cola/procesando/completado/error, incluye duplicados detectados vía el resumen 'Duplicado detectado…') y retry_import_job (solo permite reintentar jobs en estado 'error', reencola con los mismos identificadores sin bytes; seguro porque ExecuteAsync solo llama SaveChangesAsync al final). — EBC
+
+* **2026-07-29** — TASK-EBC-MCP-45 cerrada: Se completaron las confirmaciones pendientes de los 138 movimientos autorizados por los cinco patrones (tarjeta, préstamo, servicios, transporte, alimentación). El flujo estándar de clasificación (TASK-EBC-MCP-46) terminó de vaciar la cola de pendientes hasta 0 movimientos. Se regeneró docs/movimientos-pendientes-clasificacion.md, que ahora muestra Total: 0 sin exponer IDs internos ni datos financieros adicionales. — EBC
+
+* **2026-07-29** — TASK-EBC-MCP-35 (post-cierre): se agregó filtro por categoría (categoryId) en search_transactions, usando la clasificación más reciente de cada movimiento. Actualizados TransactionsQueryService, SearchTransactionsTool y pruebas (77/77 exitosas). — EBC
+
+* **2026-07-29** — TASK-EBC-MCP-35 cerrada: Se agregaron 4 tools MCP de solo lectura: list_bank_accounts, list_periods, search_transactions y get_transaction_detail, con paginación estable y sin exponer IBAN, número de tarjeta ni credenciales. — EBC
+
+* **2026-07-29** — TASK-EBC-MCP-34 cerrada: Se agregó el feature Reports en Bancos.Mcp: ReportingService calcula estado de resultados (ingresos/gastos por categoría, resultado neto, movimientos pendientes de clasificar) y situación financiera (activos/pasivos derivados de tbAccountPeriodClosings, capital como residuo activos-pasivos, cuentas sin cierre calculado). ReportHtmlRenderer genera HTML autocontenido con período, moneda CRC, fecha de generación y advertencias, escapando todo texto dinámico con WebUtility.HtmlEncode. Se expusieron dos tools MCP: get_income_statement_report y get_balance_sheet_report, registradas en ReportsModule y en Program.cs. De paso se corrigió un test preexistente roto (UnclassifiedTransactionsMarkdownExporterTests) que no compilaba por un cambio de firma ya aplicado en ClassificationService/UnclassifiedTransactionSummary (feature Classification, fuera de esta tarea) para poder validar el suite completo. — EBC
+
+* **2026-07-29** — TASK-EBC-MCP-46 cerrada: Flujo estándar de clasificación manual asistida por MCP implementado y ejecutado exitosamente. Se clasificaron las 159 transacciones pendientes hasta llegar a 0. Nuevo formato de MD con banco/cuenta/ID, tool apply_classifications_from_markdown, mapper NoteToCategory con keywords, y parámetro sortBy en el export. — EB
+
+* **2026-07-29** — ## Avance TASK-EBC-MCP-46 — Flujo estándar de clasificación manual asistida por MCP
+
+### Lo implementado
+
+**Exportador (`UnclassifiedTransactionsMarkdownExporter`):**
+- Nuevo formato de columnas: `| ID | Fecha | Banco | Cuenta | Descripción | Importe | Moneda | Nota |`
+- Eliminado Ref. (ya no se necesita, el ID es el identificador)
+- Eliminada columna "Categoría propuesta" — el usuario solo llena "Nota"
+- Agregadas columnas Banco y Cuenta (nombre del banco + código de cuenta)
+- Ordenado por moneda (CRC primero, luego USD) y luego importe valor absoluto descendente
+- Sección "Cómo completar" actualizada con instrucciones del nuevo flujo
+
+**Parser (`MarkdownClassificationParser`):**
+- Parsea el nuevo formato sin Ref., usando UUID en columna ID y texto libre en Nota
+
+**Mapper de notas a categorías (`NoteToCategory`):**
+- Convierte texto libre de la nota a código de categoría por palabras clave
+- Cubre: traslados, pago tarjeta, préstamos, salario, alimentación, transporte, vivienda, servicios, salud, entretenimiento, otros ingresos
+
+**Tool MCP nueva (`apply_classifications_from_markdown`):**
+- Lee el MD, mapea notas a categorías, llama `ConfirmManualClassificationAsync` internamente
+- Retorna: aplicadas, omitidas, no resueltas (para que Claude las clasifique individualmente)
+
+**`ClassificationService`:**
+- `ListUnclassifiedAsync` ahora incluye `BankName` y `AccountCode` vía JOIN a BankAccounts y Banks
+- Nuevo método `GetCategoriesAsync` para listar categorías disponibles
+- Ordenamiento por moneda y luego importe absoluto descendente
+
+**`ClassificationModule`:** registra la nueva tool `ApplyClassificationsFromMarkdownTool`
+
+### Flujo estándar establecido
+
+1. Llamar `export_unclassified_transactions_markdown` → genera/actualiza el MD
+2. Usuario abre el MD y llena columna **Nota** en los movimientos que reconoce
+3. Decirle a Claude "aplica" → llama `apply_classifications_from_markdown`
+4. Los no resueltos por keywords los clasifica Claude individualmente con `confirm_transaction_classification`
+5. Regenerar el MD para la siguiente ronda
+
+### Nota operativa
+**Cada vez que Claude haga cambios en Bancos.Mcp, el usuario debe correr `.mcp/bancos-mcp.ps1` para que el servidor MCP tome los cambios compilados.** El script mata el proceso en puerto 8000, levanta Docker si no está corriendo, aplica migraciones y reinicia con `dotnet watch run`. — EBC
 
 * **2026-07-27** — TASK-EBC-DOC-13 cerrada: Se creó una plantilla Power Query segura para ejecutar SELECTs parametrizados contra SQL Server. — EBC
 

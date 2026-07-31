@@ -22,7 +22,7 @@ public sealed class ImportFileJob(
     ILogger<ImportFileJob> logger)
 {
     [DisableConcurrentExecution(timeoutInSeconds: 600)]
-    public async Task ExecuteAsync(string filePath, string parserKey, Guid bankAccountId, Guid? usdBankAccountId, PerformContext? context)
+    public async Task<string> ExecuteAsync(string filePath, string parserKey, Guid bankAccountId, Guid? usdBankAccountId, PerformContext? context)
     {
         context?.WriteLine("Iniciando procesamiento: {0} con parser {1}", Path.GetFileName(filePath), parserKey);
         logger.LogInformation("Processing {File} with parser {ParserKey} for account {AccountId}", filePath, parserKey, bankAccountId);
@@ -76,11 +76,13 @@ public sealed class ImportFileJob(
 
             await db.SaveChangesAsync();
             context?.WriteLine("Procesamiento completado.");
+            return "Procesamiento completado.";
         }
         catch (DbUpdateException ex) when (ex.InnerException is Microsoft.Data.SqlClient.SqlException { Number: 2601 or 2627 })
         {
             context?.WriteLine("Duplicado detectado, archivo ya fue procesado previamente. Omitido.");
             logger.LogInformation("Duplicate detected for {File}, skipping.", filePath);
+            return "Duplicado detectado, archivo ya fue procesado previamente. Omitido.";
         }
         catch (Exception ex) when (ex is not InvalidDataException)
         {
