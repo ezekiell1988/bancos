@@ -67,72 +67,122 @@ El servidor debe:
 * Validar rutas, estructura Markdown y posibles secretos antes de aplicar escrituras.
 * Mantener todo el contenido generado de `/ia` en el idioma del proyecto.
 * Aplicar gates del ciclo de vida de tareas: `Borrador` no puede implementarse; solo `Lista` puede pasar a trabajo; las tareas de riesgo alto necesitan aprobación explícita.
+* Soportar `work_task` con `transition: "blocked"` y `transition: "resumed"`, siempre con `reason`; bloquear mueve a `Bloqueada` y reanudar devuelve a `En progreso` sin reiniciar `startedAt`.
+* Exponer `return_task_to_draft` para devolver una tarea `Lista`, `En progreso` o `Bloqueada` a `Borrador`. Debe requerir `reason`, previsualizar por defecto, exigir `apply: true`, conservar el historial V2 mediante `returned_to_draft`, limpiar aprobación e inicio vigentes y sincronizar `current.md` y `blocked.md`.
+* Tratar las secciones operativas vacías de `04_tasks/current.md` como contenido estructurado: usar `Sin tareas registradas.` como representación canónica, aceptar también contenido vacío heredado y restaurar el marcador tras retirar la última entrada. Los helpers de inserción no pueden depender de una cantidad específica de saltos de línea.
 * Resolver una tarea por ID primero desde `04_tasks/tasks/{id}.md` y, si no existe, desde secciones exactas de todos los archivos de `04_tasks/done/`, recorriéndolos del mes más reciente al más antiguo. Las respuestas históricas deben incluir `archived: true` y la ruta del archivo mensual de origen.
 
-## Schema de parámetros por acción
+## Schema de parámetros por variante
 
-Una tool que multiplexa acciones, por ejemplo una tool con `action: "list_tasks"` o
+Una tool que multiplexa acciones, por ejemplo `ia_inspect` con `action: "list_tasks"` o
 `action: "search"`, debe publicar un contrato distinto por cada acción. No declarar una unión
 plana de todos los parámetros como opcionales cuando el handler rechaza campos ajenos a la acción.
 Esa divergencia permite que el cliente construya llamadas que el propio MCP considera inválidas.
 
-Usar un schema `oneOf` con una variante cerrada por acción:
+Usar un schema `oneOf` con una variante cerrada por discriminante:
 
-* Cada variante incluye `action` con `const` y solo las propiedades aceptadas por esa acción
+* Cada variante incluye una propiedad discriminante con `const` (por ejemplo, `action` u `outcome`) y solo las propiedades aceptadas por esa variante
 * Cada variante declara `additionalProperties: false`
 * Los parámetros obligatorios se declaran en el `required` de su variante
-* Una única definición de acciones debe generar tanto las variantes del schema como la lista de
+* Una única definición de variantes debe generar tanto las variantes del schema como la lista de
   campos permitidos en el handler
-* El validador de protocolo resuelve la variante correspondiente antes de validar propiedades,
-  obligatorios y enumeraciones
+* El validador de protocolo identifica la variante por cualquier propiedad con `const` que coincida
+  con el argumento; no puede asumir un nombre fijo como `action`
+* Todo parámetro con `type: "array"` declara `items` con el schema de sus elementos. Los clientes
+  de VS Code rechazan el catálogo cuando un array no define sus elementos.
 
 No mantener por separado un schema con todos los parámetros y una lista de campos permitidos por
-acción. Las dos estructuras se desincronizan con facilidad. Si el catálogo crece, actualizar el
+variante. Las dos estructuras se desincronizan con facilidad. Si el catálogo crece, actualizar el
 presupuesto del smoke test de forma proporcional al número de tools, sin eliminar el cierre de las
 variantes para ahorrar caracteres.
 
 ## Tools recomendadas
 
-Tools o prompts de workflow público:
+El servidor actual autodetecta un catálogo consolidado de 15 tools. Las acciones públicas se
+documentan primero; las primitivas avanzadas y las escrituras internas se usan para composición,
+diagnóstico y mantenimiento del workflow.
+
+### Fachada pública
 
 | Tool o prompt | Propósito |
 |---|---|
-| `create_task` | Crear una tarea en `Borrador` con objetivo, alcance, exclusiones, criterios de aceptación, riesgo, archivos probables, plan técnico, validación, rollback y checklist. |
-| `approve_task` | Validar el contrato de tarea y moverla a `Lista`. |
-| `work_task` | Ejecutar una tarea aprobada: validar `/ia`, leer contexto/ADRs/archivos, planificar, implementar, validar y registrar progreso. |
-| `finish_task` | Cerrar o mover a revisión: actualizar tarea, progreso, archivos cambiados, trabajo pendiente, riesgos, docs y `03_plan.md` si el ID de tarea aparece en el plan de fases. |
+| `create_task` | Crear una tarea en `Borrador`; usa el contrato completo del MCP y `apply: false` por defecto. |
+| `approve_task` | Validar una tarea y moverla de `Borrador` a `Lista`. |
+| `work_task` | Iniciar una tarea aprobada o registrar una transición `blocked`/`resumed` con `reason`. |
+| `return_task_to_draft` | Devolver una tarea activa a `Borrador` sin simular un cierre o duplicidad. |
+| `finish_task` | Cerrar una tarea como `Completada` y sincronizar plan, cola, historial y progreso. |
+| `duplicate_task` | Archivar una tarea como duplicada desde cualquier estado, validando la referencia y el motivo. |
+| `delete_task` | Eliminar permanentemente una tarea con rastro de auditoría en `done/`. Usar cuando la tarea ya no se va a trabajar y no corresponde marcarla como completada. Requiere `id` y `reason`. |
+| `close_issue` | Resolver un issue abierto, sincronizar `05` y `07` y moverlo al archivo mensual. |
 
-Las siguientes tools son útiles internamente y pueden permanecer invocables por agentes avanzados:
+### Bloques avanzados
 
 Tools de lectura:
 
 | Tool | Propósito |
 |---|---|
-| `ia_get_context` | Devolver el bundle mínimo para `planificar`, `implementar`, `revisar`, `depurar` o `cerrar_sesion`. |
-| `ia_list_tasks` | Listar tareas activas, bloqueadas, backlog o completadas. |
-| `ia_read_task` | Leer una tarea por ID: activa o archivada; para historial, prioriza el mes más reciente e incluye `archived: true` y la ruta de origen. |
-| `ia_list_decisions` | Listar archivos ADR. |
-| `ia_read_decision` | Leer un ADR por ID. |
-| `ia_list_issues` | Listar issues activos. |
-| `ia_search` | Buscar en Markdown localmente antes de leer más contexto. |
-| `ia_validate` | Validar la estructura de `/ia` y emitir advertencias cuando `00_context.md` supera 20 000 chars, `01_requirements.md` supera 24 000 chars, `02_architecture.md` supera 24 000 chars o `03_plan.md` supera 20 000 chars. Cada warning incluye el conteo actual y la acción correctiva. |
-| `ia_read_file` | Leer un archivo Markdown específico dentro de `/ia`. |
+| `ia_get_context` | Devolver el bundle mínimo según la intención `planificar`, `implementar`, `revisar`, `depurar` o `cerrar_sesion`. |
+| `ia_validate` | Validar la estructura de `/ia` y emitir advertencias de contrato y tamaño. |
+| `ia_inspect` | Concentrar las lecturas de tareas, ADRs, issues, archivos, búsquedas, vínculos DevOps, migración histórica y métricas. |
+
+`ia_inspect` publica variantes cerradas por `action`; no hay una tool de lectura separada por
+recurso:
+
+| Acción | Uso principal |
+|---|---|
+| `list_tasks` | Listar tareas por `status`, `mode` y usuario opcional. |
+| `read_task` | Leer una tarea activa o archivada por `id`. |
+| `list_decisions` / `read_decision` | Listar o leer ADRs. |
+| `list_issues` | Listar issues con modo y texto opcionales. |
+| `list_pending_devops_link` | Obtener IDs pendientes de vínculo con DevOps. |
+| `read_file` | Leer un Markdown confinado a `/ia`. |
+| `search` | Buscar texto en los ámbitos permitidos de `/ia`. |
+| `metrics` | Calcular métricas temporales y, opcionalmente, forecast. |
+| `migration` | Clasificar timestamps históricos en modo preview; no escribe cambios. |
+
+No forman parte del catálogo vigente las antiguas tools `ia_list_*`, `ia_read_*`, `ia_search`,
+`ia_preview_operation`, `ia_create_task` o `ia_close_task`. Las lecturas se realizan mediante
+`ia_inspect` y las escrituras se previsualizan con `apply: false` en la tool correspondiente.
 
 Tools de escritura segura:
 
 | Tool | Propósito |
 |---|---|
-| `ia_preview_operation` | Previsualizar una mutación del workflow y su diff sin aplicarlo. |
-| `ia_create_task` | Primitivo interno detrás de `create_task`; crear una tarea desde el template del proyecto y actualizar `04_tasks/current.md` cuando el workflow lo aprueba. |
-| `ia_close_task` | Cerrar una tarea activa, actualizar progreso, agregar al historial mensual de completadas, eliminar el archivo individual de tarea y actualizar `03_plan.md` si el ID aparece en el plan de fases. |
 | `ia_add_progress_entry` | Agregar entradas de progreso a current y archivos de componente opcionales. |
 | `ia_create_issue` | Crear un issue abierto y actualizar el índice de issues. |
 | `ia_create_decision` | Crear un archivo ADR y actualizar el índice de ADRs. |
-| `archive_progress` | Mover entradas antiguas de `## Completado en sesiones recientes` en `05_progress/current.md` a archivos mensuales de `05_progress/archive/`; `keepDays` configurable (default 7), idempotente, preview por defecto. Usar cuando `ia_validate` advierta que `current.md` supera 12 000 caracteres. |
+| `archive_progress` | Archivar entradas antiguas de `05_progress/current.md`; es idempotente y usa preview por defecto. |
 
 Evitar una tool genérica `ia_write_file`. El MCP debe escribir workflows, no Markdown arbitrario.
 
-Si se exponen tanto tools de workflow público como tools internas `ia_*`, documentar primero las tools públicas y decirle a los usuarios que las prefieran. Las tools de bajo nivel siguen siendo útiles para debugging, smoke tests y composición avanzada de agentes.
+Si se exponen tanto tools de workflow público como tools internas `ia_*`, documentar primero las tools públicas y decirle a los usuarios que las prefieran.
+
+## Métricas y forecast opcional
+
+`ia_inspect` con `action: "metrics"` es una lectura opcional para estimar un lote de tareas a
+partir de eventos históricos verificables. No agrega campos obligatorios a las tareas, no requiere
+story points y no crea otra tool ni persistencia externa.
+
+Ejemplo mínimo:
+
+```json
+{
+  "action": "metrics",
+  "filter": "workstream=MCP",
+  "targetCount": 4,
+  "seed": 7
+}
+```
+
+`targetCount` representa cuántas tareas futuras se quieren estimar; no es un dato que deba guardarse
+en cada tarea. El resultado incluye métricas de flujo y, cuando hay muestra suficiente, percentiles
+empíricos y Monte Carlo P50/P85/P95. `seed` permite repetir el cálculo. Se pueden usar `from` y
+`asOf` para acotar el periodo y la fecha de corte.
+
+El forecast usa únicamente eventos temporales V2 con precisión suficiente. Si no hay muestra
+suficiente devuelve `insufficient_data` en lugar de inventar una fecha. La llamada es read-only y
+el uso de forecast es opcional: primero se solicita el contexto compacto; solo se consulta metrics
+cuando el agente necesita estimar un lote o revisar el flujo.
 
 ## VS Code / GitHub Copilot
 
@@ -217,17 +267,24 @@ Luego ejecutar el smoke test con script (`node .mcp/ia-workflow/tests/smoke.mjs`
 * Negociación de versión de protocolo: un `protocolVersion` soportado se devuelve; uno desconocido recibe la versión más nueva soportada, nunca un eco ciego.
 * El smoke test envía JSON-RPC delimitado por saltos de línea, coincidiendo con el transporte `stdio` de VS Code.
 * `tools/list` incluye las tools de lectura y escritura segura.
-* Para cada tool con acciones mutuamente excluyentes, `tools/list` publica una variante `oneOf`
-  cerrada por acción, sin parámetros anunciados que el handler rechace.
+* Todos los parámetros publicados con `type: "array"` incluyen `items`; este check debe recorrer
+  recursivamente `properties`, `items` y las variantes `oneOf` del catálogo.
+* Para cada tool con variantes mutuamente excluyentes, `tools/list` publica una variante `oneOf`
+  cerrada por su discriminante, sin parámetros anunciados que el handler rechace.
 * `ia_validate` devuelve `valid: true`.
 * `ia_validate` emite advertencias de tamaño cuando `00_context.md` supera 20 000 chars, `01_requirements.md` supera 24 000 chars, `02_architecture.md` supera 24 000 chars o `03_plan.md` supera 20 000 chars; cada warning debe incluir el conteo actual y la acción correctiva.
 * `ia_get_context` devuelve archivos para una solicitud de planificación compacta, por ejemplo `intent: "planificar"`, `mode: "summary"` e `includeText: false`.
 * La lectura de tareas resuelve una tarea archivada y, cuando el mismo ID existe en dos meses sintéticos, devuelve la sección del mes más reciente con `archived: true`.
 * Al menos una tool de escritura funciona en modo preview.
-* El path traversal es rechazado (ej. `ia_read_file` con `../` devuelve un error).
+* `duplicate_task` funciona desde `Borrador` en una copia desechable, no muta durante el preview, marca el checklist, registra la duplicidad y archiva la tarea al aplicar `apply: true`.
+* El path traversal es rechazado (ej. `ia_inspect` con `action: "read_file"` y `../` devuelve un error).
 * Una llamada con un parámetro de otra acción es rechazada por el contrato antes de ejecutar el
   handler.
-* Si es seguro hacerlo, un workflow de escritura funciona con `apply: true` en una copia desechable de `/ia` — nunca contra la copia de trabajo.
+* Si es seguro hacerlo, el ciclo `create_task` → `approve_task` → `work_task` → `finish_task`
+  funciona con `apply: true` en una copia desechable de `/ia`, incluyendo un `current.md` con la
+  tabla de borradores canónica y las secciones `Lista` y `En progreso` inicialmente vacías; nunca
+  contra la copia de trabajo. Debe comprobar tanto el marcador `Sin tareas registradas.` como una
+  representación heredada compuesta solo por saltos de línea.
 * `archive_progress keepDays=9999` (preview) devuelve `changes: []` sin error; `keepDays=0 apply=true` reduce `current.md` y la segunda ejecución devuelve `changes: []` (idempotencia).
 
 ## Checklist de documentación
@@ -256,6 +313,7 @@ Al auditar un MCP existente para `/ia`, marcar estos como gaps importantes:
 * `05_progress/current.md` supera 12 000 caracteres y no existe la tool `archive_progress` ni un mecanismo equivalente de archivado — registrarlo como gap.
 * `04_tasks/current.md` acumula más de 5 líneas `> **Completado` en el header porque `buildCloseTaskChanges` no limpia las antiguas — registrarlo como gap importante; la corrección es agregar `trimCompletedHeaderLines` (ver sección siguiente).
 * `04_tasks/current.md` contiene un segundo encabezado `# 04 —` o una tabla `## Cola activa` legada junto con las secciones operativas nuevas — registrarlo como gap bloqueante y ejecutar la limpieza descrita en la sección siguiente.
+* `approve_task`, `work_task` o `finish_task` fallan con una sección operativa vacía porque el helper solo reconoce saltos de línea específicos — registrarlo como gap bloqueante; normalizar el marcador y hacer el helper tolerante a contenido vacío heredado.
 
 ## Convenciones de write-tools y markdown
 
@@ -330,6 +388,5 @@ Si `04_tasks/current.md` contiene estructura duplicada (segundo encabezado `# 04
 ## Lista
 ## Borradores
 ## Bloqueadas
-## En revisión
 ```
 

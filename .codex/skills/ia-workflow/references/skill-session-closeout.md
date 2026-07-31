@@ -42,26 +42,25 @@ description: Close a development session by updating tasks, progress, issues, AD
 
 * `Propósito`: persistir el estado de la sesión en `/ia`.
 * `Cuándo usar`: al final de una sesión, o cuando el usuario diga que actualice `/ia`.
-* `Contexto requerido`: `04_tasks/current.md`, `05_progress/current.md`, `07_issues.md`.
-* `Procedimiento`: revisar cambios, actualizar tareas tocadas, actualizar progreso, registrar issues, registrar un ADR en `06_decisions/{ADR-ID}-{slug}.md` y actualizar `06_decisions.md` si se tomó una decisión, proponer un skill, archivar progreso antiguo.
+* `Contexto requerido`: ejecutar `ia_validate` e `ia_get_context(intent: "cerrar_sesion")`, y usar `ia_inspect` para la TASK, progreso, issues o decisiones pertinentes.
+* `Procedimiento`: revisar cambios, cerrar tareas con `finish_task`, registrar progreso adicional con `ia_add_progress_entry`, registrar issues y ADRs con sus tools MCP, proponer un skill y archivar progreso con `archive_progress` cuando corresponda.
 * `Reglas de seguridad`: sin secretos en ningún archivo; agregar al historial, no reescribirlo.
 * `Salida esperada`: estado de tarea actualizado, progreso actual claro, trabajo pendiente y riesgos documentados.
 
 ## Secuencia de cierre
 
 1. Revisar cambios con el estado del control de versiones.
-2. Actualizar cada archivo de tarea tocado y la cola activa; mover el trabajo completado al historial mensual.
-3. Actualizar `05_progress/current.md` y el archivo del componente afectado.
-4. Si alguna tarea completada aparecía en `03_plan.md` con `⏳ TASK-ID`, actualizar esa fila a `✅`. Si ya no quedan filas `⏳` en la fase, marcar el encabezado de fase como `✅ Completada`.
-5. Registrar bugs no resueltos en `07_issues.md` usando el template de issue.
-6. Registrar un ADR si se tomó una decisión técnica importante: crear un archivo bajo `06_decisions/{ADR-ID}-{slug}.md` y actualizar el índice en `06_decisions.md`.
-7. Proponer un nuevo skill si se detectó un patrón repetible.
-8. Archivar entradas de progreso antiguas cuando el archivo actual haya crecido demasiado.
+2. Ejecutar `finish_task` en preview y con `apply: true` para cada TASK completada; el MCP actualiza el plan, la cola, el historial y el progreso.
+3. Registrar progreso adicional con `ia_add_progress_entry` solo cuando no forma parte del cierre de una TASK.
+4. Registrar bugs no resueltos con `ia_create_issue` y decisiones técnicas con `ia_create_decision`.
+5. Proponer un nuevo skill si se detectó un patrón repetible.
+6. Ejecutar `archive_progress` cuando la validación indique que el progreso requiere archivado.
+7. Ejecutar `ia_validate` para confirmar que el cierre dejó `/ia` consistente.
 
 ## Errores comunes
 
 * Cerrar una sesión sin mover las tareas completadas fuera de la cola activa.
 * Dejar que `05_progress/current.md` crezca sin archivar.
 * Registrar una decisión en las notas de progreso en vez de un ADR.
-* Agregar cuerpos completos de ADR directamente en `06_decisions.md` en vez de usar un archivo por ADR.
+* Editar archivos o índices de `/ia` manualmente cuando `iaWorkflow` está disponible.
 * No revisar si alguna fase de `03_plan.md` quedó completamente verde después de cerrar tareas.

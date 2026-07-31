@@ -5,7 +5,7 @@ import { runtime } from "../src/runtime.mjs";
 export default {
   name: "finish_task",
   order: 40,
-  description: "Cierra una tarea o la mueve a revisión. Al cerrar sincroniza 03_plan, 04_tasks y 05_progress. Preview por defecto.",
+  description: "Cierra una tarea o la devuelve a Borrador para revisión. Al cerrar sincroniza 03_plan, 04_tasks y 05_progress. Preview por defecto.",
   inputSchema: finishSchema(),
   handler: (args) => runtime.write.runWriteOperation("finish_task", args),
   async smoke({ callTool, check, toolJson, state }) {
@@ -15,6 +15,13 @@ export default {
     check("finish_task preview cubre 03", paths.includes("03_plan.md"));
     check("finish_task preview cubre 04", paths.some((item) => item.startsWith("04_tasks/")));
     check("finish_task preview cubre 05", paths.some((item) => item.startsWith("05_progress/")));
+    const review = toolJson(await callTool("finish_task", { id: state.taskId, outcome: "review", summary: "Requiere revisión humana antes de continuar", area: "QA", apply: true }));
+    const reviewedTask = await fs.readFile(path.join(state.iaRoot, "04_tasks/tasks", `${state.taskId}.md`), "utf8");
+    const reviewedCurrent = await fs.readFile(path.join(state.iaRoot, "04_tasks/current.md"), "utf8");
+    check("finish_task review devuelve a Borrador", review.applied === true && reviewedTask.includes("**Estado:** Borrador"));
+    check("finish_task review registra Borradores", reviewedCurrent.includes("## Borradores") && reviewedCurrent.includes(`| ${state.taskId} |`));
+    const reapproved = toolJson(await callTool("approve_task", { id: state.taskId, apply: true }));
+    check("finish_task review exige nueva aprobación", reapproved.applied === true);
     const applied = toolJson(await callTool("finish_task", { ...args, apply: true }));
     check("finish_task aplica cierre", applied.applied === true);
     const plan = await fs.readFile(path.join(state.iaRoot, "03_plan.md"), "utf8");

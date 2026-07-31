@@ -35,7 +35,7 @@ Si el proyecto instala y expone el MCP `iaWorkflow`, cada archivo principal debe
 * Para cualquier tarea, pregunta, planificación, diagnóstico, revisión, implementación o cierre, iniciar con `ia_validate` y `ia_get_context` usando la intención adecuada.
 * Para trabajar sobre una tarea, usar `work_task` antes de editar; solo implementar tareas `Lista` y exigir aprobación explícita cuando el riesgo sea alto.
 * Al finalizar, usar `finish_task`; usar las acciones MCP correspondientes para crear, aprobar, bloquear, inspeccionar o cerrar elementos del workflow.
-* Usar `ia_read_file`, `ia_read_task` o `ia_search` solo para lecturas puntuales que el contexto MCP enrute o que sean necesarias para el trabajo actual.
+* Usar `ia_inspect` solo para lecturas puntuales que el contexto MCP enrute o que sean necesarias para el trabajo actual.
 * No leer directamente `ia/README.md` ni recorrer `/ia` manualmente para reconstruir contexto. `ia/README.md` sigue siendo documentación y navegación humana.
 * Usar los skills de gestión de tareas, revisión de código y cierre de sesión definidos por el proyecto.
 * No exponer secretos, tokens, contraseñas, cadenas de conexión ni claves privadas.
@@ -57,7 +57,7 @@ Para cualquier tarea, consulta, planificación, revisión o diagnóstico usa pri
 
 - Al iniciar, usa `ia_validate` y `ia_get_context` con la intención adecuada.
 - Para una tarea concreta, usa `work_task` antes de editar y `finish_task` al cerrar.
-- Usa `ia_read_file`, `ia_read_task` o `ia_search` solo para lecturas puntuales enrutadas por el contexto MCP.
+- Usa `ia_inspect` solo para lecturas puntuales enrutadas por el contexto MCP.
 - Aplica los skills de gestión de tareas, revisión y cierre definidos por el proyecto.
 ```
 

@@ -40,10 +40,12 @@ description: Review project diffs against business rules, ADRs, mandatory patter
 
 * `Propósito`: revisar cambios contra las reglas del proyecto antes del commit o PR.
 * `Cuándo usar`: una tarea está completa, el usuario pide una revisión, o corre un agente de QA.
-* `Contexto requerido`: `02_architecture.md`, `06_decisions.md` como índice de ADRs, solo los archivos relevantes bajo `06_decisions/`, `07_issues.md` y el archivo de la tarea de origen.
+* `Contexto requerido`: ejecutar `ia_validate` e `ia_get_context(intent: "revisar")`, y usar `ia_inspect` solo para la tarea, ADRs o issues pertinentes.
 * `Procedimiento`: obtener el diff, verificar la Salida esperada de la tarea, aplicar el checklist, clasificar hallazgos, emitir un veredicto.
 * `Reglas de seguridad`: no corregir código silenciosamente; nunca citar valores de secretos, reportar solo la ubicación.
 * `Salida esperada`: un reporte con bloqueantes, riesgos, mejoras y un veredicto final.
+
+La revisión es una actividad de lectura y reporte. Si descubre un defecto o una decisión necesaria, debe proponer `ia_create_issue` o `ia_create_decision` en el reporte; aplicar una mutación MCP requiere la autorización correspondiente y no sustituye el veredicto de revisión.
 
 ## Construir el checklist
 

@@ -6,12 +6,12 @@ description: Referencia del MCP SQL de desarrollo consolidado en db_exec
 ## DB Query MCP
 
 Servidor MCP local para SQL Server de **desarrollo** (EvistaDev). Usa
-`.local-secrets/sqlserver.json` sin devolver valores sensibles. Para producción usar
+`.local-secrets/db.json` sin devolver valores sensibles. Para producción usar
 `db-query-pro`.
 
 Este directorio es el paquete base portable: contiene protocolo, ejecución SQL,
 reportes, discovery de tools y smoke bajo `src/`. Puede copiarse completo a otro
-proyecto; solo requiere crear `.local-secrets/sqlserver.json` en la raíz del proyecto
+proyecto; solo requiere crear `.local-secrets/db.json` en la raíz del proyecto
 destino. Este perfil fija la identidad del servidor, el archivo local de secretos y
 la política de desarrollo.
 

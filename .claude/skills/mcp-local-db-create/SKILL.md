@@ -25,7 +25,7 @@ MCP locales. El paquete base contiene el runtime, `mssql` y el unico tool `db_ex
 
 1. Copiar la carpeta completa `.mcp/db-query/`, incluidos `src/`, `tools/`, `tests/`,
    `package.json`, `package-lock.json` y `.gitignore`.
-2. Crear `.local-secrets/sqlserver.json` en la raiz del proyecto con los campos
+2. Crear `.local-secrets/db.json` en la raiz del proyecto con los campos
    `Server`, `Database`, `User` y `Password`. No incluir este archivo en Git, prompts,
    logs ni configuraciones MCP.
 3. Ejecutar [examples/install-db-query.ps1](./examples/install-db-query.ps1) desde la

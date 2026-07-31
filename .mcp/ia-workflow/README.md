@@ -26,7 +26,7 @@ El servidor expone una fachada publica para usuarios no tecnicos y mantiene prim
 | `migrate_task` | Normalizar una TASK `Borrador` creada con formato legado antes de aprobarla. |
 | `approve_task` | Validar campos obligatorios y mover a `Lista`. |
 | `work_task` | Trabajar solo una tarea `Lista`, con rechazo seguro para borradores o riesgo alto sin aprobacion. |
-| `finish_task` | Cerrar o mover a revisión; al completar sincroniza `03`, `04` y `05`. |
+| `finish_task` | Cerrar o devolver a Borrador para revisión; al completar sincroniza `03`, `04` y `05`. |
 | `close_issue` | Resolver y archivar un issue sincronizando `05` y `07`. |
 
 Reglas:
@@ -34,7 +34,7 @@ Reglas:
 * `create_task` crea tareas en `Borrador`.
 * `migrate_task` normaliza una tarea heredada en preview antes de aprobarla.
 * `approve_task` valida contrato y mueve a `Lista`.
-* `work_task` rechaza tareas en `Borrador`, `Bloqueada`, `En revision` o `Completada`.
+* `work_task` rechaza tareas en `Borrador`, `Bloqueada` o `Completada`.
 * Si `Riesgo: alto`, `work_task` exige `Aprobacion: aprobada`.
 * Las escrituras siguen usando preview por defecto y solo aplican con `apply: true`.
 
@@ -195,7 +195,7 @@ Fachada publica recomendada:
 | `create_task` | Crea una TASK en `Borrador` con contrato completo y preview por defecto. |
 | `approve_task` | Valida y aprueba una TASK para moverla a `Lista`. |
 | `work_task` | Verifica gates y devuelve contexto de trabajo para una TASK aprobada. |
-| `finish_task` | Cierra como `Completada` o deja `En revisión`; al cerrar actualiza `03_plan.md`, `04_tasks/` y `05_progress/`. |
+| `finish_task` | Cierra como `Completada` o devuelve a `Borrador` para revisión; al cerrar actualiza `03_plan.md`, `04_tasks/` y `05_progress/`. |
 | `close_issue` | Cierra un issue, lo mueve al archivo mensual de `07`, limpia activos y registra el resultado en `05`. |
 
 Primitivas avanzadas:
@@ -253,7 +253,7 @@ Antes de aplicar, cada operacion valida rutas permitidas dentro de `/ia`, ausenc
 | `create_task` | Convertir una solicitud en TASK Borrador. |
 | `approve_task` | Aprobar una TASK Borrador validando su contrato. |
 | `work_task` | Validar gates y preparar contexto de una TASK Lista. |
-| `finish_task` | Cerrar o mover a revision una TASK trabajada. |
+| `finish_task` | Cerrar o devolver a Borrador una TASK trabajada para revisión. |
 | `close_issue` | Resolver un issue y sincronizar progreso e historial. |
 | `ia_planificar_sesion` | Iniciar sesion leyendo solo contexto necesario. |
 | `ia_implementar_tarea` | Implementar una TASK existente. |

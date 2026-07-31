@@ -30,6 +30,35 @@ En flujos de trabajo con delegación a agentes, cada tarea es el contrato de apr
     └── YYYY-MM.md
 ```
 
+## Contrato de secciones operativas
+
+`04_tasks/current.md` tiene secciones operativas que consumen las transiciones del MCP. Cada una
+debe contener entradas o el marcador canónico `Sin tareas registradas.`; una sección vacía no se
+representa solo con saltos de línea.
+
+```markdown
+## En progreso
+
+Sin tareas registradas.
+
+## Lista
+
+Sin tareas registradas.
+
+## Bloqueadas
+
+Sin tareas registradas.
+```
+
+`Borradores` conserva su tabla de encabezados aun cuando no haya tareas. El MCP debe aceptar el
+marcador canónico y el contenido vacío heredado al insertar una entrada, y debe restaurar el
+marcador al retirar la última. Las operaciones `approve_task`, `work_task` y `finish_task` no
+pueden depender de una cantidad concreta de líneas vacías.
+
+El smoke test del MCP debe crear una copia de `/ia` con `Lista` y `En progreso` vacías, ejecutar
+`create_task`, `approve_task` y `work_task`, y comprobar que el ciclo termina sin un error de
+sección no encontrada.
+
 ## Convención de ID
 
 ```text
@@ -65,7 +94,6 @@ TASK-{INICIALES}-{AREA}-{NN}
 | `Ready` | `Lista` | Validada y aprobada; el agente puede implementar. |
 | `In Progress` | `En progreso` | En implementación activa. |
 | `Blocked` | `Bloqueada` | No puede continuar hasta que se resuelva una condición externa. |
-| `Review` | `En revisión` | Implementación terminada, pendiente de revisión o validación. |
 | `Done` | `Completada` | Terminada y archivada en el historial mensual. |
 
 Solo las tareas `Lista` pueden seleccionarse para implementación. Los estados legados como `pendiente` pueden tratarse como `Lista` durante la migración, pero las tareas nuevas deben usar los estados canónicos.
@@ -83,7 +111,7 @@ Solo las tareas `Lista` pueden seleccionarse para implementación. Los estados l
 ```markdown
 # TASK-{INICIALES}-{AREA}-{NN} — {título corto}
 
-**Estado:** Borrador | Lista | En progreso | Bloqueada | En revisión | Completada
+**Estado:** Borrador | Lista | En progreso | Bloqueada | Completada
 **Autor:** {git config user.name} `<{git config user.email}>`
 **Rama:** {feature/iniciales/descripcion-kebab o -}
 **Inicio:** {YYYY-MM-DD HH:MM zona horaria}
@@ -172,10 +200,14 @@ Solo las tareas `Lista` pueden seleccionarse para implementación. Los estados l
 2. Validar los campos requeridos y el nivel de riesgo antes de moverla a `Lista`.
 3. Agregar el trabajo listo o activo a `04_tasks/current.md`.
 4. Implementar solo una tarea `Lista` a la vez.
-5. Mover el trabajo bloqueado a `04_tasks/blocked.md` con una condición de desbloqueo clara.
-6. Usar `En revisión` cuando la implementación esté terminada pero falta validación o revisión humana.
+5. Si aparece una dependencia externa, usar `work_task` con `transition: "blocked"` y un `reason`; el MCP registra el evento y mueve la tarea a `Bloqueada`.
+6. Cuando la dependencia se resuelva, usar `work_task` con `transition: "resumed"` y un nuevo `reason`; el MCP devuelve la tarea a `En progreso` sin reiniciar `startedAt`.
 7. Al completar, agregar un resumen a `04_tasks/done/YYYY-MM.md`.
 8. Eliminar los archivos de tarea completados de `04_tasks/tasks/`.
+
+Las metricas V2 separan `cycleTimeMs`, `blockedTimeMs` y `activeTimeMs`. El tiempo activo suma
+los intervalos `started`/`resumed` hasta `blocked`/`completed`; el tiempo bloqueado suma los
+intervalos `blocked` hasta `resumed`/`completed`.
 
 ## Reglas especiales para CAP
 
@@ -184,13 +216,14 @@ Las tareas de capacitación usan el área `CAP` y usualmente tienen rama `-`. Su
 ## Checklist
 
 * Cada tarea activa tiene un archivo.
-* `tasks/` contiene solo tareas en Borrador, Lista, En progreso, En revisión o Bloqueada.
+* `tasks/` contiene solo tareas en Borrador, Lista, En progreso o Bloqueada.
 * El trabajo completado vive en `done/YYYY-MM.md`.
 * Los items del backlog no se tratan como tareas aprobadas.
 * La salida esperada es lo suficientemente concreta para validar.
 * Las tareas de riesgo alto muestran aprobación explícita antes de la implementación.
 * El header de `current.md` tiene como máximo 1 línea `> **Última actualización:` y hasta 5 líneas `> **Completado`. No contiene otras blockquotes históricas (`> **Cerrado`, `> **Agregado`, etc.).
 * `current.md` no contiene un segundo encabezado `# 04 —` ni una tabla `## Cola activa` legada.
+* Toda sección operativa sin tareas usa `Sin tareas registradas.` en lugar de saltos de línea sin contenido.
 
 ## Errores comunes
 
@@ -201,13 +234,14 @@ Las tareas de capacitación usan el área `CAP` y usualmente tienen rama `-`. Su
 * Usar salida esperada vaga como "mejorar módulo".
 * Acumular más de 5 líneas `> **Completado` en el header de `current.md` sin limpiarlas (el MCP debe aplicar `trimCompletedHeaderLines` al cerrar cada tarea).
 * Mantener estructura duplicada legacy (`# 04 — Tareas Activas` + `## Cola activa`) junto con las secciones operativas nuevas.
+* Implementar inserciones de tareas que solo reconocen una cantidad fija de saltos de línea en secciones vacías.
 
 ## Template de tarea
 
 ```markdown
 # TASK-{INICIALES}-{AREA}-{NN} — {título corto}
 
-**Estado:** Borrador | Lista | En progreso | Bloqueada | En revisión | Completada
+**Estado:** Borrador | Lista | En progreso | Bloqueada | Completada
 **Autor:** {git config user.name} `<{git config user.email}>`
 **Rama:** {feature/iniciales/descripcion-kebab o -}
 **Inicio:** {YYYY-MM-DD HH:MM zona horaria}
@@ -294,10 +328,14 @@ Las tareas de capacitación usan el área `CAP` y usualmente tienen rama `-`. Su
 2. Validar los campos requeridos y el nivel de riesgo antes de moverla a `Lista`.
 3. Agregar el trabajo listo o activo a `04_tasks/current.md`.
 4. Implementar solo una tarea `Lista` a la vez.
-5. Mover el trabajo bloqueado a `04_tasks/blocked.md` con una condición de desbloqueo clara.
-6. Usar `En revisión` cuando la implementación esté terminada pero falta validación o revisión humana.
+5. Si aparece una dependencia externa, usar `work_task` con `transition: "blocked"` y un `reason`; el MCP registra el evento y mueve la tarea a `Bloqueada`.
+6. Cuando la dependencia se resuelva, usar `work_task` con `transition: "resumed"` y un nuevo `reason`; el MCP devuelve la tarea a `En progreso` sin reiniciar `startedAt`.
 7. Al completar, agregar un resumen a `04_tasks/done/YYYY-MM.md`.
 8. Eliminar los archivos de tarea completados de `04_tasks/tasks/`.
+
+Las metricas V2 separan `cycleTimeMs`, `blockedTimeMs` y `activeTimeMs`. El tiempo activo suma
+los intervalos `started`/`resumed` hasta `blocked`/`completed`; el tiempo bloqueado suma los
+intervalos `blocked` hasta `resumed`/`completed`.
 
 ## Reglas especiales para CAP
 
@@ -306,7 +344,7 @@ Las tareas de capacitación usan el área `CAP` y usualmente tienen rama `-`. Su
 ## Checklist
 
 * Cada tarea activa tiene un archivo.
-* `tasks/` contiene solo tareas en Borrador, Lista, En progreso, En revisión o Bloqueada.
+* `tasks/` contiene solo tareas en Borrador, Lista, En progreso o Bloqueada.
 * El trabajo completado vive en `done/YYYY-MM.md`.
 * Los items del backlog no se tratan como tareas aprobadas.
 * La salida esperada es lo suficientemente concreta para validar.

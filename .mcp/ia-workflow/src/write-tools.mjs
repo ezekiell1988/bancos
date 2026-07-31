@@ -379,13 +379,13 @@ async function buildFinishTaskChanges(input) {
   }
 
   const contract = inspectTaskContract(taskText);
-  const reviewTask = appendTaskNote(replaceTaskField(taskText, "Estado", "En revisión"), `Pendiente de revisión: ${summary}`);
+  const reviewTask = appendTaskNote(replaceTaskField(taskText, "Estado", "Borrador"), `Pendiente de revisión: ${summary}`);
   const currentPath = "04_tasks/current.md";
   const currentText = await optionalText(currentPath);
   const row = `| ${id} | ${area} | ${contract.title} | ${contract.priority} |`;
   const updatedCurrent = insertTableRow(
-    updateLastUpdatedLine(removeTaskRows(currentText, id), `${todayCrDate()} CR (${id} en revisión)`),
-    "## En revisión",
+    updateLastUpdatedLine(removeTaskRows(currentText, id), `${todayCrDate()} CR (${id} en borrador)`),
+    "## Borradores",
     row
   );
 
@@ -914,8 +914,8 @@ function normalizeTaskStatus(value) {
     "in progress": "En progreso",
     bloqueada: "Bloqueada",
     blocked: "Bloqueada",
-    "en revision": "En revisión",
-    review: "En revisión",
+    "en revision": "Borrador",
+    review: "Borrador",
     completada: "Completada",
     done: "Completada",
     complete: "Completada",
@@ -933,7 +933,6 @@ function currentHeadingForStatus(status) {
     Borrador: "## Borradores",
     Lista: "## Lista",
     "En progreso": "## En progreso",
-    "En revisión": "## En revisión",
   };
 
   return map[status] ?? "## Próximas (Lista / ready to start — en orden de implementación)";
@@ -1078,8 +1077,8 @@ function assertTaskCanBeWorked(contract) {
 }
 
 function assertTaskCanBeFinished(contract) {
-  if (!["Lista", "En progreso", "En revisión"].includes(contract.status)) {
-    throw rpcError(-32602, `No se puede cerrar una tarea ${contract.status}; debe estar Lista, En progreso o En revisión.`);
+  if (!["Lista", "En progreso"].includes(contract.status)) {
+    throw rpcError(-32602, `No se puede cerrar una tarea ${contract.status}; debe estar Lista o En progreso.`);
   }
 
   if (contract.risk === "alto" && contract.approval !== "aprobada") {
