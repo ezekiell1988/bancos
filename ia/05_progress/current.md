@@ -1,6 +1,6 @@
 # Progreso actual
 
-> **Última actualización:** 2026-07-31 CR (TASK-EBC-MCP-38 completada)
+> **Última actualización:** 2026-09-16 CR (TASK-EBC-DOC-14 completada)
 
 ## En curso
 
@@ -23,6 +23,8 @@
 ## Completado en sesiones recientes
 
 
+
+* **2026-09-16** — TASK-EBC-DOC-14 cerrada: Se sincronizó mcp-vscode-dotnet desde la base canónica .agents/skills hacia .claude/skills y .codex/skills. La verificación posterior reportó 60 skills idénticos, sin conflictos. — EBC
 
 * **2026-07-31** — TASK-EBC-MCP-38 cerrada: Implementadas las tools MCP de conciliación N:N entre pagos y transferencias, con propuesta explicable, confirmación/corrección/eliminación auditables y preservación de movimientos originales. Se agregó el modelo EF Core y su migración, registro de las cinco tools y pruebas de servicio/protocolo. — EBC
 

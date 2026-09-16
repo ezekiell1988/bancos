@@ -1,8 +1,10 @@
-> **Última actualización:** 2026-07-27 CR (TASK-EBC-DOC-13 completada)
+> **Última actualización:** 2026-09-16 CR (TASK-EBC-DOC-14 completada)
 
 
 
 ## Completado
+
+* **2026-09-16** — TASK-EBC-DOC-14: Se sincronizó mcp-vscode-dotnet desde la base canónica .agents/skills hacia .claude/skills y .codex/skills. La verificación posterior reportó 60 skills idénticos, sin conflictos. — EBC
 
 * **2026-07-27** — TASK-EBC-DOC-13: Se creó una plantilla Power Query segura para ejecutar SELECTs parametrizados contra SQL Server. — EBC
 

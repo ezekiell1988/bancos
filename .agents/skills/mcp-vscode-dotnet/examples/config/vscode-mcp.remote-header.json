@@ -1,0 +1,20 @@
+{
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "mcp-token",
+      "description": "MCP access token",
+      "password": true
+    }
+  ],
+  "servers": {
+    "companyMcp": {
+      "type": "http",
+      "url": "https://company-mcp.<env-id>.<region>.azurecontainerapps.io/mcp",
+      "headers": {
+        "Authorization": "Bearer ${input:mcp-token}"
+      }
+    }
+  }
+}
+

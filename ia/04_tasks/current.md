@@ -1,6 +1,8 @@
 # 04 — Tareas activas
 
-> **Última actualización:** 2026-07-31 CR (TASK-EBC-MCP-38 completada)
+> **Última actualización:** 2026-09-16 CR (TASK-EBC-DOC-14 completada)
+
+
 
 
 
@@ -226,8 +228,8 @@
 
 ## En progreso
 
-Sin tareas.
-
+| ID | Área | Título | Prioridad |
+|---|---|---|---|
 ## Lista
 
 | ID | Área | Título | Prioridad |
@@ -240,8 +242,7 @@ Sin tareas.
 
 ## Bloqueadas
 
-Sin tareas.
-
+Sin tareas registradas.
 ## En revisión
 
 Sin tareas.

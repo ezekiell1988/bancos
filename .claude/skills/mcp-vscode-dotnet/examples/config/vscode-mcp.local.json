@@ -1,0 +1,24 @@
+{
+  "servers": {
+    "companyMcpLocal": {
+      "type": "stdio",
+      "command": "dotnet",
+      "args": [
+        "run",
+        "--project",
+        "${workspaceFolder}/src/CompanyMcp.Stdio/CompanyMcp.Stdio.csproj",
+        "--no-launch-profile",
+        "--tl:off",
+        "--verbosity",
+        "quiet"
+      ],
+      "cwd": "${workspaceFolder}",
+      "dev": {
+        "watch": [
+          "src/CompanyMcp.Tools/**/*.cs",
+          "src/CompanyMcp.Stdio/**/*.cs"
+        ]
+      }
+    }
+  }
+}

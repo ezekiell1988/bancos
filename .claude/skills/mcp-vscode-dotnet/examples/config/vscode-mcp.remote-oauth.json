@@ -1,0 +1,12 @@
+{
+  "servers": {
+    "companyMcp": {
+      "type": "http",
+      "url": "https://company-mcp.<env-id>.<region>.azurecontainerapps.io/mcp",
+      "oauth": {
+        "clientId": "00000000-0000-0000-0000-000000000000"
+      }
+    }
+  }
+}
+
