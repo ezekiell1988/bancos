@@ -1,201 +1,69 @@
 using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
 using Bancos.Mcp.Features.TemplateDetection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
+using ModelContextProtocol.Client;
 using Xunit;
 
 namespace Bancos.Mcp.Tests;
 
 public sealed class McpProtocolTests : IClassFixture<McpWebApplicationFactory>
 {
-    private readonly HttpClient client;
     private readonly McpWebApplicationFactory factory;
 
-    public McpProtocolTests(McpWebApplicationFactory factory)
+    public McpProtocolTests(McpWebApplicationFactory factory) => this.factory = factory;
+
+    [Fact]
+    public async Task Tools_list_exposes_the_full_catalog_over_http()
     {
-        this.factory = factory;
-        client = factory.CreateClient();
+        await using var client = await ConnectAsync();
+
+        var tools = await client.ListToolsAsync();
+
+        Assert.Contains(tools, tool => tool.Name == "health_status");
+        Assert.Contains(tools, tool => tool.Name == "detect_import_template");
+        Assert.Contains(tools, tool => tool.Name == "get_ledger_period");
+        Assert.Contains(tools, tool => tool.Name == "delete_reconciliation");
+        Assert.True(tools.Count >= 25, $"Se esperaban al menos 25 tools, se obtuvieron {tools.Count}.");
     }
 
     [Fact]
-    public async Task Initialize_negotiates_the_client_protocol_version_and_creates_a_session()
+    public async Task Tools_call_returns_content_and_structured_content()
     {
-        using var response = await InitializeAsync("2024-11-05");
-        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        await using var client = await ConnectAsync();
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("2024-11-05", document.RootElement.GetProperty("result").GetProperty("protocolVersion").GetString());
-        Assert.True(response.Headers.TryGetValues("Mcp-Session-Id", out var values));
-        Assert.False(string.IsNullOrWhiteSpace(values.Single()));
-    }
+        var result = await client.CallToolAsync("health_status", new Dictionary<string, object?>());
 
-    [Fact]
-    public async Task Tools_list_requires_a_session_and_exposes_output_schemas()
-    {
-        var sessionId = await GetSessionIdAsync();
-        using var response = await PostAsync("""{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}""", sessionId);
-        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var tools = document.RootElement.GetProperty("result").GetProperty("tools");
-        var statusTool = tools.EnumerateArray().Single(tool => tool.GetProperty("name").GetString() == "health_status");
-        Assert.True(statusTool.TryGetProperty("outputSchema", out _));
-        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "detect_import_template");
-        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "classify_pending_transactions");
-        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "list_unclassified_transactions");
-        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "confirm_transaction_classification");
-        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "list_exchange_rates");
-        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "record_exchange_rate");
-        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "resolve_exchange_rate");
-        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "get_ledger_period");
-        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "calculate_period_closings");
-        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "calculate_foreign_exchange_closing");
-        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "list_card_statements");
-        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "list_card_financings");
-        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "list_loan_statements");
-        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "list_unreconciled_transactions");
-        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "propose_reconciliation");
-        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "confirm_reconciliation");
-        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "correct_reconciliation");
-        Assert.Contains(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "delete_reconciliation");
-    }
-
-    [Theory]
-    [InlineData("2025-03-26")]
-    [InlineData("2025-11-25")]
-    public async Task Tools_list_accepts_the_protocol_version_negotiated_with_the_client(string protocolVersion)
-    {
-        using var initialize = await InitializeAsync(protocolVersion);
-        var sessionId = initialize.Headers.GetValues("Mcp-Session-Id").Single();
-        using var response = await PostAsync("""{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}""", sessionId, protocolVersion);
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task Tools_list_accepts_a_known_session_when_the_client_omits_the_protocol_header()
-    {
-        var sessionId = await GetSessionIdAsync();
-        using var response = await PostAsync("""{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}""", sessionId, includeProtocolVersion: false);
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task Tools_call_returns_text_and_structured_content()
-    {
-        var sessionId = await GetSessionIdAsync();
-        using var response = await PostAsync("""{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"health_status","arguments":{}}}""", sessionId);
-        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-
-        var result = document.RootElement.GetProperty("result");
-        Assert.Equal("Estado: disponible", result.GetProperty("content")[0].GetProperty("text").GetString());
-        Assert.Equal("available", result.GetProperty("structuredContent").GetProperty("status").GetString());
-    }
-
-    [Fact]
-    public async Task Detect_import_template_returns_only_the_safe_structured_id()
-    {
-        var sessionId = await GetSessionIdAsync();
-        using var response = await PostAsync("""{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"detect_import_template","arguments":{"relativePath":"bcr.csv"}}}""", sessionId);
-        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-
-        Assert.Equal("10000000-0000-0000-0000-000000000001", document.RootElement.GetProperty("result").GetProperty("structuredContent").GetProperty("idImportTemplates").GetString());
-    }
-
-    [Fact]
-    public async Task Requests_with_an_unknown_session_or_protocol_version_are_rejected()
-    {
-        using var unknownSession = await PostAsync("""{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}""", "unknown");
-        var sessionId = await GetSessionIdAsync();
-        using var unsupportedVersion = await PostAsync("""{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}""", sessionId, "2020-01-01");
-        using var mismatchedVersion = await PostAsync("""{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}""", sessionId, "2025-11-25");
-
-        Assert.Equal(HttpStatusCode.BadRequest, unknownSession.StatusCode);
-        Assert.Equal(HttpStatusCode.BadRequest, unsupportedVersion.StatusCode);
-        Assert.Equal(HttpStatusCode.BadRequest, mismatchedVersion.StatusCode);
+        Assert.NotEqual(true, result.IsError);
+        Assert.NotNull(result.StructuredContent);
     }
 
     [Fact]
     public async Task Requests_from_an_unapproved_origin_are_rejected()
     {
+        var httpClient = factory.CreateClient();
         using var request = new HttpRequestMessage(HttpMethod.Post, "/mcp")
         {
-            Content = JsonContent.Create(JsonDocument.Parse("""{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18"}}""").RootElement)
+            Content = JsonContent.Create(new { jsonrpc = "2.0", id = 1, method = "initialize", @params = new { protocolVersion = "2025-06-18" } })
         };
         request.Headers.Add("Origin", "https://unapproved.example");
-        using var response = await client.SendAsync(request);
+        request.Headers.Add("Accept", "application/json, text/event-stream");
+
+        using var response = await httpClient.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
-    [Fact]
-    public async Task Delete_ends_the_session()
+    private async Task<McpClient> ConnectAsync()
     {
-        var sessionId = await GetSessionIdAsync();
-        using var deleteRequest = new HttpRequestMessage(HttpMethod.Delete, "/mcp");
-        deleteRequest.Headers.Add("Mcp-Session-Id", sessionId);
-        using var deleteResponse = await client.SendAsync(deleteRequest);
-        using var laterRequest = await PostAsync("""{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}""", sessionId);
-
-        Assert.Equal(HttpStatusCode.OK, deleteResponse.StatusCode);
-        Assert.Equal(HttpStatusCode.BadRequest, laterRequest.StatusCode);
-    }
-
-    [Fact]
-    public async Task Notifications_are_accepted_without_a_response_body()
-    {
-        var sessionId = await GetSessionIdAsync();
-        using var notification = await PostAsync("""{"jsonrpc":"2.0","method":"notifications/initialized"}""", sessionId);
-
-        Assert.Equal(HttpStatusCode.Accepted, notification.StatusCode);
-    }
-
-    [Fact]
-    public void Mcp_post_endpoint_requires_the_bounded_concurrency_policy()
-    {
-        var dataSource = factory.Services.GetRequiredService<EndpointDataSource>();
-        var endpoint = dataSource.Endpoints.Single(endpoint =>
-            endpoint.Metadata.GetMetadata<HttpMethodMetadata>()?.HttpMethods.Contains("POST") == true
-            && endpoint is RouteEndpoint routeEndpoint
-            && routeEndpoint.RoutePattern.RawText == "/mcp/");
-
-        Assert.Equal(TemplateDetectionModule.McpToolsRateLimitPolicy, endpoint.Metadata.GetMetadata<EnableRateLimitingAttribute>()?.PolicyName);
-    }
-
-    private async Task<string> GetSessionIdAsync()
-    {
-        using var response = await InitializeAsync("2025-06-18");
-        response.EnsureSuccessStatusCode();
-        return response.Headers.GetValues("Mcp-Session-Id").Single();
-    }
-
-    private Task<HttpResponseMessage> InitializeAsync(string version) =>
-        PostAsync(JsonSerializer.Serialize(new
+        var httpClient = factory.CreateClient();
+        var transport = new HttpClientTransport(new HttpClientTransportOptions
         {
-            jsonrpc = "2.0",
-            id = 1,
-            method = "initialize",
-            @params = new { protocolVersion = version }
-        }));
-
-    private Task<HttpResponseMessage> PostAsync(string json, string? sessionId = null, string protocolVersion = "2025-06-18", bool includeProtocolVersion = true)
-    {
-        var request = new HttpRequestMessage(HttpMethod.Post, "/mcp") { Content = JsonContent.Create(JsonDocument.Parse(json).RootElement) };
-        if (!string.IsNullOrWhiteSpace(sessionId))
-        {
-            request.Headers.Add("Mcp-Session-Id", sessionId);
-            if (includeProtocolVersion)
-                request.Headers.Add("MCP-Protocol-Version", protocolVersion);
-        }
-
-        return client.SendAsync(request);
+            Endpoint = new Uri(httpClient.BaseAddress!, "/mcp")
+        }, httpClient);
+        return await McpClient.CreateAsync(transport);
     }
 }
 

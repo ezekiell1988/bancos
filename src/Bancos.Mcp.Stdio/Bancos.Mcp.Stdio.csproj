@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>14</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol" Version="2.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Bancos.Mcp.Tools\Bancos.Mcp.Tools.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Reusa el mismo appsettings.Development.json (gitignored) del host HTTP para no duplicar secretos locales. -->
+    <Content Include="..\Bancos.Mcp\appsettings.Development.json" Link="appsettings.Development.json" CopyToOutputDirectory="PreserveNewest" Condition="Exists('..\Bancos.Mcp\appsettings.Development.json')" />
+  </ItemGroup>
+
+</Project>

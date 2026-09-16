@@ -26,6 +26,25 @@
         "debug": { "type": "node" }
       }
     },
+    "bancosMcpStdio": {
+      "type": "stdio",
+      "command": "dotnet",
+      "args": [
+        "run",
+        "--project",
+        "${workspaceFolder}/src/Bancos.Mcp.Stdio/Bancos.Mcp.Stdio.csproj",
+        "--no-launch-profile",
+        "--tl:off",
+        "--verbosity",
+        "quiet"
+      ],
+      "dev": {
+        "watch": [
+          "src/Bancos.Mcp.Tools/**/*.cs",
+          "src/Bancos.Mcp.Stdio/**/*.cs"
+        ]
+      }
+    },
     "bancosMcp": {
       "type": "http",
       "url": "http://127.0.0.1:8000/mcp"

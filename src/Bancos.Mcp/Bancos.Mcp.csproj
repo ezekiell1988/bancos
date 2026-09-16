@@ -6,15 +6,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="ExcelDataReader" Version="3.7.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.2">
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.2" />
-    <PackageReference Include="UglyToad.PdfPig" Version="1.7.0-custom-5" />
+    <PackageReference Include="ModelContextProtocol.AspNetCore" Version="2.2.0" />
     <PackageReference Include="Hangfire.AspNetCore" Version="1.8.22" />
-    <PackageReference Include="Hangfire.SqlServer" Version="1.8.22" />
-    <PackageReference Include="Hangfire.Console" Version="1.4.3" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Bancos.Mcp.Tools\Bancos.Mcp.Tools.csproj" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Bancos.Mcp.Tests" />

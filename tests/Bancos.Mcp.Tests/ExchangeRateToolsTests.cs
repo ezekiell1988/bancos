@@ -1,9 +1,7 @@
-using System.Text.Json;
 using Bancos.Mcp.Data;
 using Bancos.Mcp.Domain;
 using Bancos.Mcp.Features.ExchangeRates;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Bancos.Mcp.Tests;
@@ -80,16 +78,12 @@ public sealed class ExchangeRateToolsTests
         await using var db = CreateDb();
         var bank = await SeedBankAsync(db, "BN");
         await AddRateAsync(db, bank, new DateOnly(2026, 7, 30), 458m);
-        var scopeFactory = new TestScopeFactory(db);
-        var tool = new ResolveExchangeRateTool(scopeFactory);
-        using var arguments = JsonDocument.Parse("""{"requestedDate":"2026-07-31","currencyCode":"USD","bankCode":"BN"}""");
+        var service = new ExchangeRateService(db);
 
-        var result = await tool.ExecuteAsync(arguments.RootElement, CancellationToken.None);
+        var result = await ResolveExchangeRateTool.ResolveAsync(new DateOnly(2026, 7, 31), "USD", "BN", service, CancellationToken.None);
 
-        Assert.True(result.StructuredContent is not null);
-        using var structured = JsonDocument.Parse(JsonSerializer.Serialize(result.StructuredContent));
-        Assert.True(structured.RootElement.GetProperty("isFallback").GetBoolean());
-        Assert.Equal(458m, structured.RootElement.GetProperty("crcPerUnit").GetDecimal());
+        Assert.True(result.IsFallback);
+        Assert.Equal(458m, result.CrcPerUnit);
     }
 
     private static McpCatalogDbContext CreateDb() => new(new DbContextOptionsBuilder<McpCatalogDbContext>()
@@ -108,21 +102,5 @@ public sealed class ExchangeRateToolsTests
     {
         db.ExchangeRates.Add(new ExchangeRate { Id = Guid.NewGuid(), BankId = bank.Id, RateDate = date, CurrencyCode = "USD", CrcPerUnit = value });
         await db.SaveChangesAsync();
-    }
-
-    private sealed class TestScopeFactory(McpCatalogDbContext db) : IServiceScopeFactory
-    {
-        public IServiceScope CreateScope() => new TestScope(db);
-    }
-
-    private sealed class TestScope(McpCatalogDbContext db) : IServiceScope
-    {
-        public IServiceProvider ServiceProvider { get; } = new TestServiceProvider(db);
-        public void Dispose() { }
-    }
-
-    private sealed class TestServiceProvider(McpCatalogDbContext db) : IServiceProvider
-    {
-        public object? GetService(Type serviceType) => serviceType == typeof(ExchangeRateService) ? new ExchangeRateService(db) : null;
     }
 }

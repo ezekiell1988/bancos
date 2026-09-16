@@ -19,6 +19,19 @@ args = [
     ".",
 ]
 
+[mcp_servers.bancosMcpStdio]
+command = "dotnet"
+args = [
+    "run",
+    "--project",
+    "/Users/ezequielbaltodanocubillo/Documents/Bancos/src/Bancos.Mcp.Stdio/Bancos.Mcp.Stdio.csproj",
+    "--no-launch-profile",
+    "--tl:off",
+    "--verbosity",
+    "quiet",
+]
+startup_timeout_sec = 60
+
 [mcp_servers.bancosMcp]
 url = "http://127.0.0.1:8000/mcp"
 startup_timeout_sec = 30

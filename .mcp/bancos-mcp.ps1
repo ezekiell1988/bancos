@@ -10,15 +10,8 @@ if ($existing) {
     $existing | ForEach-Object { kill -9 $_ 2>$null }
     Start-Sleep -Seconds 1
 }
-$status = docker inspect --format '{{.State.Status}}' bancos-sql-1 2>$null
-if ($status -ne 'running') {
-    Write-Host "Levantando BD..."
-    docker compose --project-directory $projectRoot up -d
-    Start-Sleep -Seconds 8
-}
 
-Write-Host "Aplicando migraciones de Bancos.Mcp..."
-dotnet ef database update --project $mcpProject --startup-project $mcpProject
+& (Join-Path $PSScriptRoot "db-up.ps1")
 
-Write-Host "Iniciando MCP y Hangfire..."
+Write-Host "Iniciando MCP HTTP y Hangfire..."
 dotnet watch run --project $mcpProject
