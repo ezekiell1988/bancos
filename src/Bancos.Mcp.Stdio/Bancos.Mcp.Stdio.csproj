@@ -17,8 +17,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Reusa el mismo appsettings.Development.json (gitignored) del host HTTP para no duplicar secretos locales. -->
-    <Content Include="..\Bancos.Mcp\appsettings.Development.json" Link="appsettings.Development.json" CopyToOutputDirectory="PreserveNewest" Condition="Exists('..\Bancos.Mcp\appsettings.Development.json')" />
+    <Content Include="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="appsettings.Development.json" CopyToOutputDirectory="PreserveNewest" Condition="Exists('appsettings.Development.json')" />
   </ItemGroup>
 
 </Project>

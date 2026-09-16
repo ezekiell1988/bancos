@@ -16,12 +16,11 @@ public static class AccountPeriodClosingsModule
         return services;
     }
 
-    public static IApplicationBuilder UseAccountPeriodClosingsJobs(this IApplicationBuilder app)
+    public static void ScheduleAccountPeriodClosingsJob()
     {
         RecurringJob.AddOrUpdate<CalculateAccountPeriodClosingsJob>(
             "calculate-period-closings",
             job => job.ExecuteAsync(EarliestPeriodId, null!),
             MonthlyClosingCron);
-        return app;
     }
 }

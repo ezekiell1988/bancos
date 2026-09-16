@@ -1,4 +1,7 @@
+using Bancos.Mcp.Features.AccountPeriodClosings;
+using Bancos.Mcp.Features.ExchangeRates;
 using Bancos.Mcp.Tools;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -20,4 +23,12 @@ builder.Services
     .WithStdioServerTransport()
     .WithToolsFromAssembly(BancosMcpCatalog.Assembly);
 
-await builder.Build().RunAsync();
+var host = builder.Build();
+
+if (!string.IsNullOrWhiteSpace(builder.Configuration.GetConnectionString("DefaultConnection")))
+{
+    AccountPeriodClosingsModule.ScheduleAccountPeriodClosingsJob();
+    ExchangeRatesModule.ScheduleExchangeRatesJob();
+}
+
+await host.RunAsync();

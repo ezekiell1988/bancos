@@ -26,14 +26,13 @@ public static class ExchangeRatesModule
         return services;
     }
 
-    public static IApplicationBuilder UseExchangeRatesJobs(this IApplicationBuilder app)
+    public static void ScheduleExchangeRatesJob()
     {
         RecurringJob.AddOrUpdate<BccrExchangeRateJob>(
             "refresh-bccr-exchange-rates",
             job => job.ExecuteAsync(null!),
             DailyAtEightInCostaRicaCron,
             new RecurringJobOptions { TimeZone = CostaRicaTimeZone });
-        return app;
     }
 
     private static TimeZoneInfo FindCostaRicaTimeZone()

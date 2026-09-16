@@ -2,11 +2,11 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Bancos MCP",
+      "name": "Bancos DB",
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "pwsh",
-      "runtimeArgs": ["${workspaceFolder}/.mcp/bancos-mcp.ps1"],
+      "runtimeArgs": ["${workspaceFolder}/.mcp/db-up.ps1"],
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen"
     }
