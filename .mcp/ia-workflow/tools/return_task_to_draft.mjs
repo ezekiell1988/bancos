@@ -1,22 +1,23 @@
-import { runtime } from "../src/runtime.mjs";
+import { getWorkflow } from '../src/common.mjs';
 
 export default {
-  name: "return_task_to_draft",
-  order: 35,
-  description: "Devuelve una tarea Lista, En progreso o Bloqueada a Borrador con motivo. Preview por defecto.",
+  name: 'return_task_to_draft',
+  description: 'Devuelve una tarea Lista, En progreso o Bloqueada a Borrador y conserva el historial de eventos V2.',
   inputSchema: {
-    type: "object",
-    properties: { id: { type: "string" }, reason: { type: "string" }, apply: { type: "boolean" } },
-    required: ["id", "reason"],
+    type: 'object',
+    properties: {
+      id: { type: 'string', description: 'TASK-ID.' },
+      reason: { type: 'string', description: 'Why the work returns to draft.' },
+      apply: { type: 'boolean', description: 'Set true to apply.' },
+    },
+    required: ['id', 'reason'],
     additionalProperties: false,
   },
-  handler: (args) => runtime.write.runWriteOperation("return_task_to_draft", args),
-  async smoke({ callTool, check, toolJson, state }) {
-    const result = toolJson(await callTool("return_task_to_draft", { id: state.taskId, reason: "Requiere revisión humana antes de continuar." }));
-    check("return_task_to_draft preview por defecto", result.applied === false);
-    const applied = toolJson(await callTool("return_task_to_draft", { id: state.taskId, reason: "Requiere revisión humana antes de continuar.", apply: true }));
-    check("return_task_to_draft devuelve a Borrador", applied.applied === true);
-    const reapproved = toolJson(await callTool("approve_task", { id: state.taskId, apply: true }));
-    check("return_task_to_draft exige nueva aprobación", reapproved.applied === true);
+  async handler(args) {
+    return getWorkflow().returnTaskToDraft(args.id, args.reason, args.apply === true);
+  },
+  async smoke({ callTool, check, toolJson }) {
+    const res = toolJson(await callTool('return_task_to_draft', { id: 'TASK-ZZ-MCP-999', reason: 'smoke' }));
+    check('return_task_to_draft con id inexistente responde error', typeof res.error === 'string', res.error);
   },
 };

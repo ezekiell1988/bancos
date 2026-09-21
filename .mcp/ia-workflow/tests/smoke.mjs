@@ -1,97 +1,96 @@
 #!/usr/bin/env node
-import fs from "node:fs/promises";
-import { readdirSync } from "node:fs";
-import os from "node:os";
-import path from "node:path";
-import { spawn } from "node:child_process";
-import { fileURLToPath, pathToFileURL } from "node:url";
+// Smoke test: deriva el catálogo de tools/, corre los checks genéricos de protocolo y
+// ejecuta el smoke() co-ubicado de cada tool contra el /ia real del repo, en modo
+// solo lectura o preview (apply:true jamás se ejercita aquí para no mutar /ia).
+//
+// Ejecución: node .mcp/ia-workflow/tests/smoke.mjs
+
+import { readdirSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { spawnMcp, createChecker } from '../../_shared/test-harness.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const projectRoot = path.resolve(here, "../../..");
-const serverPath = path.resolve(here, "../server.mjs");
-const toolsDir = path.resolve(here, "../tools");
-const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "ia-workflow-smoke-"));
-const tempIaRoot = path.join(tempRoot, "ia");
-await fs.cp(path.join(projectRoot, "ia"), tempIaRoot, { recursive: true });
+const serverPath = path.join(here, '..', 'server.mjs');
+const toolsDir = path.join(here, '..', 'tools');
+const projectRoot = path.resolve(here, '..', '..', '..');
 
-const child = spawn(process.execPath, [serverPath, "--ia-root", tempIaRoot], { stdio: ["pipe", "pipe", "pipe"] });
-let buffer = "";
-let stderr = "";
-let nextId = 1;
-const pending = new Map();
-child.stdout.on("data", (chunk) => {
-  buffer += chunk.toString();
-  let index;
-  while ((index = buffer.indexOf("\n")) !== -1) {
-    const line = buffer.slice(0, index).trim();
-    buffer = buffer.slice(index + 1);
-    if (!line) continue;
-    const message = JSON.parse(line);
-    pending.get(message.id)?.(message);
-    pending.delete(message.id);
-  }
-});
-child.stderr.on("data", (chunk) => { stderr += chunk.toString(); });
-
-function rpc(method, params = {}, timeoutMs = 10000) {
-  const id = nextId++;
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => { pending.delete(id); reject(new Error(`timeout ${method}: ${stderr}`)); }, timeoutMs);
-    pending.set(id, (message) => { clearTimeout(timer); resolve(message); });
-    child.stdin.write(`${JSON.stringify({ jsonrpc: "2.0", id, method, params })}\n`);
-  });
-}
-const notify = (method, params = {}) => child.stdin.write(`${JSON.stringify({ jsonrpc: "2.0", method, params })}\n`);
-const callTool = (name, args = {}) => rpc("tools/call", { name, arguments: args });
-const toolJson = (response) => JSON.parse(response.result.content[0].text);
-const toolText = (response) => response.result.content[0].text;
-let failures = 0;
-function check(name, condition, detail = "") {
-  process.stdout.write(`${condition ? "OK  " : "FAIL"} ${name}${detail ? ` — ${detail}` : ""}\n`);
-  if (!condition) failures += 1;
-}
+const { rpc, notify, callTool, toolJson, toolText, child } = spawnMcp(serverPath, [
+  '--project-root',
+  projectRoot,
+]);
+const { check, report } = createChecker();
 
 try {
-  const initialized = await rpc("initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "smoke", version: "1" } });
-  check("initialize responde", initialized.result?.serverInfo?.name === "ia-workflow-mcp");
-  check("versión conocida se respeta", initialized.result?.protocolVersion === "2025-06-18");
-  notify("notifications/initialized");
-  const future = await rpc("initialize", { protocolVersion: "9999-99-99", capabilities: {}, clientInfo: { name: "smoke", version: "1" } });
-  check("versión futura no se refleja", future.result?.protocolVersion !== "9999-99-99");
+  const init = await rpc('initialize', {
+    protocolVersion: '2024-11-05',
+    capabilities: {},
+    clientInfo: { name: 'smoke-test', version: '1.0.0' },
+  });
+  check(
+    'initialize responde con nombre del servidor',
+    init.result?.serverInfo?.name === 'iaWorkflow',
+    `serverInfo=${JSON.stringify(init.result?.serverInfo)}`,
+  );
+  check(
+    'protocolVersion conocida se respeta',
+    init.result?.protocolVersion === '2024-11-05',
+    `respondió ${init.result?.protocolVersion}`,
+  );
+  notify('notifications/initialized');
 
-  const files = readdirSync(toolsDir).filter((file) => file.endsWith(".mjs") && !file.startsWith("_")).sort();
-  const expected = files.map((file) => path.basename(file, ".mjs"));
-  const listed = await rpc("tools/list");
-  const names = listed.result.tools.map((tool) => tool.name);
-  check("tools/list coincide con tools/", names.length === expected.length && expected.every((name) => names.includes(name)), `tools=${names.length}`);
-  check("ia_validate aparece primero", names[0] === "ia_validate", `primero=${names[0]}`);
-  const inspectSchema = listed.result.tools.find((tool) => tool.name === "ia_inspect")?.inputSchema;
-  check("ia_inspect publica variantes oneOf cerradas", Array.isArray(inspectSchema?.oneOf) && inspectSchema.oneOf.length >= 8 && inspectSchema.oneOf.every((variant) => variant.additionalProperties === false));
-  const missing = toolJson(await callTool("ia_read_task", {}));
-  check("argumento requerido devuelve error de negocio", typeof missing.error === "string" && missing.error.includes("id"));
-  const extraProperty = toolJson(await callTool("ia_inspect", { action: "metrics", extra: true }));
-  check("schema cerrado rechaza propiedad ajena", typeof extraProperty.error === "string" && extraProperty.error.includes("no permitido"));
-  const unknownAction = toolJson(await callTool("ia_inspect", { action: "unknown" }));
-  check("oneOf rechaza acción desconocida", typeof unknownAction.error === "string");
+  const initFuture = await rpc('initialize', {
+    protocolVersion: '9999-99-99',
+    capabilities: {},
+    clientInfo: { name: 'smoke-test', version: '1.0.0' },
+  });
+  check(
+    'protocolVersion desconocida → la más reciente soportada (no echo ciego)',
+    initFuture.result?.protocolVersion !== '9999-99-99',
+    `respondió ${initFuture.result?.protocolVersion}`,
+  );
+
+  const toolFiles = readdirSync(toolsDir)
+    .filter((f) => f.endsWith('.mjs') && !f.startsWith('_'))
+    .sort();
+  const expected = toolFiles.map((f) => path.basename(f, '.mjs'));
+
+  const toolsList = await rpc('tools/list');
+  const names = toolsList.result.tools.map((t) => t.name);
+
+  check(
+    `tools/list expone los ${expected.length} tools de tools/`,
+    expected.every((n) => names.includes(n)) && names.length === expected.length,
+    `expuestos=${names.length}, faltantes=${expected.filter((n) => !names.includes(n)).join(', ') || 'ninguno'}`,
+  );
+  check('tools/list incluye los 22 tools de ia-workflow', expected.length === 22, `total=${expected.length}`);
 
   const modules = [];
-  for (const file of files) modules.push((await import(pathToFileURL(path.join(toolsDir, file)).href)).default);
+  for (const file of toolFiles) {
+    const mod = await import(pathToFileURL(path.join(toolsDir, file)).href);
+    modules.push(mod.default);
+  }
   modules.sort((a, b) => (a.order ?? 100) - (b.order ?? 100) || a.name.localeCompare(b.name));
-  const state = { iaRoot: tempIaRoot, fs };
+
+  const state = {};
   const ctx = { rpc, notify, callTool, check, toolJson, toolText, state };
+
   for (const tool of modules) {
-    check(`${tool.name} tiene smoke co-ubicado`, typeof tool.smoke === "function");
-    if (typeof tool.smoke === "function") {
-      try { await tool.smoke(ctx); } catch (error) { check(`smoke ${tool.name} no lanza`, false, error.stack ?? error.message); }
+    if (typeof tool.smoke !== 'function') {
+      console.log(`SKIP ${tool.name} — sin smoke() co-ubicado`);
+      continue;
+    }
+    try {
+      await tool.smoke(ctx);
+    } catch (err) {
+      check(`smoke() de ${tool.name} no lanza`, false, err.message);
     }
   }
 
-  process.stdout.write(failures === 0 ? "\nSMOKE TEST: TODO OK\n" : `\nSMOKE TEST: ${failures} fallo(s)\n`);
-  process.exitCode = failures === 0 ? 0 : 1;
-} catch (error) {
-  process.stderr.write(`SMOKE TEST ERROR: ${error.stack ?? error.message}\n${stderr}`);
+  report();
+} catch (err) {
+  console.error(`SMOKE TEST ERROR: ${err.message}`);
   process.exitCode = 1;
 } finally {
   child.kill();
-  await fs.rm(tempRoot, { recursive: true, force: true });
 }

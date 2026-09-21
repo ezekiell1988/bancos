@@ -4,8 +4,10 @@
       "command": "node",
       "args": [
         ".mcp/ia-workflow/server.mjs",
-        "--project-root",
-        "."
+        "--runtime",
+        "studio",
+        "--local-secrets-file",
+        ".local-secrets/ia-workflow.json"
       ]
     },
     "dbQuery": {
@@ -13,7 +15,9 @@
       "args": [
         ".mcp/db-query/server.mjs",
         "--project-root",
-        "."
+        ".",
+        "--secrets-file",
+        "db.json"
       ]
     },
     "bancosMcpStdio": {
@@ -27,6 +31,22 @@
         "--tl:off",
         "--verbosity",
         "quiet"
+      ]
+    },
+    "azureAi": {
+      "command": "node",
+      "args": [
+        ".mcp/azure-ai/server.mjs",
+        "--project-root",
+        "."
+      ]
+    },
+    "googleAi": {
+      "command": "node",
+      "args": [
+        ".mcp/google-ai/server.mjs",
+        "--project-root",
+        "."
       ]
     }
   }

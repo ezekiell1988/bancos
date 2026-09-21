@@ -1,0 +1,7 @@
+[mcp_servers.azureAi]
+command = "node"
+args = [
+  "/ruta/al/proyecto/.mcp/azure-ai/server.mjs",
+  "--project-root",
+  "/ruta/al/proyecto"
+]

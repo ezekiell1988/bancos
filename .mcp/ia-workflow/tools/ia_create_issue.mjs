@@ -1,7 +1,27 @@
-import { runtime } from "../src/runtime.mjs";
+import { getWorkflow } from '../src/common.mjs';
+
 export default {
-  name: "ia_create_issue", order: 50, description: "Crea issue abierto y actualiza 07_issues/current.md. Preview por defecto.",
-  inputSchema: issueSchema(), handler: (args) => runtime.write.runWriteOperation("create_issue", args),
-  async smoke({ callTool, check, toolJson }) { const result = toolJson(await callTool("ia_create_issue", { title: "Issue de preview", severity: "low", component: "MCP", symptom: "Se prueba creación sin aplicar." })); check("ia_create_issue preview", result.applied === false); check("ia_create_issue cubre 07", result.changes?.every((change) => change.path.startsWith("07_issues/"))); },
+  name: 'ia_create_issue',
+  description: 'Crea un issue abierto y actualiza su índice. La vista previa es predeterminada.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      title: { type: 'string', description: 'Issue title.' },
+      severity: { type: 'string', description: 'low, medium, high or critical.' },
+      component: { type: 'string', description: 'Affected component.' },
+      symptom: { type: 'string', description: 'Observed symptom.' },
+      apply: { type: 'boolean', description: 'Set true to apply.' },
+    },
+    required: ['title', 'severity', 'component', 'symptom'],
+    additionalProperties: false,
+  },
+  async handler(args) {
+    return getWorkflow().createIssue(args.title, args.severity, args.component, args.symptom, args.apply === true);
+  },
+  async smoke({ callTool, check, toolJson }) {
+    const res = toolJson(
+      await callTool('ia_create_issue', { title: 'Smoke issue', severity: 'low', component: 'mcp', symptom: 'smoke test' }),
+    );
+    check('ia_create_issue en preview no escribe', res.preview === true && res.applied === false, JSON.stringify(res).slice(0, 150));
+  },
 };
-export function issueSchema() { return { type: "object", properties: { title: { type: "string" }, severity: { type: "string", enum: ["critical", "high", "medium", "low"] }, component: { type: "string" }, symptom: { type: "string" }, rootCause: { type: "string" }, workaround: { type: "string" }, proposedFix: { type: "string" }, linkedTasks: { type: "array", items: { type: "string" } }, authorName: { type: "string" }, authorEmail: { type: "string" }, apply: { type: "boolean" } }, required: ["title", "severity", "component", "symptom"], additionalProperties: false }; }

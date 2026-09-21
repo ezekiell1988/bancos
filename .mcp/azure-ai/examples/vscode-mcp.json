@@ -1,0 +1,20 @@
+{
+  "servers": {
+    "azureAi": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "${workspaceFolder}/.mcp/azure-ai/server.mjs",
+        "--project-root",
+        "${workspaceFolder}"
+      ],
+      "cwd": "${workspaceFolder}",
+      "dev": {
+        "watch": [
+          ".mcp/_shared/**/*.mjs",
+          ".mcp/azure-ai/**/*.mjs"
+        ]
+      }
+    }
+  }
+}

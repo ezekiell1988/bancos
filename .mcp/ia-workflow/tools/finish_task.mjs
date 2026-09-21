@@ -1,40 +1,23 @@
-import fs from "node:fs/promises";
-import path from "node:path";
-import { runtime } from "../src/runtime.mjs";
+import { getWorkflow } from '../src/common.mjs';
 
 export default {
-  name: "finish_task",
-  order: 40,
-  description: "Cierra una tarea o la devuelve a Borrador para revisión. Al cerrar sincroniza 03_plan, 04_tasks y 05_progress. Preview por defecto.",
-  inputSchema: finishSchema(),
-  handler: (args) => runtime.write.runWriteOperation("finish_task", args),
-  async smoke({ callTool, check, toolJson, state }) {
-    const args = { id: state.taskId, outcome: "done", summary: "Workflow integral validado correctamente", area: "QA", filesChanged: ["prueba.txt"], validation: ["Smoke ejecutado correctamente."], pendingItems: ["Ninguno."], risks: ["Ninguno adicional."], rollbackNotes: "Eliminar la copia temporal." };
-    const preview = toolJson(await callTool("finish_task", args));
-    const paths = preview.changes?.map((change) => change.path) ?? [];
-    check("finish_task preview cubre 03", paths.includes("03_plan.md"));
-    check("finish_task preview cubre 04", paths.some((item) => item.startsWith("04_tasks/")));
-    check("finish_task preview cubre 05", paths.some((item) => item.startsWith("05_progress/")));
-    const review = toolJson(await callTool("finish_task", { id: state.taskId, outcome: "review", summary: "Requiere revisión humana antes de continuar", area: "QA", apply: true }));
-    const reviewedTask = await fs.readFile(path.join(state.iaRoot, "04_tasks/tasks", `${state.taskId}.md`), "utf8");
-    const reviewedCurrent = await fs.readFile(path.join(state.iaRoot, "04_tasks/current.md"), "utf8");
-    check("finish_task review devuelve a Borrador", review.applied === true && reviewedTask.includes("**Estado:** Borrador"));
-    check("finish_task review registra Borradores", reviewedCurrent.includes("## Borradores") && reviewedCurrent.includes(`| ${state.taskId} |`));
-    const reapproved = toolJson(await callTool("approve_task", { id: state.taskId, apply: true }));
-    check("finish_task review exige nueva aprobación", reapproved.applied === true);
-    const applied = toolJson(await callTool("finish_task", { ...args, apply: true }));
-    check("finish_task aplica cierre", applied.applied === true);
-    const plan = await fs.readFile(path.join(state.iaRoot, "03_plan.md"), "utf8");
-    const current = await fs.readFile(path.join(state.iaRoot, "04_tasks/current.md"), "utf8");
-    const progress = await fs.readFile(path.join(state.iaRoot, "05_progress/current.md"), "utf8");
-    const quality = await fs.readFile(path.join(state.iaRoot, "05_progress/by-component/quality.md"), "utf8");
-    check("finish_task actualiza 03 físicamente", !plan.includes(`⏳ ${state.taskId}`) && plan.includes("| Prueba | ✅ |"));
-    check("finish_task limpia 04 current", !current.includes(`| ${state.taskId} |`));
-    check("finish_task registra 05", progress.includes(state.taskId));
-    check("finish_task registra componente de 05", quality.includes(state.taskId));
+  name: 'finish_task',
+  description: 'Archiva una tarea En progreso, actualiza su aporte exacto al plan y crea indicadores de revisión solo cuando la fase está completa.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      id: { type: 'string', description: 'TASK-ID.' },
+      summary: { type: 'string', description: 'Short completion summary.' },
+      apply: { type: 'boolean', description: 'Set true to apply.' },
+    },
+    required: ['id'],
+    additionalProperties: false,
+  },
+  async handler(args) {
+    return getWorkflow().finishTask(args.id, args.summary, args.apply === true);
+  },
+  async smoke({ callTool, check, toolJson }) {
+    const res = toolJson(await callTool('finish_task', { id: 'TASK-ZZ-MCP-999' }));
+    check('finish_task con id inexistente responde error', typeof res.error === 'string', res.error);
   },
 };
-
-export function finishSchema() {
-  return { type: "object", properties: { id: { type: "string" }, outcome: { type: "string", enum: ["review", "done"] }, summary: { type: "string" }, area: { type: "string", enum: ["FE", "BE", "DB", "INF", "DOC", "MCP", "QA"] }, authorName: { type: "string" }, progressComponent: { type: "string", enum: ["backend", "frontend", "database", "infrastructure", "documentation", "quality"] }, filesChanged: { type: "array", items: { type: "string" } }, validation: { type: "array", items: { type: "string" } }, pendingItems: { type: "array", items: { type: "string" } }, risks: { type: "array", items: { type: "string" } }, rollbackNotes: { type: "string" }, apply: { type: "boolean" } }, required: ["id", "outcome", "summary", "area"], additionalProperties: false };
-}

@@ -1,7 +1,41 @@
-import { runtime } from "../src/runtime.mjs";
+import { getWorkflow } from '../src/common.mjs';
+
 export default {
-  name: "ia_create_decision", description: "Crea un ADR individual y actualiza el índice 06_decisions.md. Preview por defecto.",
-  inputSchema: { type: "object", properties: { title: { type: "string" }, domain: { type: "string" }, status: { type: "string", enum: ["propuesta", "aceptada", "reemplazada"] }, context: { type: "string" }, decision: { type: "string" }, reason: { type: "string" }, alternatives: { type: "array", items: { type: "string" } }, consequences: { type: "array", items: { type: "string" } }, replaces: { type: "string" }, apply: { type: "boolean" } }, required: ["title", "domain", "context", "decision", "reason"], additionalProperties: false },
-  handler: (args) => runtime.write.runWriteOperation("create_decision", args),
-  async smoke({ callTool, check, toolJson }) { const result = toolJson(await callTool("ia_create_decision", { title: "Decisión temporal de smoke", domain: "MCP", context: "Se valida el preview de ADR.", decision: "No aplicar cambios reales.", reason: "El smoke debe ser seguro." })); check("ia_create_decision preview", result.applied === false); check("ia_create_decision cubre índice y ADR", result.changes?.length === 2 && result.changes.every((change) => change.path.startsWith("06_decisions"))); },
+  name: 'ia_create_decision',
+  description: 'Crea un ADR estructurado y actualiza el índice de decisiones. La vista previa es predeterminada.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      title: { type: 'string', description: 'ADR title.' },
+      domain: { type: 'string', description: 'Decision domain.' },
+      context: { type: 'string', description: 'Context.' },
+      decision: { type: 'string', description: 'Decision.' },
+      reason: { type: 'string', description: 'Reason.' },
+      status: { type: 'string', description: 'propuesta, aceptada or reemplazada.' },
+      alternatives: { type: 'array', items: { type: 'string' }, description: 'Alternatives considered.' },
+      consequences: { type: 'array', items: { type: 'string' }, description: 'Consequences.' },
+      replaces: { type: 'string', description: 'Optional ADR replaced.' },
+      apply: { type: 'boolean', description: 'Set true to apply.' },
+    },
+    required: ['title', 'domain', 'context', 'decision', 'reason'],
+    additionalProperties: false,
+  },
+  async handler(args) {
+    return getWorkflow().createDecision(
+      args.title, args.domain, args.context, args.decision, args.reason, args.status,
+      args.alternatives, args.consequences, args.replaces, args.apply === true,
+    );
+  },
+  async smoke({ callTool, check, toolJson }) {
+    const res = toolJson(
+      await callTool('ia_create_decision', {
+        title: 'Smoke ADR',
+        domain: 'MCP',
+        context: 'ctx',
+        decision: 'dec',
+        reason: 'smoke',
+      }),
+    );
+    check('ia_create_decision en preview no escribe', res.preview === true && res.applied === false, JSON.stringify(res).slice(0, 150));
+  },
 };

@@ -228,18 +228,15 @@
 
 ## En progreso
 
-| ID | Área | Título | Prioridad |
-|---|---|---|---|
+| Tarea | Área | Riesgo |
+|-------|------|--------|
+| [TASK-EBC-INF-13](tasks/TASK-EBC-INF-13.md) | INF | Medio |
 ## Lista
 
-| ID | Área | Título | Prioridad |
-|---|---|---|---|
-
+Sin tareas registradas.
 ## Borradores
 
-| ID | Título | Riesgo | Aprobación |
-|---|---|---|---|
-
+Sin tareas registradas.
 ## Bloqueadas
 
 Sin tareas registradas.

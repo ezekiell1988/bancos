@@ -3,8 +3,40 @@
     "dbQuery": {
       "type": "stdio",
       "command": "node",
-      "args": ["${workspaceFolder}/.mcp/db-query/server.mjs", "--project-root", "${workspaceFolder}"],
-      "dev": { "watch": ".mcp/db-query/**/*.mjs", "debug": { "type": "node" } }
+      "args": [
+        "${workspaceFolder}/.mcp/db-query/packages/mcp-stdio/dist/server.js",
+        "--project-root",
+        "${workspaceFolder}",
+        "--secrets-file",
+        "db_voicebot.json"
+      ],
+      "dev": {
+        "watch": [
+          ".mcp/_shared-sdk/src/**/*.ts",
+          ".mcp/db-query/packages/**/*.ts"
+        ],
+        "debug": { "type": "node" }
+      }
+    },
+    "dbQueryClickeat": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "${workspaceFolder}/.mcp/db-query/packages/mcp-stdio/dist/server.js",
+        "--project-root",
+        "${workspaceFolder}",
+        "--secrets-file",
+        "db_dev_clickeat.json",
+        "--server-name",
+        "dbQueryClickeat"
+      ],
+      "dev": {
+        "watch": [
+          ".mcp/_shared-sdk/src/**/*.ts",
+          ".mcp/db-query/packages/**/*.ts"
+        ],
+        "debug": { "type": "node" }
+      }
     }
   }
 }

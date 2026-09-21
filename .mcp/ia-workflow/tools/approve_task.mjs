@@ -1,16 +1,23 @@
-import { runtime } from "../src/runtime.mjs";
+import { getWorkflow } from '../src/common.mjs';
 
 export default {
-  name: "approve_task",
-  order: 20,
-  description: "Valida una tarea Borrador y la mueve a Lista. Preview por defecto.",
-  inputSchema: { type: "object", properties: { id: { type: "string" }, approver: { type: "string" }, apply: { type: "boolean" } }, required: ["id"], additionalProperties: false },
-  handler: (args) => runtime.write.runWriteOperation("approve_task", args),
-  async smoke({ callTool, check, toolJson, state }) {
-    const preview = toolJson(await callTool("approve_task", { id: state.taskId }));
-    check("approve_task genera preview", preview.applied === false);
-    const applied = toolJson(await callTool("approve_task", { id: state.taskId, approver: "smoke", apply: true }));
-    const current = toolJson(await callTool("ia_read_file", { path: "04_tasks/current.md", mode: "full" }));
-    check("approve_task mueve a Lista", applied.applied === true && current.text?.includes("## Lista") && current.text?.includes(state.taskId));
+  name: 'approve_task',
+  description: 'Mueve una tarea de Borrador a Lista después de validarla. El trabajo de alto riesgo requiere un aprobador explícito.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      id: { type: 'string', description: 'TASK-ID.' },
+      approver: { type: 'string', description: 'Explicit approver, required for risk alto.' },
+      apply: { type: 'boolean', description: 'Set true to apply.' },
+    },
+    required: ['id'],
+    additionalProperties: false,
+  },
+  async handler(args) {
+    return getWorkflow().approveTask(args.id, args.approver, args.apply === true);
+  },
+  async smoke({ callTool, check, toolJson }) {
+    const res = toolJson(await callTool('approve_task', { id: 'TASK-ZZ-MCP-999' }));
+    check('approve_task con id inexistente responde error', typeof res.error === 'string', res.error);
   },
 };

@@ -1,289 +1,88 @@
-# IA MCP
+# iaWorkflow (Node.js — skill mcp-vscode)
 
-Servidor MCP local, generico y sin RAG para operar una carpeta `/ia` como contexto estructurado para LLMs.
+Servidor MCP local, propiedad del proyecto, para operar `/ia` mediante `stdio` (JSON-RPC
+delimitado por saltos de línea). Migrado de .NET a Node.js en TASK-EBC-MCP-97 (ADR-123, revierte
+ADR-119): 1 tool = 1 archivo en `tools/`, autodescubierto por el runtime genérico compartido
+`.mcp/_shared/`.
 
-## Enfoque
+La política de escritura es segura: cada operación ofrece preview por defecto y requiere
+`apply=true`; `delete_task` exige además `confirm=true`. Las rutas se confinan a `/ia`, las
+escrituras usan una allowlist (`WRITABLE_ROOTS` en `src/store.mjs`) y se rechazan patrones de
+secretos antes de escribir.
 
-Este servidor esta pensado para agentes LLM, no para una API humana tradicional. La fuente de verdad sigue siendo Markdown en Git. El MCP enruta, lee, busca, valida y ejecuta escrituras seguras por workflow.
+El patrón operativo de ahorro de tokens es: `ia_validate` → `ia_get_context` en `summary` o
+`pathsOnly` → `ia_inspect` únicamente para el archivo necesario.
 
-Expone tres superficies:
-
-| Superficie | Uso |
-|---|---|
-| `tools` | Acciones model-controlled para que el LLM pida contexto por intencion, busque texto, valide `/ia` y opere workflows seguros. |
-| `resources` | Archivos Markdown de `/ia` con URI `ia:///...`, legibles como contexto explicito. |
-| `prompts` | Flujos guiados para planificar, implementar, revisar, depurar y cerrar sesion. |
-
-No usa embeddings, base vectorial ni RAG.
-
-## Workflow publico
-
-El servidor expone una fachada publica para usuarios no tecnicos y mantiene primitivas `ia_*` para agentes avanzados:
-
-| Accion publica | Proposito |
-|---|---|
-| `create_task` | Crear una TASK en `Borrador` con contrato completo. |
-| `migrate_task` | Normalizar una TASK `Borrador` creada con formato legado antes de aprobarla. |
-| `approve_task` | Validar campos obligatorios y mover a `Lista`. |
-| `work_task` | Trabajar solo una tarea `Lista`, con rechazo seguro para borradores o riesgo alto sin aprobacion. |
-| `finish_task` | Cerrar o devolver a Borrador para revisión; al completar sincroniza `03`, `04` y `05`. |
-| `return_task_to_draft` | Devolver explícitamente una TASK a `Borrador` para corregirla antes de aprobarla de nuevo. |
-| `close_issue` | Resolver y archivar un issue sincronizando `05` y `07`. |
-| `archive_progress` | Archivar entradas antiguas o reducir `05_progress/current.md` cuando supera 12.000 caracteres. |
-| `ia_inspect` | Consultar lecturas unificadas y métricas de tareas sin modificar `/ia`. |
-
-Reglas:
-
-* `create_task` crea tareas en `Borrador`.
-* `migrate_task` normaliza una tarea heredada en preview antes de aprobarla.
-* `approve_task` valida contrato y mueve a `Lista`.
-* `work_task` rechaza tareas en `Borrador`, `Bloqueada` o `Completada`.
-* Si `Riesgo: alto`, `work_task` exige `Aprobacion: aprobada`.
-* Las escrituras siguen usando preview por defecto y solo aplican con `apply: true`.
-
-## Ahorro de tokens
-
-Las tools de lectura soportan respuestas compactas:
-
-| Opcion | Uso |
-|---|---|
-| `mode: "pathsOnly"` | Devuelve rutas/URIs sin contenido. |
-| `mode: "summary"` | Devuelve titulo, headings, bullets y tablas principales. |
-| `mode: "full"` | Devuelve texto, respetando `maxChars`. |
-| `maxChars` | Limita caracteres por archivo. |
-| `includeText: false` | Evita texto completo en bundles de contexto. |
-
-Patron recomendado para LLMs:
-
-1. `ia_validate`
-2. `ia_get_context` con `mode: "summary"` o `pathsOnly`
-3. Leer solo archivos necesarios con `ia_read_file` o `ia_read_task`
-4. Usar `ia_search` con `maxResults` bajo antes de pedir mas texto
-
-La separacion sigue el modelo oficial MCP:
-
-* `tools`: funciones que el modelo puede descubrir e invocar segun el contexto.
-* `resources`: datos o archivos que el cliente puede incorporar como contexto para el LLM.
-* `prompts`: plantillas de mensajes e instrucciones para flujos repetibles.
-
-Referencias oficiales:
-
-* https://modelcontextprotocol.io/docs/getting-started/intro
-* https://modelcontextprotocol.io/specification/2025-06-18/server/tools
-* https://modelcontextprotocol.io/specification/2025-06-18/server/resources
-* https://modelcontextprotocol.io/specification/2025-06-18/server/prompts
-
-## Ejecucion local
-
-Desde la raiz de cualquier proyecto con carpeta `/ia`:
-
-```bash
-node .mcp/ia-workflow/server.mjs --project-root /ruta/al/proyecto
-```
-
-Tambien se puede apuntar directamente a la carpeta `/ia`:
-
-```bash
-node .mcp/ia-workflow/server.mjs --ia-root /ruta/al/proyecto/ia
-```
-
-Variables soportadas:
-
-| Variable | Uso |
-|---|---|
-| `IA_MCP_PROJECT_ROOT` | Raiz del proyecto. El servidor usara `{root}/ia`. |
-| `IA_MCP_IA_ROOT` | Ruta directa a la carpeta `/ia`. |
-
-## Configuracion ejemplo
-
-Ejemplo conceptual para un cliente MCP local:
-
-```json
-{
-  "mcpServers": {
-    "ia-workflow": {
-      "command": "node",
-      "args": [
-        "/ruta/al/proyecto/.mcp/ia-workflow/server.mjs",
-        "--project-root",
-        "/ruta/al/proyecto"
-      ]
-    }
-  }
-}
-```
-
-## VS Code / GitHub Copilot
-
-VS Code usa `.vscode/mcp.json`. En este repo esa configuracion queda versionable para que el equipo comparta el MCP local. `.gitignore` usa:
-
-```gitignore
-**/.vscode/
-!/.vscode/
-/.vscode/*
-!/.vscode/mcp.json
-!.mcp/ia-workflow/tests/
-!.mcp/ia-workflow/tests/*.mjs
-```
-
-El ejemplo reutilizable para otros proyectos vive en:
-
-```text
-.mcp/ia-workflow/examples/vscode-mcp.json
-```
-
-Para probarlo en VS Code:
-
-1. Abrir workspace con `.vscode/mcp.json` versionado.
-2. En Copilot Chat, habilitar Agent Mode y seleccionar/permitir las tools del servidor `iaWorkflow`.
-3. Pedir algo como: `Usa el MCP iaWorkflow, llama ia_validate y luego ia_get_context con intent=planificar y mode=summary`.
-
-## Codex
-
-Para que Codex cargue este servidor, agregar al archivo local `~/.codex/config.toml`:
-
-```toml
-[mcp_servers.ia_workflow]
-command = "node"
-args = [
-  "/ruta/al/proyecto/.mcp/ia-workflow/server.mjs",
-  "--project-root",
-  "/ruta/al/proyecto"
-]
-startup_timeout_sec = 30
-```
-
-Despues de guardar la configuracion, reiniciar Codex o abrir una sesion nueva. Los MCP servers se descubren al iniciar la sesion; una sesion ya abierta no recibe automaticamente tools nuevas.
-
-Prompt de prueba recomendado:
-
-```text
-Usa el MCP ia_workflow. Primero llama ia_validate. Luego llama ia_get_context con intent=planificar, mode=summary e includeText=false.
-```
-
-## Estructura interna
+## Arquitectura
 
 ```text
 .mcp/ia-workflow/
-  server.mjs               # entrypoint genérico; no cambia al agregar tools
-  tools/                   # un archivo por tool: schema, handler y smoke co-ubicado
-  examples/
-    vscode-mcp.json        # ejemplo versionable para .vscode/mcp.json
-    codex-config.toml      # ejemplo para ~/.codex/config.toml
-  tests/
-    smoke.mjs              # smoke test JSON-RPC newline-delimited
-  src/
-    constants.mjs          # version, contrato /ia e intenciones
-    registry.mjs           # autodescubrimiento y validación de tools/
-    protocol.mjs           # transporte stdio: JSON-RPC newline-delimited
-    common.mjs             # validacion de argumentos y utilidades base
-    fs.mjs                 # acceso seguro limitado a /ia
-    markdown.mjs           # resumen, inserciones Markdown y diffs
-    prompts.mjs            # prompts MCP
-    read-tools.mjs         # operaciones de lectura compartidas
-    runtime.mjs            # contexto confinado del servidor
-    secrets.mjs            # escaneo basico de secrets en Markdown
-    time.mjs               # fechas Costa Rica
-    write-tools.mjs        # operaciones declarativas preview/apply
+├── server.mjs           ← adaptador delgado sobre _shared/runtime.mjs. No se edita al agregar tools
+├── src/
+│   ├── common.mjs       ← initWorkflow()/getWorkflow() (delega en paths.mjs)
+│   ├── paths.mjs        ← workflowPathsFromArgs(): --project-root/--ia-root/--runtime studio
+│   ├── store.mjs        ← IO confinado a /ia: read/readOptional/enumerateMarkdown/resolveTask/
+│   │                        resolveIssue/commit (preview/apply atómico) — puerto de las
+│   │                        primitivas de WorkflowService.cs
+│   ├── text.mjs         ← helpers de texto: timestamp (America/Costa_Rica), Field/SetField,
+│   │                        Slug, Bullets, AppendEvent (historial JSONL V2), etc.
+│   ├── markdown.mjs     ← manipulación de secciones Markdown: InsertTaskRow, MarkPlanTaskComplete,
+│   │                        AddBulletUnderHeading, UpdateIndependentPlan*, etc.
+│   └── workflow.mjs     ← las 22 operaciones (createWorkflow(iaRoot)), puerto 1:1 de
+│                            WorkflowService.cs (validate/getContext/inspect + 19 tools de escritura)
+├── tools/                ← 22 archivos, uno por tool (ver catálogo abajo)
+└── tests/
+    └── smoke.mjs         ← corre contra el /ia real del repo en modo solo lectura/preview
 ```
 
-`initialize` negocia `protocolVersion` contra una lista soportada. Si el cliente pide una version conocida, la respuesta la conserva; si pide una desconocida, responde la version soportada mas nueva.
+## Configuración por perfil
 
-## Tools principales
+El perfil `stdio` local de VS Code, Claude Code y Codex usa `--runtime studio` y lee `name`,
+`initials`, `email` y `platform` desde `<proyecto>/.local-secrets/ia-workflow.json`
+(`src/paths.mjs#workflowPathsFromArgs`, puerto de `WorkflowPaths.FromArgs`). Al crear una tarea,
+esos valores son los defaults del autor (vía `IA_WORKFLOW_AUTHOR_*` en `process.env`, fijadas por
+`paths.mjs` igual que el `.NET` anterior). Las rutas se derivan del proyecto y el archivo no se
+versiona.
 
-Fachada publica recomendada:
+## Catálogo de tools (22)
 
-| Tool | Proposito |
-|---|---|
-| `create_task` | Crea una TASK en `Borrador` con contrato completo y preview por defecto. |
-| `approve_task` | Valida y aprueba una TASK para moverla a `Lista`. |
-| `work_task` | Verifica gates y devuelve contexto de trabajo para una TASK aprobada. |
-| `finish_task` | Cierra como `Completada` o devuelve a `Borrador` para revisión; al cerrar actualiza `03_plan.md`, `04_tasks/` y `05_progress/`. |
-| `close_issue` | Cierra un issue, lo mueve al archivo mensual de `07`, limpia activos y registra el resultado en `05`. |
+`ia_validate`, `ia_get_context`, `ia_inspect` (lectura) — `create_task`, `approve_task`,
+`work_task`, `return_task_to_draft`, `finish_task`, `restore_task`, `reopen_task`,
+`duplicate_task`, `delete_task`, `assign_task_to_phase`, `update_independent_plan`,
+`ia_create_issue`, `close_issue`, `ia_link_issue_to_task`, `ia_add_progress_entry`,
+`archive_progress`, `ia_create_decision`, `resolve_phase_review`, `migrate_tasks_to_v2`.
 
-Primitivas avanzadas:
+Cada tool vive en `tools/{name}.mjs` con `export default { name, description, inputSchema,
+handler, smoke? }`, autodescubierto por `.mcp/_shared/registry.mjs` — agregar uno nuevo no toca
+`server.mjs`.
 
-| Tool | Proposito |
-|---|---|
-| `ia_get_context` | Devuelve el bundle correcto segun `intent`: `planificar`, `implementar`, `revisar`, `depurar`, `cerrar_sesion`. |
-| `ia_list_tasks` | Lista tareas activas, backlog, bloqueadas, completadas o todas. |
-| `ia_read_task` | Lee una TASK activa por ID. |
-| `ia_list_decisions` | Lista ADRs individuales. |
-| `ia_read_decision` | Lee un ADR por ID. |
-| `ia_list_issues` | Lista issues activos. |
-| `ia_search` | Busqueda textual local en Markdown. |
-| `ia_validate` | Valida archivos y carpetas obligatorias del contrato `/ia`. |
-| `ia_read_file` | Lee un archivo puntual dentro de `/ia`. |
-| `ia_inspect` | Fachada `oneOf` para listar/leer tareas, decisiones, issues, archivos, búsquedas y métricas. |
-
-## Tools de escritura segura
-
-La V2 agrega escritura declarativa. No existe `ia_write_file` ni escritura raw: el MCP escribe procesos, no archivos.
-
-| Tool | Proposito |
-|---|---|
-| `ia_preview_operation` | Genera preview/diff estructurado sin aplicar cambios. |
-| `ia_create_task` | Primitiva interna compatible con `create_task`: crea TASK desde template y actualiza `04_tasks/current.md`. |
-| `ia_close_task` | Cierra TASK activa: `03` plan, `04` current/done y `05` current/componente. |
-| `ia_add_progress_entry` | Agrega una entrada de progreso actual y opcionalmente por componente. |
-| `archive_progress` | Mueve entradas antiguas o excedentes a `05_progress/archive/YYYY-MM.md`; es idempotente. |
-| `return_task_to_draft` | Devuelve una TASK a `Borrador` y limpia sus referencias activas con preview por defecto. |
-| `ia_create_issue` | Crea ISSUE abierto y actualiza `07_issues/current.md`. |
-| `ia_close_issue` | Cierra ISSUE abierto: actualiza `05`, `07/current`, `07/archive` y elimina el archivo activo. |
-| `ia_create_decision` | Crea ADR individual y actualiza `06_decisions.md`. |
-
-Todas las tools de escritura usan `apply: false` por defecto. Para aplicar, repetir la misma llamada con:
-
-```json
-{
-  "apply": true
-}
-```
-
-Antes de aplicar, cada operacion valida rutas permitidas dentro de `/ia`, ausencia basica de secrets, idioma espanol aproximado y estructura general.
-
-## Ejemplo de flujo LLM
-
-```text
-1. Llama ia_get_context con intent=planificar y mode=summary.
-2. Si debes crear una tarea, llama create_task con apply=false.
-3. Muestra el preview al usuario.
-4. Solo si el usuario confirma, llama create_task con los mismos argumentos y apply=true.
-5. Llama ia_validate.
-```
-
-## Prompts
-
-| Prompt | Uso |
-|---|---|
-| `create_task` | Convertir una solicitud en TASK Borrador. |
-| `approve_task` | Aprobar una TASK Borrador validando su contrato. |
-| `work_task` | Validar gates y preparar contexto de una TASK Lista. |
-| `finish_task` | Cerrar o devolver a Borrador una TASK trabajada para revisión. |
-| `close_issue` | Resolver un issue y sincronizar progreso e historial. |
-| `ia_planificar_sesion` | Iniciar sesion leyendo solo contexto necesario. |
-| `ia_implementar_tarea` | Implementar una TASK existente. |
-| `ia_revisar_cambios` | Revisar cambios contra arquitectura, ADRs e issues. |
-| `ia_depurar_issue` | Investigar un issue documentado. |
-| `ia_cerrar_sesion` | Cerrar sesion actualizando `/ia`. |
-
-## Reglas
-
-* Las escrituras son declarativas y requieren `apply: true`.
-* No lee fuera de `/ia`.
-* No guarda memoria oculta.
-* No indexa semanticamente.
-* No ofrece escritura raw de Markdown.
-* En `stdio`, stdout emite solo mensajes MCP JSON-RPC delimitados por newline. Los logs deben ir a stderr.
-
-## Validacion
-
-Antes de considerar listo el MCP:
+## Validación
 
 ```bash
-node --check .mcp/ia-workflow/server.mjs
-find .mcp/ia-workflow/src .mcp/ia-workflow/tools -name '*.mjs' -exec node --check {} \;
+node --check .mcp/_shared/*.mjs .mcp/ia-workflow/server.mjs \
+  .mcp/ia-workflow/src/*.mjs .mcp/ia-workflow/tools/*.mjs
 node .mcp/ia-workflow/tests/smoke.mjs
 ```
 
-El smoke deriva el catálogo desde `tools/` y ejecuta el `smoke()` co-ubicado de cada tool. En una copia temporal verifica el cierre físico de tareas en `03/04/05`, el cierre de issues en `05/07`, previews seguros y rechazo de path traversal.
+El smoke corre contra el `/ia` real del repositorio: los tools de escritura se ejercitan siempre
+en preview (`apply` omitido) o con IDs inexistentes para forzar la ruta de error, nunca mutan el
+repo. La paridad de formato con la versión .NET se verificó manualmente comparando `read_task`,
+`ia_validate` y previews de `approve_task`/`create_task` byte a byte, y con una escritura real de
+`ia_add_progress_entry` cuyo resultado coincide exactamente con el formato que producía el host
+.NET.
+
+## Recursos y prompts (gap conocido)
+
+La versión .NET expone además `resources` (`ia:///...`, lectura de Markdown vía `Add Context`) y
+`prompts` (`planificar`, `implementar`, `cerrar_sesion`). El runtime compartido `.mcp/_shared/`
+(heredado de antes de ADR-119) solo implementa `tools`. `readResource` quedó portado en
+`workflow.mjs` pero sin exponerse todavía como primitivo MCP — usar `ia_inspect action=read_file`
+como equivalente vía tool mientras no se agregue soporte de `resources`/`prompts` al runtime
+compartido.
+
+## Código .NET anterior (ADR-119)
+
+`src/IaWorkflow.Tools`, `src/IaWorkflow.Stdio`, `tests/IaWorkflow.StdioSmoke`, `IaWorkflow.sln`,
+`Directory.Build.props` y el `.gitignore` de .NET se eliminaron tras validar el equivalente Node
+(smoke 22/22, paridad byte a byte contra la versión .NET aún conectada en esa sesión, y una
+escritura real con formato idéntico) — recuperables en el historial de git si hiciera falta.

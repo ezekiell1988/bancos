@@ -1,8 +1,0 @@
-{
-  "name": "cuponera-db-query-mcp",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "mssql": "12.7.0"
-  }
-}

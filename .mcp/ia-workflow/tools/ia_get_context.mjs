@@ -1,7 +1,27 @@
-import { runtime } from "../src/runtime.mjs";
+import { getWorkflow } from '../src/common.mjs';
+
 export default {
-  name: "ia_get_context", description: "Devuelve contexto compacto según intención: planificar, implementar, revisar, depurar o cerrar sesión.",
-  inputSchema: { type: "object", properties: { intent: { type: "string", enum: ["planificar", "implementar", "revisar", "depurar", "cerrar_sesion"] }, taskId: { type: "string" }, issueId: { type: "string" }, includeText: { type: "boolean" }, mode: { type: "string", enum: ["full", "summary", "pathsOnly"] }, maxChars: { type: "integer" } }, required: ["intent"], additionalProperties: false },
-  handler: (args) => runtime.read.getContext(args),
-  async smoke({ callTool, check, toolJson }) { const result = toolJson(await callTool("ia_get_context", { intent: "planificar", mode: "pathsOnly", includeText: false })); check("ia_get_context devuelve rutas", result.files?.length > 0 && result.files.every((item) => item.path)); check("ia_get_context pathsOnly omite texto", result.files?.every((item) => !item.text && !item.summary)); },
+  name: 'ia_get_context',
+  order: 1,
+  description: 'Devuelve el conjunto mínimo de contexto de /ia para planificar, implementar, revisar, depurar o cerrar_sesion.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      intent: { type: 'string', description: 'Session intent.' },
+      taskId: { type: 'string', description: 'Optional TASK-ID to include.' },
+      issueId: { type: 'string', description: 'Optional ISSUE-ID to include.' },
+      mode: { type: 'string', description: 'full, summary or pathsOnly.' },
+      includeText: { type: 'boolean', description: 'Whether to include file text.' },
+      maxChars: { type: 'integer', description: 'Maximum characters per full file.' },
+    },
+    required: ['intent'],
+    additionalProperties: false,
+  },
+  async handler(args) {
+    return getWorkflow().getContext(args.intent, args.taskId, args.issueId, args.mode, args.includeText, args.maxChars);
+  },
+  async smoke({ callTool, check, toolJson }) {
+    const res = toolJson(await callTool('ia_get_context', { intent: 'planificar', mode: 'pathsOnly' }));
+    check('ia_get_context devuelve files[]', Array.isArray(res.files) && res.files.length > 0, JSON.stringify(res).slice(0, 150));
+  },
 };
