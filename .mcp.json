@@ -12,13 +12,12 @@
       ]
     },
     "dbQuery": {
+      "type": "stdio",
       "command": "node",
       "args": [
-        ".mcp/db-query/server.mjs",
+        "/Users/ezequielbaltodanocubillo/.mcp/db-query/server.mjs",
         "--project-root",
-        ".",
-        "--secrets-file",
-        "db.json"
+        "/Users/ezequielbaltodanocubillo/Documents/Bancos"
       ]
     },
     "bancosMcpStdio": {

@@ -4,7 +4,6 @@
   "type": "module",
   "dependencies": {
     "ioredis": "^5.4.1",
-    "mssql": "^12.7.2",
     "ws": "^8.18.0"
   }
 }

@@ -1,13 +1,8 @@
 [mcp_servers.dbQuery]
 command = "node"
-args = [
-    "/Users/ezequielbaltodanocubillo/Documents/Bancos/.mcp/db-query/server.mjs",
-    "--project-root",
-    "/Users/ezequielbaltodanocubillo/Documents/Bancos",
-]
-enabled = true
+args = ["/Users/ezequielbaltodanocubillo/.mcp/db-query/server.mjs", "--project-root", "/Users/ezequielbaltodanocubillo/Documents/Bancos"]
 startup_timeout_sec = 30
-tool_timeout_sec = 90
+tool_timeout_sec = 180
 default_tools_approval_mode = "prompt"
 
 [mcp_servers.iaWorkflow]
