@@ -1,13 +1,14 @@
 {
   "mcpServers": {
     "iaWorkflow": {
+      "type": "stdio",
       "command": "node",
       "args": [
-        ".mcp/ia-workflow/server.mjs",
+        "/Users/ezequielbaltodanocubillo/.mcp/ia-workflow/server.mjs",
         "--runtime",
         "studio",
         "--local-secrets-file",
-        ".local-secrets/ia-workflow.json"
+        "/Users/ezequielbaltodanocubillo/.local-secrets/ia-workflow.json"
       ]
     },
     "dbQuery": {

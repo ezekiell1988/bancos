@@ -236,7 +236,9 @@
 Sin tareas registradas.
 ## Borradores
 
-Sin tareas registradas.
+| Tarea | Área | Riesgo |
+|-------|------|--------|
+| [TASK-EBC-DOC-15](tasks/TASK-EBC-DOC-15.md) | DOC | Bajo |
 ## Bloqueadas
 
 Sin tareas registradas.

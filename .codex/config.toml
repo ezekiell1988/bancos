@@ -14,9 +14,11 @@ default_tools_approval_mode = "prompt"
 command = "node"
 cwd = "/Users/ezequielbaltodanocubillo/Documents/Bancos"
 args = [
-    ".mcp/ia-workflow/server.mjs",
-    "--project-root",
-    ".",
+    "/Users/ezequielbaltodanocubillo/.mcp/ia-workflow/server.mjs",
+    "--runtime",
+    "studio",
+    "--local-secrets-file",
+    "/Users/ezequielbaltodanocubillo/.local-secrets/ia-workflow.json",
 ]
 
 [mcp_servers.bancosMcpStdio]

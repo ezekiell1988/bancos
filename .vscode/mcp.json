@@ -4,14 +4,13 @@
       "type": "stdio",
       "command": "node",
       "args": [
-        "${workspaceFolder}/.mcp/ia-workflow/server.mjs",
-        "--project-root",
-        "${workspaceFolder}"
+        "/Users/ezequielbaltodanocubillo/.mcp/ia-workflow/server.mjs",
+        "--runtime",
+        "studio",
+        "--local-secrets-file",
+        "/Users/ezequielbaltodanocubillo/.local-secrets/ia-workflow.json"
       ],
-      "dev": {
-        "watch": ".mcp/ia-workflow/**/*.mjs",
-        "debug": { "type": "node" }
-      }
+      "cwd": "${workspaceFolder}"
     },
     "dbQuery": {
       "type": "stdio",
@@ -23,7 +22,9 @@
       ],
       "dev": {
         "watch": ".mcp/db-query/**/*.mjs",
-        "debug": { "type": "node" }
+        "debug": {
+          "type": "node"
+        }
       }
     },
     "bancosMcpStdio": {
