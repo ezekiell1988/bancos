@@ -1,6 +1,6 @@
 # 03 — Plan de Desarrollo
 
-> Última actualización: 2026-07-26
+> Última actualización: 2026-09-25
 
 ## Dirección actual
 
@@ -17,7 +17,9 @@
 
 ---
 
-### Fase 2 — Carga y cierres en MCP ⏳ En curso
+### Fase 2 — Carga y cierres en MCP 🔄 En curso
+
+> Avance: 2 de 4 componentes completados (actualizado 2026-09-25).
 
 | Componente | Estado |
 |---|---|
@@ -28,7 +30,9 @@
 
 ---
 
-### Fase 3 — Clasificación híbrida en MCP ⏳
+### Fase 3 — Clasificación híbrida en MCP ⏳ Pendiente
+
+> Avance: 0 de 4 componentes completados (actualizado 2026-09-25).
 
 | Componente | Estado |
 |---|---|
@@ -41,7 +45,9 @@ Orden obligatorio: reglas .NET → Azure AI → `No clasificado` → corrección
 
 ---
 
-### Fase 4 — Contabilidad y reportes HTML en MCP ⏳
+### Fase 4 — Contabilidad y reportes HTML en MCP ⏳ Pendiente
+
+> Avance: 0 de 3 componentes completados (actualizado 2026-09-25).
 
 | Componente | Estado |
 |---|---|
@@ -51,10 +57,10 @@ Orden obligatorio: reglas .NET → Azure AI → `No clasificado` → corrección
 
 ---
 
-### Fase 5 — Operación MCP autónoma ⏳
+### Fase 5 — Operación MCP autónoma ⏳ Pendiente
 
 El LLM podrá cargar archivos, ejecutar cierres, resolver clasificaciones, solicitar revisión humana para excepciones y generar reportes HTML autocontenidos.
 
-### Fase 6 — Preparación Azure ⏳
+### Fase 6 — Preparación Azure ⏳ Pendiente
 
 Aplicable solo tras una tarea de seguridad aprobada. Incluye autenticación del servidor MCP, secretos y plataforma de despliegue; no forma parte del alcance actual.

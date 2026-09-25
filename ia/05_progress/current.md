@@ -1,11 +1,16 @@
 # Progreso actual
 
-> **Última actualización:** 2026-09-16 CR (TASK-EBC-DOC-14 completada)
+> **Última actualización:** 2026-09-25 CR
+> **Fase activa:** Fase 2 — Carga y cierres en MCP (2 de 4 componentes completados)
 
-## En curso
+## En progreso
 
 * Descubrimiento de requisitos financieros.
 * Firmas de siete plantillas documentadas; faltan validación de XLS binario y semántica de CSV de crédito durante implementación.
+
+| Item | Responsable | Estado | Siguiente paso |
+|------|-------------|--------|----------------|
+| TASK-EBC-INF-13 Video regalo: muñeca 3D tierna (imagen Azure AI Foundry + Veo 3.1) | Ezequiel Baltodano Cubillo | En progreso | Continuar la implementación |
 
 ## Completado en sesión actual
 
@@ -13,7 +18,7 @@
 * Inspeccionados formatos de primera carga de forma anonimizada y documentados detectores/validaciones.
 * Configurados MCP `iaWorkflow` y `dbquery`; smoke tests completos y configuración de Codex/VS Code/Claude actualizada.
 
-## Próximo
+## Pendiente
 
 * Completar preguntas de requisitos.
 * Auditar estructura `/ia`.
