@@ -1,6 +1,6 @@
 # Checklist de revisión — Bancos
 
-Lo aplica el skill global `project-code-review` sobre cada diff, además de sus verificaciones generales.
+Lo aplica la regla [`revision-codigo.md`](./revision-codigo.md) sobre cada diff, además de sus verificaciones generales.
 
 ## Checklist
 

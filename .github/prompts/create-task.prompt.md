@@ -16,7 +16,7 @@ Crear un archivo de tarea en `ia/04_tasks/tasks/{TASK-ID}.md` y registrar la tar
 
 ## Reglas
 
-- Seguir el skill `.agents/skills/ia-nueva-tarea/SKILL.md`.
+- Seguir la regla `ia/rules/gestion-tareas.md`.
 - Asignar el siguiente ID secuencial disponible para la persona y área.
 - `Expected Output` debe ser verificable — si no se puede verificar, redefinir la tarea.
 - No mezclar múltiples features en una sola tarea.

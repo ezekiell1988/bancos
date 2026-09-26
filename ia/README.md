@@ -21,6 +21,18 @@ Los adaptadores MCP que implementan un caso de uso viven junto a su feature. Por
 | `06_decisions.md` | Índice de ADRs | Cambiar arquitectura |
 | `07_issues.md` | Problemas conocidos | Depurar |
 | `08_retrospective.md` | Aprendizajes | Cerrar fase |
+| `rules/` | Reglas de workflow y reglas propias del proyecto | Planificar, gestionar tareas, revisar o cerrar sesión |
+
+## Reglas de workflow (`ia/rules/`)
+
+Los procedimientos de trabajo viven en `rules/`, no en skills globales. Leerlos con el MCP `iaWorkflow` (`ia_inspect action=read_file path=rules/<archivo>`) o directo si el MCP no está disponible. Índice completo: `rules/README.md`.
+
+| Intención | Regla | Además |
+|---|---|---|
+| Iniciar sesión, planificar, elegir la próxima tarea | `rules/planificacion.md` | — |
+| Crear, aprobar, iniciar, bloquear o cerrar una tarea | `rules/gestion-tareas.md` | `rules/mapa-area-skill.md` antes de implementar |
+| Revisar un diff o un cambio antes de commit/PR | `rules/revision-codigo.md` | `rules/checklist-revision.md` |
+| Cerrar la sesión y dejar `/ia` al día | `rules/cierre-sesion.md` | — |
 
 ## Flujo
 
@@ -30,4 +42,4 @@ Los adaptadores MCP que implementan un caso de uso viven junto a su feature. Por
 4. Solo implementar una tarea `Lista`; riesgo alto requiere aprobación explícita.
 5. Cerrar tarea actualizando progreso, decisiones e issues aplicables.
 
-Esquemas: `SCHEMAS.md`. Templates: `templates/`. Prompts: `prompts/`.
+Esquemas: `SCHEMAS.md`. Templates: `templates/`. Prompts: `prompts/`. Reglas: `rules/`.

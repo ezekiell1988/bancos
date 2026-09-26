@@ -28,7 +28,7 @@ Definir el mapa de área a skill del proyecto
 
 ## Contexto
 
-El skill global `project-task-management` carga las reglas propias del proyecto desde `ia/rules/mapa-area-skill.md`. El archivo existe como plantilla con un bloque POR DEFINIR porque requiere conocer el stack, los ADRs y las convenciones reales del proyecto.
+La regla genérica `ia/rules/gestion-tareas.md` exige cargar el skill técnico de cada área antes de implementar, según `ia/rules/mapa-area-skill.md`. El archivo existe como plantilla con un bloque POR DEFINIR porque requiere conocer el stack, los ADRs y las convenciones reales del proyecto.
 
 ## Objetivo
 
@@ -40,7 +40,7 @@ Dejar `ia/rules/mapa-area-skill.md` sin marcadores, con contenido concreto y ver
 
 ## Fuera de alcance
 
-* Modificar los skills globales `project-*`, compartidos por todos los proyectos.
+* Modificar las reglas genéricas de `ia/rules/` (`gestion-tareas.md`, `revision-codigo.md`, etc.): se actualizan con `init-ia.mjs --refresh-rules`; un ajuste propio va en su sección `## Ajustes del proyecto`.
 * Reescribir la estructura de `/ia`.
 
 ## Criterios de aceptación

@@ -15,6 +15,7 @@ Revisar el cambio actual (`git diff`) verificando corrección, seguridad y adher
 
 ## Reglas
 
+- Seguir la regla `ia/rules/revision-codigo.md` y aplicar `ia/rules/checklist-revision.md`.
 - Verificar que el `Expected Output` de la tarea se cumple.
 - Detectar: bugs de lógica, vulnerabilidades OWASP top 10, código innecesario fuera del scope de la tarea.
 - No proponer refactorizaciones no relacionadas con la tarea.

@@ -15,7 +15,7 @@ Actualizar `/ia` para que refleje el estado real del proyecto al finalizar la se
 
 ## Reglas
 
-- Seguir el skill `.agents/skills/ia-sesion-cierre/SKILL.md`.
+- Seguir la regla `ia/rules/cierre-sesion.md`.
 - No cerrar una tarea si `Expected Output` no está cumplido.
 - Si la tarea se completó: mover resumen a `04_tasks/done/{YYYY-MM}.md` y eliminar el archivo individual.
 - Actualizar `05_progress/current.md` y `05_progress/by-component/{área}.md`.
