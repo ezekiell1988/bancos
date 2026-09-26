@@ -27,7 +27,7 @@ Ejecutar `ia_validate` e `ia_get_context(intent: "cerrar_sesion")` si el MCP est
 5. Revisar cada flag arquitectónico o de retrospectiva en `02_architecture.md`/`08_retrospective.md`. Documentar la retrospectiva cuando haya evidencia suficiente, crear las tareas de sus acciones y resolver el flag con `resolve_phase_review`. Dejarlo pendiente solo si falta evidencia, con el motivo.
 6. Si se detectó un patrón repetible, proponer una regla nueva en `rules/` (o en `## Ajustes del proyecto` de la regla que corresponda) o un skill técnico.
 7. Actualizar a mano solo las secciones manuales de `05_progress/current.md`: `Resumen ejecutivo`, `Pendiente` y `Riesgos y bloqueos`.
-8. Si `05_progress/current.md` supera 12 000 caracteres, ejecutar `archive_progress` con `keepDays: 0` (o `archiveAllClosed: true`): hoy `keepDays` > 0 no archiva nada, y la tool mueve la sección `## Completado en sesiones recientes` completa con su encabezado, que hay que reponer vacía (`Sin entradas registradas.`). Para archivar solo lo viejo, mover a mano las viñetas antiguas a `05_progress/archive/AAAA-MM.md` y dejar las recientes (con fecha al inicio: `* **AAAA-MM-DD** — …`).
+8. Si `05_progress/current.md` supera 12 000 caracteres (`ia_validate` lo avisa), ejecutar `archive_progress` con `keepDays` (p. ej. 14): mueve al archivo mensual las viñetas fechadas más viejas y deja las recientes. Las viñetas sin fecha inicial no se archivan así: fecharlas antes con la fecha de cierre de su historial. Con `keepDays: 0` se mueve la sección completa y hay que reponerla con `Sin entradas registradas.`.
 9. Ejecutar `ia_validate` para confirmar que el cierre dejó `/ia` consistente.
 
 ## Reglas de seguridad
