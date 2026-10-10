@@ -17,6 +17,8 @@
     <PackageReference Include="Hangfire.AspNetCore" Version="1.8.22" />
     <PackageReference Include="Hangfire.SqlServer" Version="1.8.22" />
     <PackageReference Include="Hangfire.Console" Version="1.4.3" />
+    <!-- Hangfire.Core trae Newtonsoft.Json 11.0.1 (GHSA-5crp-9r3c-p9vr); se fija la versión corregida. -->
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Bancos.Mcp.Tests" />
