@@ -1,6 +1,6 @@
 # 00 — Contexto del Proyecto
 
-> Última actualización: 2026-07-26
+> Última actualización: 2026-10-17
 > Alcance activo: Bancos.Mcp es el único proyecto funcional.
 
 ## Identidad
@@ -46,24 +46,18 @@
 | `src/input/` | Muestra histórica inicial; no se modifica durante análisis. |
 | `src/output/` | Aplicación final compilada/servida. |
 | `.local-secrets/` | Configuración local ignorada; nunca versionar ni leer valores en respuestas. |
-| `.mcp/bancos-mcp.ps1` | Script que levanta SQL Server (Docker) y el servidor MCP en modo watch. |
+| `.mcp/db-up.ps1` | Levanta SQL Server (Docker) si no corre y aplica las migraciones de `Bancos.Mcp.Tools`. |
+| `.mcp.json` | Registra `bancosMcpStdio`: el cliente MCP arranca `src/Bancos.Mcp.Stdio` por stdio. |
 | `ia/` | Contexto y trazabilidad de trabajo. |
 
 ## Desarrollo local
 
 ### Levantar BD y MCP
 
-El script `.mcp/bancos-mcp.ps1` arranca el contenedor Docker de SQL Server (si no está corriendo) y ejecuta `dotnet watch run` del proyecto `Bancos.Mcp` en el puerto 8000.
+* BD: `pwsh .mcp/db-up.ps1` arranca el contenedor de SQL Server (si no está corriendo) y aplica las migraciones.
+* MCP: no se levanta a mano; el cliente (Claude Code, Codex, VS Code) arranca `bancosMcpStdio` desde `.mcp.json` por stdio.
 
-**Regla operativa:** el usuario (Ezequiel) ejecuta este script manualmente. Cuando un cambio requiera levantar o reiniciar el MCP, el agente debe indicarle al usuario que ejecute `.mcp/bancos-mcp.ps1`; el agente no debe levantarlo por su cuenta.
-
-```bash
-# macOS / Linux
-pwsh .mcp/bancos-mcp.ps1
-
-# Windows (PowerShell)
-.\.mcp\bancos-mcp.ps1
-```
+**Regla operativa:** Ezequiel maneja el ciclo de vida de la BD y del servidor MCP. Si un cambio requiere levantar o reiniciar algo, el agente no lo hace por su cuenta: le pide al usuario que corra `pwsh .mcp/db-up.ps1` o que reconecte `bancosMcpStdio` desde su cliente (por ejemplo `/mcp` en Claude Code).
 
 Requisitos: Docker Desktop corriendo y PowerShell (`pwsh`) instalado.
 
@@ -71,5 +65,5 @@ Requisitos: Docker Desktop corriendo y PowerShell (`pwsh`) instalado.
 
 | Alcance | Comando |
 |---|---|
-| MCP | `pwsh .mcp/bancos-mcp.ps1` → `tools/list` responde con tools disponibles |
+| MCP | Con `bancosMcpStdio` conectado, `tools/list` responde con tools disponibles |
 | Datos | Consultas de conciliación vía MCP `dbquery` cuando esté disponible |
