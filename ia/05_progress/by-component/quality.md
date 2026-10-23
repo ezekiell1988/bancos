@@ -1,8 +1,8 @@
+# Progreso — Calidad
+
 > **Última actualización:** 2026-07-31 CR (TASK-EBC-MCP-38 completada)
 
-
-
-## Completado
+## Completado en sesiones recientes
 
 * **2026-07-31** — TASK-EBC-MCP-38: Implementadas las tools MCP de conciliación N:N entre pagos y transferencias, con propuesta explicable, confirmación/corrección/eliminación auditables y preservación de movimientos originales. Se agregó el modelo EF Core y su migración, registro de las cinco tools y pruebas de servicio/protocolo. — EBC
 

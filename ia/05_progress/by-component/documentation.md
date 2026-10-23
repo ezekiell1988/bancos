@@ -1,8 +1,8 @@
+# Progreso — Documentación
+
 > **Última actualización:** 2026-09-16 CR (TASK-EBC-DOC-14 completada)
 
-
-
-## Completado
+## Completado en sesiones recientes
 
 * **2026-09-16** — TASK-EBC-DOC-14: Se sincronizó mcp-vscode-dotnet desde la base canónica .agents/skills hacia .claude/skills y .codex/skills. La verificación posterior reportó 60 skills idénticos, sin conflictos. — EBC
 

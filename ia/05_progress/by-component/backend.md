@@ -1,8 +1,8 @@
+# Progreso — Backend
+
 > **Última actualización:** 2026-07-31 CR (TASK-EBC-MCP-40 completada)
 
-
-
-## Completado
+## Completado en sesiones recientes
 
 * **2026-07-31** — TASK-EBC-MCP-40: Implementadas tres tools MCP de solo lectura: list_card_statements con filtros de cuenta/período/fechas, saldos y líneas vinculadas; list_card_financings con financiamientos activos y filtro de moneda; y list_loan_statements con extractos, saldos y cuotas ordenadas. Se añadieron servicios scoped, DTOs seguros sin SourceFingerprint, módulos DI y registro en Program. Se agregaron pruebas de consultas, relaciones, filtros, orden y descubrimiento en tools/list. — EBC
 

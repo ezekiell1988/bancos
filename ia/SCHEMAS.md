@@ -127,7 +127,7 @@ como descripciones del esquema.
 
 ```markdown
 # TASK-{INICIALES}-{ÁREA}-{NN} — {título}
-> Estado: Borrador | Lista | En progreso | Bloqueada | En revisión | Completada
+> Estado: Borrador | Lista | En progreso | Bloqueada | Completada
 > Riesgo: Bajo | Medio | Alto
 > Aprobación: Pendiente | Aprobada explícitamente
 ## Contexto

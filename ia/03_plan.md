@@ -1,12 +1,14 @@
 # 03 — Plan de Desarrollo
 
-> Última actualización: 2026-09-25
+> Última actualización: 2026-10-23
 
 ## Dirección actual
 
 `Bancos.Mcp` es el único proyecto activo. Un LLM realiza todo el trabajo mediante tools MCP; no existen API HTTP ni interfaz web en la arquitectura activa.
 
----
+La fase activa es la Fase 2 — Carga y cierres en MCP. Para cerrarla faltan tareas para las filas «Tools MCP de extracción por formato» e «Idempotencia e importación con huella».
+
+## Fases
 
 ### Fase 1 — Fundación y contexto ✅ Completada
 
@@ -15,20 +17,16 @@
 | `/ia` y reglas operativas | ✅ |
 | MCP `iaWorkflow` y `dbquery` | ✅ |
 
----
-
 ### Fase 2 — Carga y cierres en MCP 🔄 En curso
 
 > Avance: 2 de 4 componentes completados (actualizado 2026-09-25).
 
 | Componente | Estado |
 |---|---|
-| Catálogo y tablas transaccionales MCP | ✅ |
+| Catálogo y tablas transaccionales MCP | ✅ TASK-EBC-DB-07 |
 | Tools MCP de extracción por formato | ⏳ En revisión |
 | Idempotencia e importación con huella | ⏳ Pendiente |
-| Cierres y períodos | ✅ Implementado |
-
----
+| Cierres y períodos | ✅ TASK-EBC-MCP-31 |
 
 ### Fase 3 — Clasificación híbrida en MCP ⏳ Pendiente
 
@@ -43,8 +41,6 @@
 
 Orden obligatorio: reglas .NET → Azure AI → `No clasificado` → corrección del usuario → nueva regla .NET.
 
----
-
 ### Fase 4 — Contabilidad y reportes HTML en MCP ⏳ Pendiente
 
 > Avance: 0 de 3 componentes completados (actualizado 2026-09-25).
@@ -55,8 +51,6 @@ Orden obligatorio: reglas .NET → Azure AI → `No clasificado` → corrección
 | Tool HTML de estado de resultados | ⏳ Pendiente |
 | Tool HTML de situación financiera | ⏳ Pendiente |
 
----
-
 ### Fase 5 — Operación MCP autónoma ⏳ Pendiente
 
 El LLM podrá cargar archivos, ejecutar cierres, resolver clasificaciones, solicitar revisión humana para excepciones y generar reportes HTML autocontenidos.
@@ -64,3 +58,7 @@ El LLM podrá cargar archivos, ejecutar cierres, resolver clasificaciones, solic
 ### Fase 6 — Preparación Azure ⏳ Pendiente
 
 Aplicable solo tras una tarea de seguridad aprobada. Incluye autenticación del servidor MCP, secretos y plataforma de despliegue; no forma parte del alcance actual.
+
+## Pendiente de planificación
+
+* Ninguno por ahora.

@@ -1,8 +1,8 @@
+# Progreso — Frontend
+
 > **Última actualización:** 2026-07-26 CR (TASK-EBC-FE-03 completada)
 
-
-
-## Completado
+## Completado en sesiones recientes
 
 * **2026-07-26** — TASK-EBC-FE-03: Cancelada por decisión de arquitectura: Bancos operará exclusivamente mediante MCP y se retira el frontend Angular. — C
 

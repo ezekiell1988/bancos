@@ -14,7 +14,8 @@ Sin tareas registradas.
 
 ## Borradores
 
-Sin tareas registradas.
+| Tarea | Área | Riesgo |
+|-------|------|--------|
 
 ## Bloqueadas
 
@@ -22,5 +23,6 @@ Sin tareas registradas.
 
 ## En revisión
 
-Sin tareas.
-| TASK-EBC-DB-05 | DB | Estrategia de dos entornos de base de datos (dev y prod) | crítica |
+| Tarea | Área | Riesgo |
+|-------|------|--------|
+| [TASK-EBC-DB-05](tasks/TASK-EBC-DB-05.md) | DB | Alto |

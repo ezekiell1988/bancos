@@ -1,8 +1,8 @@
+# Progreso — Infraestructura
+
 > **Última actualización:** 2026-07-27 CR (TASK-EBC-MCP-43 completada)
 
-
-
-## Completado
+## Completado en sesiones recientes
 
 * **2026-07-27** — TASK-EBC-MCP-43: Corregida la compatibilidad Streamable HTTP con VS Code: el servidor valida la sesión cuando se recibe Mcp-Session-Id y usa la versión negociada si VS Code omite MCP-Protocol-Version. Se incorporó auditoría local segura del handshake. — EBC
 
