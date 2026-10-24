@@ -1,8 +1,11 @@
 # 02 — Arquitectura del Sistema
 
-> Última actualización: 2026-07-26
+> Última actualización: 2026-10-24
+> Requisitos: las secciones citan los `REQ-…` de `01_requirements.md`. REQ-017 (conciliación N:N) todavía no tiene diseño.
 
 ## Resumen
+
+> Requisitos: REQ-020, REQ-021
 
 **Dirección estratégica:** `Bancos.Mcp` es el único proyecto funcional y expone las
 operaciones financieras mediante tools MCP. Usa `McpCatalogDbContext` y su propia base
@@ -20,18 +23,20 @@ columna; los nombres físicos permanecen en inglés.
 
 ## Features
 
-| Feature | Responsabilidad |
-|---|---|
-| `Imports` | Upload temporal, huella, detección de plantilla y encolado. |
-| `Parsing` | Extractores PDF/Excel/CSV por firma de formato. |
-| `Ledger` | Cuentas, auxiliares, movimientos y comprobantes. |
-| `Classification` | Reglas, categorías, tags, IA y revisión manual. |
-| `ExchangeRates` | Tipo de cambio diario y fallback. |
-| `ForeignExchange` | Cierres regenerables de pasivos USD. |
-| `Reports` | Pérdidas/ganancias y situación financiera. |
-| `CardStatements` | Cortes de tarjetas, período, vencimiento y pago agrupado analítico. |
+| Feature | Responsabilidad | Requisitos |
+|---|---|---|
+| `Imports` | Upload temporal, huella, detección de plantilla y encolado. | REQ-001, REQ-003, REQ-019 |
+| `Parsing` | Extractores PDF/Excel/CSV por firma de formato. | REQ-002 |
+| `Ledger` | Cuentas, auxiliares, movimientos y comprobantes. | REQ-004, REQ-012, REQ-013 |
+| `Classification` | Reglas, categorías, tags, IA y revisión manual. | REQ-005, REQ-006, REQ-018 |
+| `ExchangeRates` | Tipo de cambio diario y fallback. | REQ-009, REQ-010 |
+| `ForeignExchange` | Cierres regenerables de pasivos USD. | REQ-011 |
+| `Reports` | Pérdidas/ganancias y situación financiera. | REQ-007, REQ-008, REQ-015, REQ-016 |
+| `CardStatements` | Cortes de tarjetas, período, vencimiento y pago agrupado analítico. | REQ-014 |
 
 ## Flujo de importación
+
+> Requisitos: REQ-001, REQ-002, REQ-003
 
 ```text
 [Upload] -> [ImportId] -> [Hangfire job]
@@ -44,6 +49,8 @@ Job recibe solo `ImportId`; bytes no viajan en argumentos Hangfire. Console regi
 
 ## Clasificación híbrida y aprendizaje
 
+> Requisitos: REQ-005, REQ-006
+
 La clasificación la orquesta `Bancos.Mcp`; un LLM invoca las tools, pero el motor decide con un orden fijo:
 
 1. .NET busca una regla determinista por cuenta, descripción normalizada y contexto del movimiento.
@@ -54,6 +61,8 @@ La clasificación la orquesta `Bancos.Mcp`; un LLM invoca las tools, pero el mot
 `tbCategories` modela el árbol de categorías con raíces Ingreso, Gasto, Activo, Pasivo y Capital. `tbClassificationRules` contiene las reglas reutilizables; `tbTransactionClassifications` conserva el historial, origen (`rule`, `ai`, `manual`, `unclassified`), confianza y explicación de cada decisión.
 
 ## Tools MCP de reportes
+
+> Requisitos: REQ-007, REQ-008, REQ-016
 
 `Reports` expone tools que devuelven HTML autocontenido, no páginas web:
 
@@ -69,6 +78,8 @@ La clasificación la orquesta `Bancos.Mcp`; un LLM invoca las tools, pero el mot
 Los períodos contables parten del 2025-12-31. `CardStatements` mantiene ciclos del banco y sus movimientos vinculados; el cierre de tarjeta informa pago y liquidez, mientras el libro mayor registra compras/pagos por fecha contable.
 
 ## Tablas transaccionales del MCP
+
+> Requisitos: REQ-004, REQ-013, REQ-014
 
 El catálogo MCP incluye, además de las tablas de catálogo base (`tbBanks`, `tbBankAccounts`, `tbImportTemplates`, `tbImportTemplatePatterns`, `tbBankAccountImportTemplates`, `tbExchangeRates`), las siguientes tablas transaccionales creadas en `TASK-EBC-DB-07`:
 
