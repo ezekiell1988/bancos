@@ -1,25 +1,15 @@
 # AGENTS.md — Bancos
 
-## Workflow obligatorio
+## Workflow
 
-`/ia` es fuente de verdad, pero MCP `iaWorkflow` es interfaz operativa obligatoria.
+`/ia` es fuente de verdad y MCP `iaWorkflow` su interfaz: `ia_validate` + `ia_get_context` al iniciar, `work_task` antes de editar y `finish_task` al cerrar.
 
-1. Para tarea, consulta, planificación, revisión, diagnóstico o cierre: usar `ia_validate` y `ia_get_context` con intención adecuada.
-2. Para tarea concreta: usar `work_task` antes de editar y `finish_task` al cerrar.
-3. Para lecturas puntuales: usar `ia_read_file`, `ia_read_task` o `ia_search` solo cuando contexto MCP lo requiera.
-4. Consultas a `dbbancos`: usar MCP `dbquery` y herramientas de solo lectura. No leer ni imprimir `.local-secrets/db.json`.
+## Qué hace el proyecto
 
-No recorrer `/ia` manualmente ni reemplazar este flujo por skills. Los skills técnicos se usan únicamente cuando tarea aprobada requiera un patrón especializado.
+El dueño pasa documentos bancarios y facturas; el agente anota cada movimiento en `datos/` según `README.md` (jsonl por día, carpeta por mes, respaldo en `multimedia/`). Gastos del BCR a `bcr/`, de la tarjeta BAC a `bac/`; ingresos (salarios ITQS o ClickEat) a la cuenta donde caen, normalmente BCR. Si aparece un tipo nuevo, agregarlo al jsonl de tipos.
 
 ## Seguridad
 
-* No exponer credenciales, IBAN, números de cuenta, saldos, transacciones ni archivos fuente en respuestas, logs, prompts o `/ia`.
-* Escrituras MCP requieren preview y `apply: true`; operaciones destructivas requieren confirmación explícita.
-* Solo implementar tareas `Lista`. Riesgo alto requiere aprobación explícita.
-* Antes de publicar en Azure, crear y aprobar tarea de autenticación/seguridad.
-
-## Contexto técnico
-
-* Monolito .NET 10/C# 14 Minimal API por features + Angular standalone + MSSQL.
-* Jobs con Hangfire/Hangfire.Console. Nunca pasar bytes de archivos a argumentos de jobs.
-* Configuración .NET en `appsettings`; secretos solo en archivos locales ignorados.
+* El repo es público: `datos/` y `.local-secrets/` nunca van a git.
+* No copiar montos, cuentas ni movimientos a `/ia`, commits ni logs.
+* Código anterior: rama `legacy`, solo consulta.

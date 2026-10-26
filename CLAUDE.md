@@ -1,17 +1,8 @@
 # CLAUDE.md — Bancos
 
-## MCP primero
+Seguir `AGENTS.md`. Usar MCP `iaWorkflow` para todo trabajo del proyecto (`ia_validate`, `ia_get_context`, `work_task`, `finish_task`); no recorrer `/ia` manualmente.
 
-Usa MCP `iaWorkflow` para todo trabajo del proyecto:
-
-* Llama `ia_validate` y `ia_get_context` antes de planificar, implementar, revisar, depurar o cerrar.
-* Usa `work_task` antes de editar y `finish_task` al finalizar.
-* Usa lecturas MCP puntuales; no recorras `/ia` manualmente.
-* Para SQL en `dbbancos`, usa `dbquery` de solo lectura; nunca reveles contenido de `.local-secrets/db.json`.
-
-## Reglas
-
-* Trabaja únicamente tareas `Lista`; tareas de riesgo alto requieren aprobación explícita.
-* No expongas datos financieros, identificadores bancarios, credenciales ni archivos de importación.
+* Movimientos y respaldos van a `datos/` con el formato de `README.md`; `datos/` está fuera de git (repo público).
+* No exponer datos financieros, cuentas, credenciales ni archivos fuente fuera de `datos/`.
 * Escritos de workflow: preview primero, `apply: true` solo tras aprobación.
-* Stack: .NET 10/C# 14 Minimal APIs por features, Angular standalone, MSSQL y Hangfire.Console.
+* Código anterior (MCP .NET + SQL): rama `legacy`, solo consulta.

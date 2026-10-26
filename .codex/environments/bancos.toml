@@ -1,8 +1,0 @@
-# Entorno reutilizable de desarrollo local para Bancos.
-version = "1"
-name = "Bancos"
-
-[[actions]]
-name = "Iniciar MCP"
-icon = "play"
-command = "pwsh -ExecutionPolicy Bypass -File ./.mcp/bancos-mcp.ps1"

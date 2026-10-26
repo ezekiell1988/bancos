@@ -1,10 +1,4 @@
+# Datos financieros privados: nunca a git (el repo es público)
+datos/
 .local-secrets/
-**/appsettings.Development.json
-bin/
-obj/
-.vs/
 .DS_Store
-.local-output/
-**/logs/
-.mcp/**/node_modules/
-src/input/

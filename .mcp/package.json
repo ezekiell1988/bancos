@@ -1,9 +1,0 @@
-{
-  "name": "bancos-mcp-shared-deps",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "ioredis": "^5.4.1",
-    "ws": "^8.18.0"
-  }
-}

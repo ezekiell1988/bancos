@@ -11,34 +11,6 @@
         "/Users/ezequielbaltodanocubillo/.local-secrets/ia-workflow.json"
       ],
       "cwd": "${workspaceFolder}"
-    },
-    "dbQuery": {
-      "type": "stdio",
-      "command": "node",
-      "args": [
-        "/Users/ezequielbaltodanocubillo/.mcp/db-query/server.mjs",
-        "--project-root",
-        "${workspaceFolder}"
-      ]
-    },
-    "bancosMcpStdio": {
-      "type": "stdio",
-      "command": "dotnet",
-      "args": [
-        "run",
-        "--project",
-        "${workspaceFolder}/src/Bancos.Mcp.Stdio/Bancos.Mcp.Stdio.csproj",
-        "--no-launch-profile",
-        "--tl:off",
-        "--verbosity",
-        "quiet"
-      ],
-      "dev": {
-        "watch": [
-          "src/Bancos.Mcp.Tools/**/*.cs",
-          "src/Bancos.Mcp.Stdio/**/*.cs"
-        ]
-      }
     }
   }
 }

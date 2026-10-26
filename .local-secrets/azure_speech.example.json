@@ -1,4 +1,0 @@
-{
-  "AZURE_SPEECH_KEY": "your-key-here",
-  "AZURE_SPEECH_ENDPOINT": "https://your-resource.cognitiveservices.azure.com"
-}

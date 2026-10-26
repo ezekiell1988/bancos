@@ -10,44 +10,6 @@
         "--local-secrets-file",
         "/Users/ezequielbaltodanocubillo/.local-secrets/ia-workflow.json"
       ]
-    },
-    "dbQuery": {
-      "type": "stdio",
-      "command": "node",
-      "args": [
-        "/Users/ezequielbaltodanocubillo/.mcp/db-query/server.mjs",
-        "--project-root",
-        "/Users/ezequielbaltodanocubillo/Documents/Bancos"
-      ]
-    },
-    "bancosMcpStdio": {
-      "type": "stdio",
-      "command": "dotnet",
-      "args": [
-        "run",
-        "--project",
-        "src/Bancos.Mcp.Stdio/Bancos.Mcp.Stdio.csproj",
-        "--no-launch-profile",
-        "--tl:off",
-        "--verbosity",
-        "quiet"
-      ]
-    },
-    "azureAi": {
-      "command": "node",
-      "args": [
-        ".mcp/azure-ai/server.mjs",
-        "--project-root",
-        "."
-      ]
-    },
-    "googleAi": {
-      "command": "node",
-      "args": [
-        ".mcp/google-ai/server.mjs",
-        "--project-root",
-        "."
-      ]
     }
   }
 }
