@@ -2,7 +2,9 @@
 
 ## Borradores
 
-Sin tareas registradas.
+| Tarea | Área | Riesgo |
+|-------|------|--------|
+| [TASK-EBC-DOC-05](tasks/TASK-EBC-DOC-05.md) | DOC | Bajo |
 
 ## En progreso
 

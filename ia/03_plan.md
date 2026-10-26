@@ -4,7 +4,7 @@
 
 ## Dirección actual
 
-Registro sencillo de movimientos: primero el MCP `bancos` para anotar y consultar (skill mcp-vscode), después el skill del proyecto que guía cómo procesar documentos (skill create-skill).
+Registro sencillo de movimientos: primero el MCP `bancos` para anotar y consultar (skill mcp-vscode), después el skill del proyecto que guía cómo procesar documentos (skill create-skill), y luego usarlo desde un grupo de Telegram compartido con la pareja del dueño.
 
 ## Fases
 
@@ -61,6 +61,24 @@ Registro sencillo de movimientos: primero el MCP `bancos` para anotar y consulta
 * Se prueba anotando un documento real del dueño.
 
 **Dependencias:** Fase 2.
+
+### Fase 4 — Grupo de Telegram para finanzas ⏳ Pendiente
+
+> Avance: 0 de 1 componentes completados (actualizado 2026-10-25).
+> Requisitos: REQ-007
+
+| Componente | Estado |
+|------------|--------|
+| Grupo de prueba | ⏳ TASK-EBC-DOC-05 |
+
+**Criterios de éxito:**
+
+* Existe un grupo de prueba solo con el dueño y @MacEzequielBot (administrador), vinculado al proyecto Bancos.
+* Un documento mandado al grupo queda anotado con el MCP `bancos` y su respaldo en `datos/multimedia/`, y el bot responde en el grupo.
+* Se decide qué puede hacer la pareja en el grupo (solo consultar o también anotar) y el bot lo soporta.
+* La pareja entra al grupo final y se prueba un documento suyo de punta a punta.
+
+**Dependencias:** Fase 3 (skill record-movements probado con un documento real).
 
 
 ## Pendiente de planificación

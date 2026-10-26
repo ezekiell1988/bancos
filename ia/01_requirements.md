@@ -11,7 +11,8 @@ Llevar un registro sencillo de gastos e ingresos a partir de los documentos banc
 
 | Rol | Objetivo | Permisos o restricciones |
 |-----|----------|-------------------------|
-| Dueño | Pasar documentos y facturas, consultar cuánto entró y salió | Único usuario; sus datos son privados |
+| Dueño | Pasar documentos y facturas, consultar cuánto entró y salió | Dueño de los datos; sus datos son privados |
+| Pareja | Pasar documentos y consultar gastos desde el grupo compartido de Telegram | Solo dentro del grupo del proyecto; permisos por definir en la Fase 4 |
 | Agente | Leer el documento y anotar los movimientos | Escribe solo en `datos/` y con el MCP `bancos` |
 
 ## Invariantes del negocio
@@ -30,6 +31,7 @@ Llevar un registro sencillo de gastos e ingresos a partir de los documentos banc
 | REQ-004 | Separar por cuenta: gastos del BCR en `bcr/`, de la tarjeta BAC en `bac/`; ingresos en la cuenta donde caen | Cada movimiento queda en la carpeta de su cuenta | Pendiente |
 | REQ-005 | Consultar movimientos y el resumen de un mes (totales por clase, tipo y moneda) | El agente responde cuánto se gastó o ingresó en un mes sin leer los jsonl a mano | Pendiente |
 | REQ-006 | Corregir un movimiento mal anotado | Se puede borrar una línea puntual y volver a anotarla | Pendiente |
+| REQ-007 | Anotar y consultar movimientos desde un grupo de Telegram con el bot @MacEzequielBot, primero solo con el dueño y después con su pareja | Un documento mandado al grupo queda anotado con el MCP `bancos` y el bot responde en el grupo | Pendiente |
 
 ## Flujos principales
 
