@@ -18,7 +18,7 @@ const tmp = mkdtempSync(path.join(os.tmpdir(), `${SERVER_NAME}-smoke-`));
 const datosDir = path.join(tmp, 'datos');
 mkdirSync(datosDir);
 const jsonl = (rows) => rows.map((r) => JSON.stringify(r)).join('\n') + '\n';
-writeFileSync(path.join(datosDir, 'tipos-gasto.jsonl'), jsonl([{ id: 'comida', nombre: 'Comida' }, { id: 'supermercado', nombre: 'Supermercado' }]));
+writeFileSync(path.join(datosDir, 'tipos-gasto.jsonl'), jsonl([{ id: 'comida', nombre: 'Comida' }, { id: 'supermercado', nombre: 'Supermercado' }, { id: 'otros', nombre: 'Otros' }]));
 writeFileSync(path.join(datosDir, 'tipos-ingreso.jsonl'), jsonl([{ id: 'salario-itqs', nombre: 'Salario ITQS' }]));
 const respaldo = path.join(tmp, 'Factura Soda.jpg');
 writeFileSync(respaldo, 'imagen falsa');

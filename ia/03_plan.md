@@ -1,10 +1,10 @@
 # 03 — Plan de Desarrollo
 
-> Última actualización: 2026-10-25
+> Última actualización: 2026-10-26
 
 ## Dirección actual
 
-Registro sencillo de movimientos: primero el MCP `bancos` para anotar y consultar (skill mcp-vscode), después el skill del proyecto que guía cómo procesar documentos (skill create-skill), y luego usarlo desde un grupo de Telegram compartido con la pareja del dueño.
+Contabilidad de la familia Baltodano Soto en 3 niveles: el estado de cuenta (BCR y BAC) es la base de verdad de los reportes; los comprobantes (pagos) y facturas (documentos cobrados) son detalle auxiliar, con relación de varios a varios entre ellos (ADR-06), y SQLite para consultas. El hogar (dueño y Karen) se analiza primero y el papá es un rubro aparte, incluido por defecto. Después, el grupo de Telegram compartido con Karen.
 
 ## Fases
 
@@ -46,14 +46,14 @@ Registro sencillo de movimientos: primero el MCP `bancos` para anotar y consulta
 
 **Dependencias:** Fase 1.
 
-### Fase 3 — Skill para anotar documentos 🔄 En curso
+### Fase 3 — Skill para anotar documentos ✅ Completada
 
-> Avance: 0 de 1 componentes completados (actualizado 2026-10-25).
+> Avance: 1 de 1 componentes completados (actualizado 2026-10-26).
 > Requisitos: REQ-001, REQ-002, REQ-003, REQ-004
 
 | Componente | Estado |
 |------------|--------|
-| Skill para anotar documentos | 🔄 TASK-EBC-DOC-04 |
+| Skill para anotar documentos | ✅ TASK-EBC-DOC-04 |
 
 **Criterios de éxito:**
 
@@ -79,6 +79,45 @@ Registro sencillo de movimientos: primero el MCP `bancos` para anotar y consulta
 * La pareja entra al grupo final y se prueba un documento suyo de punta a punta.
 
 **Dependencias:** Fase 3 (skill record-movements probado con un documento real).
+
+### Fase 5 — Contabilidad familiar en 3 niveles ✅ Completada
+
+> Avance: 3 de 3 componentes completados (actualizado 2026-10-26).
+> Requisitos: REQ-002, REQ-005, REQ-006, REQ-008, REQ-009, REQ-010, REQ-011, REQ-012
+
+| Componente | Estado |
+|------------|--------|
+| MCP con 3 niveles y SQLite | ✅ TASK-EBC-MCP-02 |
+| Migración de datos | ✅ TASK-EBC-MCP-03 |
+| Skill con 3 niveles | ✅ TASK-EBC-DOC-06 |
+
+**Criterios de éxito:**
+
+* El MCP bancos anota comprobantes y facturas, los vincula a su movimiento y los lista; los pendientes no suman en reportes.
+* bancos_resumen muestra el hogar por tipo y al papá como rubro, con excluirDe y de.
+* datos/bancos.sqlite se reconstruye tras cada escritura y bancos_sql responde consultas de solo lectura.
+* Los movimientos existentes tienen id y referencia, y las fotos sueltas quedaron como comprobantes.
+* El skill record-movements y el README explican los 3 niveles; el smoke test termina en TODO OK.
+
+**Dependencias:** Fase 2 (MCP bancos).
+
+### Fase 6 — Facturas con varios pagos 🔄 En curso
+
+> Avance: 0 de 1 componentes completados (actualizado 2026-10-26).
+> Requisitos: REQ-013
+
+| Componente | Estado |
+|------------|--------|
+| Pagos de facturas en el MCP | 🔄 TASK-EBC-MCP-04 |
+
+**Criterios de éxito:**
+
+* bancos_factura y bancos_vincular aceptan varios comprobantes por factura y un comprobante en varias facturas.
+* bancos_detalles muestra lo pagado y el saldo de cada factura; bancos_pendientes lista las facturas con saldo.
+* SQLite tiene la tabla factura_pagos y bancos_sql la describe.
+* Skill record-movements, README y smoke test al día (TODO OK).
+
+**Dependencias:** Fase 5 (3 niveles).
 
 
 ## Pendiente de planificación

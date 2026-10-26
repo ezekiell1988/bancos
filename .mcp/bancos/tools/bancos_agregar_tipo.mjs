@@ -1,4 +1,5 @@
 import { CLASES, ToolError, appendJsonl, leerTipos, slug, tiposFile } from '../src/datos.mjs';
+import { refrescarSqlite } from '../src/sqlite.mjs';
 
 export default {
   name: 'bancos_agregar_tipo',
@@ -24,7 +25,7 @@ export default {
     if (existente) throw new ToolError(`Ya existe el tipo de ${clase} "${tipo.id}" (${existente.nombre}).`);
     if (apply !== true) return { preview: true, applied: false, clase, tipo, message: 'Llamar de nuevo con apply:true para guardarlo.' };
     appendJsonl(tiposFile(clase), [tipo]);
-    return { applied: true, clase, tipo };
+    return { aviso: refrescarSqlite(), applied: true, clase, tipo };
   },
   async smoke({ callTool, check, toolJson }) {
     const prev = toolJson(await callTool('bancos_agregar_tipo', { clase: 'gasto', nombre: 'Mascotas' }));

@@ -10,7 +10,7 @@
 
 | Tarea | Área | Riesgo |
 |-------|------|--------|
-| [TASK-EBC-DOC-04](tasks/TASK-EBC-DOC-04.md) | DOC | Bajo |
+| [TASK-EBC-MCP-04](tasks/TASK-EBC-MCP-04.md) | MCP | Bajo |
 
 ## Lista
 

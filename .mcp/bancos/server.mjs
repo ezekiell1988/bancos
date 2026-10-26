@@ -10,4 +10,4 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 
 initDatos();
 
-await runServer({ name: 'bancos', version: '1.0.0', toolsDir: path.join(here, 'tools') });
+await runServer({ name: 'bancos', version: '2.0.0', toolsDir: path.join(here, 'tools') });
