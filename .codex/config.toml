@@ -1,10 +1,4 @@
-[mcp_servers.iaWorkflow]
+[mcp_servers.bancos]
 command = "node"
 cwd = "/Users/ezequielbaltodanocubillo/Documents/ezekl/Bancos"
-args = [
-    "/Users/ezequielbaltodanocubillo/.mcp/ia-workflow/server.mjs",
-    "--runtime",
-    "studio",
-    "--local-secrets-file",
-    "/Users/ezequielbaltodanocubillo/.local-secrets/ia-workflow.json",
-]
+args = ["/Users/ezequielbaltodanocubillo/Documents/ezekl/Bancos/.mcp/bancos/server.mjs"]

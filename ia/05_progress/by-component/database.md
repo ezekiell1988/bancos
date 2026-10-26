@@ -1,48 +1,19 @@
-# Progreso — Base de datos
+# Progreso — database
 
-> **Última actualización:** 2026-07-27 CR (TASK-EBC-DB-11 completada)
+> Última actualización: 2026-10-25
+
+## Estado actual
+
+No aplica: no hay base de datos; los datos son jsonl en `datos/` (ver `02_architecture.md`).
 
 ## Completado en sesiones recientes
 
-* **2026-07-27** — TASK-EBC-DB-11: Se agregó al catálogo MCP el modelo de clasificación: tbCategories (árbol jerárquico Ingreso/Gasto/Activo/Pasivo/Capital, sembrado con 17 categorías), tbClassificationRules (reglas deterministas por cuenta, patrón de descripción normalizada, tipo de operación y prioridad) y tbTransactionClassifications (historial auditable con origen rule/ai/manual/unclassified, confianza y explicación). Se implementó ClassificationRuleMatcher + ClassificationService en Features/Classification como motor determinista interno (sin exponer tool MCP ni integrar Azure AI, fuera de alcance). — EBC
+Sin entradas registradas.
 
-* **2026-07-26** — TASK-EBC-DB-06: Cancelada por cambio de arquitectura: dependía del modelo y tablas de Bancos.Api, retirados al consolidar Bancos.Mcp como único proyecto funcional. — C
+## Trabajo pendiente
 
-* **2026-07-26** — TASK-EBC-MCP-27: Se recalcularon los cierres después de asignar período a todos los movimientos; la conciliación final del corte coincide íntegramente con la documentación. — C
+* Ninguno.
 
-* **2026-07-26** — TASK-EBC-MCP-24: La carga final del lote completó las importaciones, la persistencia y el cierre; la conciliación contra la documentación de corte quedó exacta. — C
+## Notas para agentes
 
-* **2026-07-26** — TASK-EBC-MCP-31: El job de cierre ahora crea períodos faltantes, asigna cada movimiento a su período y luego calcula cierres desde el rango histórico necesario. — C
-
-* **2026-07-26** — TASK-EBC-DB-10: Se reinició la BD, se reprocesaron los 19 archivos con sus plantillas y cuentas correctas, se calcularon los cierres y la conciliación completa contra el documento resultó exacta. — C
-
-* **2026-07-26** — TASK-EBC-DB-07: Migración InitialCreate completa con todas las tablas transaccionales (tbPeriods, tbTransactions, tbCardStatements, tbCardStatementLines, tbCardFinancings, tbAccountPeriodClosings, tbLoanPayments). Seed final incluye: 4 cuentas de débito con identifierHash (BN-USD, BCR-CRC, BAC-CRC, BN-CRC), templates centinela 10 (bn-debit-csv-v1) y 11 (bn-debit-csv-crc-v1) con patrones isActive=false, mappings IBAN correctos para las 4 cuentas de débito, y transacción de saldo inicial para bac-debit-01-crc (+₡10,551.04 en ENE-2026 fecha 2025-12-19). DbContext, migración y snapshot sincronizados; sin pending model changes. BD reseteada con db_reset_schemas y lista para correr PS1. — EBC
-
-* **2026-07-22** — TASK-EBC-DB-09: Se agregó y aplicó el índice no único IX_tbLoanPayments_installmentNumber. — EBC
-
-* **2026-07-22** — TASK-EBC-DB-08: BD local reiniciada y recreada mediante el script. La carga paralela de cuatro PDFs Coopealianza se procesó de forma serializada sin omisiones ni duplicados. — EBC
-
-* **2026-07-20** — MCP: se consolidó el catálogo de bancos, cuentas, plantillas y patrones de importación. Se añadieron 15 referencias de cuentas, 40 relaciones cuenta-plantilla y tipos de cambio USD para BAC y BN. El esquema MCP fue regenerado como una única migración inicial, con tablas `tb...`, columnas lower camel case, claves descriptivas y comentarios SQL en español para todas las tablas y columnas. Se validó la migración, la base local, las pruebas del catálogo y los diagnósticos. — EBC
-
-* **2026-07-20** — TASK-EBC-MCP-06: Se consolidaron las tres migraciones del catálogo MCP en una única migración inicial que crea directamente las tablas tbImportTemplates y tbImportTemplatePatterns. La base local fue reconstruida con este historial limpio. — EBC
-
-* **2026-07-20** — TASK-EBC-MCP-05: Se eliminó la base local vacía con el script reutilizable Reset-McpCatalogDatabase.ps1 y se reconstruyó mediante migraciones EF. El catálogo quedó en las tablas tbImportTemplates y tbImportTemplatePatterns con los nueve seeds y timestamps de Costa Rica. — EBC
-
-* **2026-07-20** — TASK-EBC-DB-06: aplicada la migración de identidad bancaria; creados los dos responsables y los 13 auxiliares con IBAN, banco, moneda y responsable. Pendiente: reasignar imports históricos que aún apuntan a auxiliares genéricos y validar cobertura por formato. — EBC
-
-* **2026-07-20** — TASK-EBC-DB-06: Auditoría completada. Se identificaron 8 templates activos en Imports, todos apuntando a 2 auxiliares genéricos sin IBAN ni owner real. Se acordó con el usuario crear 13 AccountAuxiliaries (4 débito, 8 crédito BAC con 2 auxiliares por tarjeta CRC+USD, 1 préstamo Coopealianza) y 2 owners nuevos (Ezequiel Baltodano y Karen Soto para BCR Débito Compartida). Próximo paso: generar y aplicar SQL de inserción. — EBC
-
-* **2026-07-20** — TASK-EBC-INF-08 (cambios de BD durante validación de importación masiva):
-  * **Migración `SeedGeneralCategory`**: Inserta la categoría "General" con ID fijo `00000000-0000-0000-0000-000000000301` como dato semilla. Razón: el índice único `(Name, ParentId)` en `Categories` solo aplica cuando `ParentId IS NOT NULL`. Múltiples workers concurrentes podían insertar duplicados de "General" (todos con `ParentId NULL`), causando fallo en `SingleOrDefaultAsync`. Con el seed, la categoría siempre existe desde el inicio.
-  * **Exchange rates USD**: La tabla `ExchangeRates` debe tener datos para el rango de fechas de los archivos a importar. Se insertaron 92 filas para mayo-julio 2026 a 519.50 CRC/USD. Sin estos datos, los imports de tarjeta de crédito BAC con transacciones en USD fallan. Ver script en [DEV-ENV-local-sqlserver.md](../../06_decisions/DEV-ENV-local-sqlserver.md).
-  * **Validación final de tablas**: 1,398 Transactions · 9 CreditFinancings · 1 LoanStatement (OutstandingBalance=₡4,372,249.85) · 10 LoanPayments · 20 Categories (1 General). — EBC
-
-* **2026-07-18** — TASK-EBC-DB-04: Se aplicó la migración AddImportProgress y se recuperaron de forma controlada las ocho importaciones existentes que habían quedado detenidas por el esquema faltante. El listado volvió a responder; no se reenviaron ni duplicaron archivos, huellas ni movimientos. — EBC
-
-* **2026-07-18** — TASK-EBC-DB-03: Se deshabilitaron los reintentos automáticos para ImportJobs mediante AutomaticRetry Attempts=0 y se aplicó la migración pendiente AddTransactionOperationType a dbbancos. — EBC
-
-* **2026-07-18** — ISSUE-001 resuelto: El contexto de datos ahora crea un propietario predeterminado, el catálogo base de cuentas y dos auxiliares neutrales. El flujo de pre-revisión resuelve automáticamente un auxiliar compatible según plantilla y tipo de cuenta, por lo que la carga ya no queda bloqueada por esa selección. Se validó con compilación, pruebas automatizadas y QA de interfaz.
-
-* **2026-07-18** — TASK-EBC-DB-02: Base reinicializada con una única migración inicial que incluye catálogo contable y auxiliares semilla no sensibles. — EBC
-
-* **2026-07-18** — TASK-EBC-DB-01: Se aplicó y verificó la migración inicial InitialCreate en dbbancos sin insertar datos de negocio. — EBC
+* La base SQL anterior está en la rama `legacy`.

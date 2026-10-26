@@ -1,10 +1,3 @@
-# Issues abiertos
-
-> **Última actualización:** 2026-07-27 CR (ISSUE-008 resuelto)
-
-
-
-
-
+> Última actualización: 2026-10-25
 
 Sin issues registrados.

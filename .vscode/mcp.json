@@ -1,16 +1,11 @@
 {
   "servers": {
-    "iaWorkflow": {
+    "bancos": {
       "type": "stdio",
       "command": "node",
-      "args": [
-        "/Users/ezequielbaltodanocubillo/.mcp/ia-workflow/server.mjs",
-        "--runtime",
-        "studio",
-        "--local-secrets-file",
-        "/Users/ezequielbaltodanocubillo/.local-secrets/ia-workflow.json"
-      ],
-      "cwd": "${workspaceFolder}"
+      "args": ["${workspaceFolder}/.mcp/bancos/server.mjs"],
+      "cwd": "${workspaceFolder}",
+      "dev": { "watch": ".mcp/bancos/**/*.mjs" }
     }
   }
 }

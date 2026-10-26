@@ -1,0 +1,2 @@
+# Mantiene "templates" versionada aunque esté vacía. No borrar.
+# Para qué sirve: Plantillas base (tarea, ADR, issue, skill técnico) a partir de las cuales el MCP y los agentes crean nuevos artefactos.

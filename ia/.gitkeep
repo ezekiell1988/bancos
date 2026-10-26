@@ -1,0 +1,2 @@
+# Mantiene "ia" versionada aunque esté vacía. No borrar.
+# Para qué sirve: Raíz del sistema de contexto para agentes LLM: 00–08 (contexto, requisitos, arquitectura, plan, tareas, progreso, ADRs, issues, retrospectiva). Ver README.md.

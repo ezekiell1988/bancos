@@ -1,143 +1,131 @@
-# /ia — Esquemas de reconstrucción
+# /ia — Esquemas de Archivos
 
-Usar solo para crear o reparar contexto. No incluir datos sensibles.
+> Estructuras de referencia para crear o recrear archivos `/ia` vacíos o faltantes.
+> No necesitas este archivo en sesiones normales.
+> Para detalles del ciclo de vida de tareas, usar `rules/gestion-tareas.md` y el contrato
+> `references/04-tasks.md` del skill `ia-workflow`.
 
-## Tablas transaccionales MCP (TASK-EBC-DB-07)
+## `00_context.md` — Contexto del Proyecto
 
-Creadas el 2026-07-21. Una sola migración `InitialMcpCatalog`. Convención: prefijo `tb`, PK `idNombreTabla`, FK `idTablaReferenciada`, timestamps `datetimeoffset`, columnas en camelCase.
+Ver `references/00-context.md` del skill `ia-workflow`.
 
-### tbPeriods
-| Columna | Tipo | Notas |
-|---|---|---|
-| idPeriods | uniqueidentifier PK | |
-| label | nvarchar(20) | UNIQUE. Ej. "JUL-2026" |
-| startDate | date | UNIQUE. Inicio del período (día 19 mes anterior) |
-| endDate | date | UNIQUE. Fin del período (día 18 mes en curso) |
-| createdAt / updatedAt | datetimeoffset | |
+## `01_requirements.md` — Requisitos del Sistema
 
-Seed: ENE-2026 a DIC-2026 (IDs `60000000-...-000000000001` a `...000000000012`).
+Ver `references/01-requirements.md` del skill `ia-workflow`.
 
-### tbTransactions
-| Columna | Tipo | Notas |
-|---|---|---|
-| idTransactions | uniqueidentifier PK | |
-| idBankAccounts | uniqueidentifier FK→tbBankAccounts RESTRICT | |
-| idPeriods | uniqueidentifier FK→tbPeriods SET NULL **nullable** | null hasta que exista el período |
-| referenceNumber | nvarchar(40) nullable | |
-| transactionDate | date | |
-| paymentDate | date nullable | |
-| description | nvarchar(200) | |
-| place | nvarchar(120) nullable | |
-| currencyCode | nchar(3) | CK: IN ('CRC','USD') |
-| amount | decimal(18,2) | positivo=cargo, negativo=abono |
-| amountCrc | decimal(18,2) | convertido a CRC |
-| exchangeRate | decimal(18,6) nullable | |
-| operationType | nvarchar(32) | CK: IN ('purchase','payment','interest','other-charge','interest-reversal') |
-| sourceFingerprint | nchar(64) | UNIQUE con idBankAccounts |
-| createdAt / updatedAt | datetimeoffset | |
+## `02_architecture.md` — Arquitectura del Sistema
 
-### tbCardStatements
-| Columna | Tipo | Notas |
-|---|---|---|
-| idCardStatements | uniqueidentifier PK | |
-| idBankAccounts | uniqueidentifier FK→tbBankAccounts RESTRICT | |
-| statementDate | date | UNIQUE con idBankAccounts |
-| periodLabel | nvarchar(20) | Informativo del header, sin FK |
-| minimumPaymentDueDate / cashPaymentDueDate | date nullable | |
-| previousBalance / purchasesTotal / paymentsTotal / interestTotal / currentBalance / minimumPayment / cashPayment / creditLimit / availableBalance | decimal(18,2) ×2 (Crc/Usd) | |
-| sourceFingerprint | nchar(64) | |
-| createdAt / updatedAt | datetimeoffset | |
+Ver `references/02-architecture.md` del skill `ia-workflow`.
 
-### tbCardStatementLines  _(ADR-03)_
-| Columna | Tipo | Notas |
-|---|---|---|
-| idCardStatementLines | uniqueidentifier PK | Surrogate key |
-| idCardStatements | uniqueidentifier FK→tbCardStatements CASCADE | |
-| idTransactions | uniqueidentifier FK→tbTransactions RESTRICT | |
-| createdAt | datetimeoffset | |
+## `03_plan.md` — Plan de Desarrollo
 
-UNIQUE: (idCardStatements, idTransactions). IX en idTransactions para búsqueda inversa.
+Contrato completo en `references/03-plan.md` del skill `ia-workflow`. Lo que lee el MCP:
 
-### tbCardFinancings
-| Columna | Tipo | Notas |
-|---|---|---|
-| idCardFinancings | uniqueidentifier PK | |
-| idBankAccounts | uniqueidentifier FK→tbBankAccounts RESTRICT | |
-| referenceNumber | nvarchar(40) nullable | |
-| financingDate | date | |
-| concept | nvarchar(200) | |
-| currencyCode | nchar(3) | CK: IN ('CRC','USD') |
-| initialBalance / outstandingBalance / installmentAmount | decimal(18,2) | |
-| installments | nvarchar(20) | Ej. "3/12" |
-| termMonths | smallint nullable | |
-| annualInterestRate | decimal(8,4) nullable | null si tasa cero |
-| dueDate | date nullable | |
-| status | nvarchar(16) | CK: IN ('active','cancelled','settled') |
-| sourceFingerprint | nchar(64) | UNIQUE con idBankAccounts |
-| createdAt / updatedAt | datetimeoffset | |
-
-### tbLoanStatements
-| Columna | Tipo | Notas |
-|---|---|---|
-| idLoanStatements | uniqueidentifier PK | |
-| idBankAccounts | uniqueidentifier FK→tbBankAccounts RESTRICT | accountType='loan' |
-| statementDate | date | |
-| currencyCode | nchar(3) | CK: IN ('CRC','USD') |
-| outstandingBalance | decimal(18,2) | |
-| sourceFingerprint | nchar(64) | UNIQUE con idBankAccounts |
-| createdAt / updatedAt | datetimeoffset | |
-
-### tbLoanPayments
-| Columna | Tipo | Notas |
-|---|---|---|
-| idLoanPayments | uniqueidentifier PK | |
-| idLoanStatements | uniqueidentifier FK→tbLoanStatements CASCADE | |
-| paymentDate | date | |
-| capital / interest / lateFee / otherCharges / total / balance | decimal(18,2) | |
-| sourceFingerprint | nchar(64) | UNIQUE con idLoanStatements |
-| createdAt | datetimeoffset | |
-
----
-
-## Convenciones de SQL Server
-
-Las tablas del catálogo MCP inician con `tb` y usan lower camel case, por ejemplo,
-`tbImportTemplates`. Sus columnas también usan lower camel case. Las claves
-primarias y foráneas expresan la entidad relacionada, por ejemplo,
-`idImportTemplates` e `idBankAccounts`; no se usa una columna SQL genérica `Id`.
-
-Cada tabla y cada columna nueva debe declarar un comentario en español mediante
-`HasComment(...)` de EF Core. Los nombres de tablas y columnas se conservan en
-inglés. La migración debe incluir esos metadatos para que SQL Server los publique
-como descripciones del esquema.
-
-## Componentes `00` a `08`
-
-* `00_context.md`: identidad, stack, límites, mapa y validación.
-* `01_requirements.md`: requisitos observables, reglas e ítems fuera de alcance.
-* `02_architecture.md`: componentes, flujo, contratos y seguridad.
-* `03_plan.md`: fases, hitos, dependencias y tareas vinculadas.
-* `04_tasks.md`: índice; cada tarea tiene objetivo, alcance, exclusiones, aceptación, riesgo, aprobación, validación y rollback.
-* `05_progress.md`: puntero a estado actual e historial.
-* `06_decisions.md`: solo índice; un archivo por ADR.
-* `07_issues.md`: índice; detalle separado por issue.
-* `08_retrospective.md`: aprendizajes accionables por fase.
-
-## Tarea
+* Cada `###` es una fase: `### {Nombre} {estado}` con estado `⏳ Pendiente`, `🔄 En curso`, `⏸️ Diferida`,
+  `⛔ Bloqueada` o `✅ Completada`. Una sola fase `🔄 En curso`. Subsecciones en `####` o negrita.
+* Tabla canónica `| Componente | Estado |` con un `TASK-ID` por fila (`⏳`/`🔄`/`✅ TASK-ID`).
+* `> Avance: …` y los estados de fila y fase los escribe el MCP.
+* `> Requisitos: REQ-…` debajo del encabezado: de qué requisitos de `01` sale la fase (`extend_main_plan` con `requirements`).
 
 ```markdown
-# TASK-{INICIALES}-{ÁREA}-{NN} — {título}
-> Estado: Borrador | Lista | En progreso | Bloqueada | Completada
-> Riesgo: Bajo | Medio | Alto
-> Aprobación: Pendiente | Aprobada explícitamente
-## Contexto
-## Objetivo
-## Incluye
-## No incluye
-## Criterios de aceptación
-## Plan técnico
-## Validación
-## Rollback
+# 03 — Plan de Desarrollo
+
+> Última actualización: {AAAA-MM-DD}
+
+## Dirección actual
+
+{fase activa, objetivo y siguiente hito}
+
+## Fases
+
+### Fase 1 — {nombre} 🔄 En curso
+
+> Avance: 0 de 2 componentes completados (actualizado {AAAA-MM-DD}).
+> Requisitos: REQ-001
+
+| Componente | Estado |
+|------------|--------|
+| {componente} | ⏳ TASK-{INI}-{AREA}-01 |
+| {componente} | ⏳ TASK-{INI}-{AREA}-02 |
+
+**Criterios de éxito:**
+
+* {resultado verificable}
+
+**Dependencias:**
+
+* {dependencia o ninguna}
+
+### Fase 2 — {nombre} ⏳ Pendiente
+
+## Pendiente de planificación
+
+* {idea que aún no está lista para convertirse en tarea}
 ```
 
-Tareas de riesgo alto no avanzan sin aprobación explícita.
+## `04_tasks.md` — Índice de Tareas
+
+Ver `references/04-tasks.md` del skill `ia-workflow`.
+
+## `05_progress.md` — Progreso del Proyecto
+
+Contrato completo en `references/05-progress.md` del skill `ia-workflow`. Con el MCP, las dos líneas del
+encabezado, `## Completado en sesiones recientes` y `## En progreso` son gestionadas; a mano solo
+`Resumen ejecutivo`, `Pendiente` y `Riesgos y bloqueos`. `Fase activa` empieza por el nombre exacto de la
+fase del plan.
+
+```markdown
+# 05 — Progreso Actual
+
+> Última actualización: {AAAA-MM-DD HH:MM} CR
+> Fase activa: Fase 1 — {nombre} (0 de 2 componentes completados)
+
+## Resumen ejecutivo
+
+{estado actual breve y próxima prioridad}
+
+## Completado en sesiones recientes
+
+Sin entradas registradas.
+
+## En progreso
+
+| Item | Responsable | Estado | Siguiente paso |
+|------|-------------|--------|----------------|
+| — | — | — | — |
+
+## Pendiente
+
+| Prioridad | Item | Razón |
+|-----------|------|-------|
+
+## Riesgos y bloqueos
+
+| Riesgo | Impacto | Mitigación |
+|--------|---------|------------|
+```
+
+`05_progress/by-component/<slug>.md` usa `## Completado en sesiones recientes` (ahí escriben
+`ia_add_progress_entry` y `close_issue` con `component`).
+
+## `06_decisions.md` — Decisiones Arquitectónicas
+
+Usar el esquema canónico de `references/06-decisions.md` del skill `ia-workflow`. No duplicar
+la plantilla de índice de ADR en este archivo.
+
+## `07_issues.md` — Issues Conocidos
+
+Ver `references/07-issues.md` del skill `ia-workflow`.
+
+## `08_retrospective.md` — Retrospectiva
+
+Ver `references/08-retrospective.md` del skill `ia-workflow`.
+
+## `rules/` — Reglas del workflow
+
+* Genéricas: `README.md`, `planificacion.md`, `gestion-tareas.md`, `revision-codigo.md` y
+  `cierre-sesion.md`. Para recrearlas o actualizarlas: `node <skill create-ia-workflow>/scripts/init-ia.mjs
+  --root <proyecto> --refresh-rules` (conserva la sección final `## Ajustes del proyecto` de cada una).
+* Propias: `checklist-revision.md` (reglas verificables de revisión) y `mapa-area-skill.md` (tabla
+  `| Área | Alcance | Skill(s) de implementación |`). Se recrean a mano; el refresco nunca las toca.
+* Contrato completo: `references/rules.md` del skill `create-ia-workflow`.

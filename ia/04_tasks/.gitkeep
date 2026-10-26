@@ -1,0 +1,2 @@
+# Mantiene "04_tasks" versionada aunque esté vacía. No borrar.
+# Para qué sirve: Cola operativa de tareas: current.md, backlog.md y blocked.md, más tasks/ (un archivo por tarea activa) y done/ (historial mensual).

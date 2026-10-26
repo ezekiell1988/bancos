@@ -1,5 +1,5 @@
-# Backlog de tareas
+> Última actualización: 2026-10-25
 
-* Lectores completos de plantillas y clasificación IA/reglas.
-* Dashboard Angular: informes, conciliación, categorías y tipos de cambio.
-* Autenticación y despliegue Azure.
+Ideas y trabajo diferido que aún no está listo para convertirse en tarea aprobada.
+
+* Sin ideas diferidas por ahora.

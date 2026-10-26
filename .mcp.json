@@ -1,15 +1,9 @@
 {
   "mcpServers": {
-    "iaWorkflow": {
+    "bancos": {
       "type": "stdio",
       "command": "node",
-      "args": [
-        "/Users/ezequielbaltodanocubillo/.mcp/ia-workflow/server.mjs",
-        "--runtime",
-        "studio",
-        "--local-secrets-file",
-        "/Users/ezequielbaltodanocubillo/.local-secrets/ia-workflow.json"
-      ]
+      "args": [".mcp/bancos/server.mjs"]
     }
   }
 }

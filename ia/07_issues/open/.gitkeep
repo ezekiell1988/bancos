@@ -1,1 +1,2 @@
-# Directorio reservado para issues abiertos.
+# Mantiene "07_issues/open" versionada aunque esté vacía. No borrar.
+# Para qué sirve: Un archivo por issue activo (ISSUE-{NNN}-{slug}.md).

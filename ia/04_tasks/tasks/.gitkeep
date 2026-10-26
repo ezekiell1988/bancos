@@ -1,0 +1,2 @@
+# Mantiene "04_tasks/tasks" versionada aunque esté vacía. No borrar.
+# Para qué sirve: Un archivo por tarea activa (TASK-{INICIALES}-{AREA}-{NN}.md).

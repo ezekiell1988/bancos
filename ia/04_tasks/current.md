@@ -1,28 +1,19 @@
-# 04 — Tareas activas
+> Última actualización: 2026-10-25 CR (TASK-EBC-DOC-01, TASK-EBC-DOC-02, TASK-EBC-DOC-03 creadas)
 
-> **Última actualización:** 2026-09-16 CR (TASK-EBC-DOC-14 completada)
+## Borradores
+
+Sin tareas registradas.
 
 ## En progreso
 
 | Tarea | Área | Riesgo |
 |-------|------|--------|
-| [TASK-EBC-INF-13](tasks/TASK-EBC-INF-13.md) | INF | Medio |
+| [TASK-EBC-DOC-04](tasks/TASK-EBC-DOC-04.md) | DOC | Bajo |
 
 ## Lista
 
 Sin tareas registradas.
 
-## Borradores
-
-| Tarea | Área | Riesgo |
-|-------|------|--------|
-
 ## Bloqueadas
 
 Sin tareas registradas.
-
-## En revisión
-
-| Tarea | Área | Riesgo |
-|-------|------|--------|
-| [TASK-EBC-DB-05](tasks/TASK-EBC-DB-05.md) | DB | Alto |

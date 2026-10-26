@@ -1,0 +1,2 @@
+# Mantiene "04_tasks/done" versionada aunque esté vacía. No borrar.
+# Para qué sirve: Historial mensual de tareas completadas (YYYY-MM.md).

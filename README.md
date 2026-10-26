@@ -1,6 +1,8 @@
 # Bancos
 
 Registro sencillo de movimientos (ingresos y gastos) a partir de documentos bancarios y facturas.
+Los movimientos se anotan con el MCP local `bancos` (`.mcp/bancos/`, ver su `README.md`).
+El contexto y el plan viven en `ia/` (workflow iaWorkflow).
 El código anterior (MCP .NET + SQL) quedó en la rama `legacy`, solo para consulta.
 
 ## Estructura (`datos/`, fuera de git)

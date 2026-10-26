@@ -1,0 +1,2 @@
+# Mantiene "07_issues" versionada aunque esté vacía. No borrar.
+# Para qué sirve: Registro de issues: current.md (índice), open/ (issues activos) y archive/ (resueltos).

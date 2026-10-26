@@ -1,0 +1,2 @@
+# Mantiene "05_progress" versionada aunque esté vacía. No borrar.
+# Para qué sirve: Registro de progreso: current.md (mes en curso), by-component/ (detalle por componente) y archive/ (meses cerrados).

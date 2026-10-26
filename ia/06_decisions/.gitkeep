@@ -1,0 +1,2 @@
+# Mantiene "06_decisions" versionada aunque esté vacía. No borrar.
+# Para qué sirve: Un archivo por ADR (ADR-{NN}-{slug}.md), append-only.
