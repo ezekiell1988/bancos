@@ -5,7 +5,7 @@ description: >
   (HTML del BCR, PDF de la tarjeta BAC), comprobantes (SINPE, voucher) y facturas (supermercado,
   servicios públicos) en sus 3 niveles, vincularlos y sacar reportes del hogar y del papá. Usar
   también para corregir un movimiento, ver qué falta conciliar o responder cuánto se gastó o ingresó.
-  Triggers: estado de cuenta, BCR, BAC, tarjeta, comprobante, SINPE, voucher, factura, recibo, gasto,
+  Triggers: estado de cuenta, Uber, recibo de Uber, BCR, BAC, tarjeta, comprobante, SINPE, voucher, factura, recibo, gasto,
   ingreso, salario, anotá, registrá, cuánto gasté, resumen del mes, papá, gastos de papi, sin detalle.
 ---
 
@@ -66,6 +66,7 @@ El comprobante es el **pago** de una factura, y no es 1 a 1: una factura se pued
 * Pago de la tarjeta BAC desde el BCR: `gasto` en `bcr` con tipo `tarjeta`. Para el gasto real, `excluirTipos: ["tarjeta"]` (los consumos ya están en `bac`).
 * Un SINPE que cubre dos cosas (p. ej. alquiler y abono de otra persona): dos movimientos con la misma `referencia`, cada uno con su tipo y `de`.
 * Tasas cero que pagan otros, salarios, depa y lo del papá: seguir `datos/reglas.md`, incluidos los avisos que pide.
+* Recibo de Uber (PDF o captura): nivel 2, `bancos_comprobante`. PDF: `pdftotext -layout`. Uber siempre comparte el recibo como 2 archivos juntos: uno de ~1 KB vacío (ignorarlo sin avisar) y el PDF real (cientos de KB); usar solo el más pesado y no pedirle al dueño que mande uno solo. Cuenta `bac`, `clase: gasto`, `tipo: transporte`, `comercio: "Uber"`, `fecha` y `hora` del viaje, `total` = total cobrado, `nota` = origen → destino. Si el viaje es del papá, `de: "papa"` (ver `datos/reglas.md`). En la BAC sale con la fecha del viaje como `fechaReal`; la propina o un ajuste pueden venir como cargo aparte.
 * `empate: true` en un vínculo: había varios movimientos iguales; si el comprobante tenía nota o tipo propios, revisar con `bancos_detalles` y corregir con `bancos_vincular`.
 * Si algo no está claro (cuenta, clase, una fecha ilegible): preguntar una sola cosa, con opciones y una recomendada, antes de anotar.
 
