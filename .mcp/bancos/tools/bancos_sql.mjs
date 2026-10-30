@@ -6,13 +6,13 @@ export default {
   order: 50,
   description:
     'Consulta de solo lectura (SELECT o WITH) sobre datos/bancos.sqlite, el índice de los 3 niveles reconstruido desde los jsonl. ' +
-    'Tablas: movimientos (id, cuenta, fecha, mes, fecha_real, referencia, clase, tipo, total, moneda, comercio, nota, de, rubro, archivo), ' +
+    'Tablas: movimientos (id, cuenta, fecha, mes, fecha_real, referencia, clase, tipo, total, moneda, comercio, nota, de, rubro, tarjeta, adicional, plastico, archivo), ' +
     'comprobantes (id, fecha, hora, cuenta, clase, total, moneda, comercio, referencia, tipo, de, nota, archivo, movimiento_id), ' +
     'facturas (id, fecha, comercio, numero, total, moneda, cuenta, tipo, de, nota, archivo, movimiento_id = vínculo directo sin pagos), ' +
     'factura_pagos (factura_id, comprobante_id: los comprobantes que pagan cada factura, varios a varios), ' +
     'factura_lineas (factura_id, n, descripcion, cantidad, unidad, precio, total, tipo), tipos (clase, id, nombre) y las vistas ' +
     'movimientos_detalle (movimientos + cantidad de comprobantes y facturas) y facturas_saldo (id, fecha, comercio, numero, total, moneda, de, ' +
-    'pagos, pagado, saldo). rubro = de o "hogar". Los reportes suman solo movimientos. Respuesta TOON.',
+    'pagos, pagado, saldo). rubro = de o "hogar"; tarjeta = cuenta titular que se paga, adicional = plástico adicional, plastico = el que compró (adicional o titular). Los reportes suman solo movimientos. Respuesta TOON.',
   inputSchema: {
     type: 'object',
     properties: {

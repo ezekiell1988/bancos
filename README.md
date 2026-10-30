@@ -48,6 +48,7 @@ datos/
 - `referencia` (opcional): número del movimiento en el banco (BCR «Documento»; BAC, referencia).
 - `clase`: `gasto` o `ingreso`. `tipo`: id de `tipos-gasto.jsonl` o `tipos-ingreso.jsonl`. `moneda`: `CRC` o `USD`.
 - `de` (opcional): rubro de otra persona, p. ej. `"papa"`. Sin `de` = hogar.
+- `tarjeta` (solo `bac`): 4 últimos dígitos de la cuenta de tarjeta titular, la que se paga. `adicional` (opcional): plástico adicional que hizo la compra; va con la `tarjeta` de su titular porque sale en el mismo estado y se paga junto. Sin `adicional` = la usó el titular.
 - `archivo`: ruta relativa a `datos/` del respaldo, o `null`.
 
 ## Comprobante (nivel 2)

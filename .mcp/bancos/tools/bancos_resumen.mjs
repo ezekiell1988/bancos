@@ -1,4 +1,4 @@
-import { CUENTAS, HOGAR, RUBRO_PROPS, filtroRubro, leerDetalles, leerTodosLosMovimientos, r2, rubroDe } from '../src/datos.mjs';
+import { CUENTAS, HOGAR, RUBRO_PROPS, filtroRubro, leerDetalles, leerTodosLosMovimientos, plasticoUsado, r2, rubroDe } from '../src/datos.mjs';
 import { periodoProps, resolverPeriodo } from '../src/periodo.mjs';
 import { pagosDe } from '../src/vinculos.mjs';
 
@@ -11,13 +11,29 @@ function sumar(mapa, clave, base, m) {
   mapa.set(clave, t);
 }
 
+/** Filas por plástico (el titular primero) y, si la tarjeta tiene adicionales, su total: lo que se paga junto. */
+function porTarjeta(filas) {
+  const totales = new Map();
+  for (const f of filas) {
+    const k = `${f.tarjeta}|${f.moneda}`;
+    const t = totales.get(k) ?? { tarjeta: f.tarjeta, plastico: 'total', moneda: f.moneda, ingresos: 0, gastos: 0, balance: 0, movimientos: 0, n: 0 };
+    t.ingresos = r2(t.ingresos + f.ingresos); t.gastos = r2(t.gastos + f.gastos); t.balance = r2(t.ingresos - t.gastos);
+    t.movimientos += f.movimientos; t.n += 1;
+    totales.set(k, t);
+  }
+  const orden = (f) => (f.plastico === f.tarjeta ? 0 : f.plastico === 'total' ? 2 : 1);
+  return [...filas, ...[...totales.values()].filter((t) => t.n > 1).map(({ n: _n, ...t }) => t)]
+    .sort((a, b) => a.tarjeta.localeCompare(b.tarjeta) || a.moneda.localeCompare(b.moneda) || orden(a) - orden(b) || a.plastico.localeCompare(b.plastico));
+}
+
 export default {
   name: 'bancos_resumen',
   format: 'toon',
   order: 31,
   description:
     'Reporte de un mes o rango, solo con movimientos bancarios (nivel 1, la base de verdad): balance ingresos - gastos por moneda, ' +
-    'balance por rubro (hogar = dueño y Karen; papa y otros por su de) y totales por rubro, clase y tipo. ' +
+    'balance por rubro (hogar = dueño y Karen; papa y otros por su de), totales por rubro, clase y tipo, ' +
+    'y por tarjeta de crédito: lo de cada plástico (titular y adicionales) y el total que se paga junto. ' +
     'Por defecto incluye todo, también al papá. excluirDe: ["papa"] lo quita; de: "papa" deja solo lo suyo (para mostrárselo). ' +
     'excluirTipos: ["tarjeta"] da el gasto real sin el pago de la tarjeta BAC desde el BCR. ' +
     'También cuenta los comprobantes y facturas del periodo que siguen sin movimiento (no suman). Respuesta TOON.',
@@ -40,6 +56,7 @@ export default {
     const balance = new Map();
     const rubros = new Map();
     const tipos = new Map();
+    const plasticos = new Map();
     for (const m of movs) {
       const rubro = rubroDe(m);
       sumar(balance, m.moneda, { moneda: m.moneda }, m);
@@ -47,6 +64,7 @@ export default {
       const k = `${rubro}|${m.clase}|${m.tipo}|${m.moneda}`;
       const t = tipos.get(k) ?? { rubro, clase: m.clase, tipo: m.tipo, moneda: m.moneda, cantidad: 0, total: 0 };
       t.cantidad += 1; t.total = r2(t.total + m.total); tipos.set(k, t);
+      if (m.tarjeta) sumar(plasticos, `${m.tarjeta}|${plasticoUsado(m)}|${m.moneda}`, { tarjeta: m.tarjeta, plastico: plasticoUsado(m), moneda: m.moneda }, m);
     }
     const orden = (r) => (r === HOGAR ? '' : r);
     const pendientes = ['comprobantes', 'facturas'].flatMap((nivel) => {
@@ -67,6 +85,7 @@ export default {
       balance: [...balance.values()],
       rubros: [...rubros.values()].sort((a, b) => orden(a.rubro).localeCompare(orden(b.rubro)) || a.moneda.localeCompare(b.moneda)),
       tipos: [...tipos.values()].sort((a, b) => orden(a.rubro).localeCompare(orden(b.rubro)) || a.clase.localeCompare(b.clase) || b.total - a.total),
+      ...(plasticos.size ? { tarjetas: porTarjeta([...plasticos.values()]) } : {}),
       ...(pendientes.length ? { pendientesSinMovimiento: pendientes } : {}),
     };
   },

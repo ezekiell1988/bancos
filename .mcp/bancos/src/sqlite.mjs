@@ -11,7 +11,7 @@ const ESQUEMA = `
 CREATE TABLE tipos (clase TEXT, id TEXT, nombre TEXT, PRIMARY KEY (clase, id));
 CREATE TABLE movimientos (
   id TEXT PRIMARY KEY, cuenta TEXT, fecha TEXT, mes TEXT, fecha_real TEXT, referencia TEXT, clase TEXT, tipo TEXT,
-  total REAL, moneda TEXT, comercio TEXT, nota TEXT, de TEXT, rubro TEXT, archivo TEXT);
+  total REAL, moneda TEXT, comercio TEXT, nota TEXT, de TEXT, rubro TEXT, tarjeta TEXT, adicional TEXT, plastico TEXT, archivo TEXT);
 CREATE TABLE comprobantes (
   id TEXT PRIMARY KEY, fecha TEXT, hora TEXT, cuenta TEXT, clase TEXT, total REAL, moneda TEXT, comercio TEXT,
   referencia TEXT, tipo TEXT, de TEXT, nota TEXT, archivo TEXT, movimiento_id TEXT);
@@ -55,10 +55,10 @@ export function reconstruirSqlite() {
     db.exec('BEGIN');
     const tipo = db.prepare('INSERT INTO tipos VALUES (?, ?, ?)');
     for (const c of CLASES) for (const t of leerTipos(c)) { tipo.run(c, t.id, t.nombre); n.tipos++; }
-    const mov = db.prepare('INSERT INTO movimientos VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    const mov = db.prepare('INSERT INTO movimientos VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
     for (const m of leerTodosLosMovimientos()) {
       mov.run(m.id, m.cuenta, m.fecha, m.fecha.slice(0, 7), v(m.fechaReal), v(m.referencia), m.clase, m.tipo, m.total, m.moneda,
-        v(m.comercio), v(m.nota), v(m.de), m.de || HOGAR, v(m.archivo));
+        v(m.comercio), v(m.nota), v(m.de), m.de || HOGAR, v(m.tarjeta), v(m.adicional), v(m.adicional || m.tarjeta), v(m.archivo));
       n.movimientos++;
     }
     const comp = db.prepare('INSERT INTO comprobantes VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');

@@ -52,7 +52,9 @@ El comprobante es el **pago** de una factura, y no es 1 a 1: una factura se pued
    | `tipo` | El más cercano de `bancos_tipos`; si ninguno sirve, `otros` y avisarle. Tipo nuevo solo si el dueño lo pide (`bancos_agregar_tipo`) |
    | `total` / `moneda` | Monto positivo; `₡` → `CRC`, `$` → `USD` |
    | `de` | Vacío si es del hogar; `papa` u otro según `datos/reglas.md` |
-   | `comercio` / `nota` | Corto, tal como aparece; la nota solo si aporta |
+   | `tarjeta` | Solo `bac`: 4 últimos dígitos de la cuenta de tarjeta (la que se paga), según `datos/reglas.md` |
+   | `adicional` | Si la línea está en el bloque de un plástico adicional del estado (otro nombre, p. ej. «KAREN»): sus 4 dígitos. Va con la `tarjeta` del titular. Sin él = titular |
+   | `comercio` / `nota` | Corto, tal como aparece; la nota solo si aporta (no repetir la tarjeta) |
 
 4. **Campos de los niveles 2 y 3:**
    * Comprobante: `fecha`, `hora`, `cuenta`, `clase`, `total`, `moneda`, `comercio` (destinatario), `referencia` (en el SINPE del BCR, el «Documento»), `nota` (el motivo) y `origen` (la foto). Poner `tipo` y `de` si el comprobante los aclara.
@@ -63,6 +65,7 @@ El comprobante es el **pago** de una factura, y no es 1 a 1: una factura se pued
 
 ## Casos especiales
 
+* Tarjeta con adicionales: es **una sola cuenta** (un estado, un saldo, un pago). En el PDF, cada plástico tiene su bloque con su número y nombre, en compras (B) y en otros cargos (D, el IVA). Todo lleva la `tarjeta` del titular; las líneas del bloque del adicional, además `adicional`. Intereses y comisiones son de la cuenta: sin `adicional`. `bancos_resumen` da `tarjetas`: lo de cada plástico y el `total` que se paga junto.
 * Pago de la tarjeta BAC desde el BCR: `gasto` en `bcr` con tipo `tarjeta`. Para el gasto real, `excluirTipos: ["tarjeta"]` (los consumos ya están en `bac`).
 * Un SINPE que cubre dos cosas (p. ej. alquiler y abono de otra persona): dos movimientos con la misma `referencia`, cada uno con su tipo y `de`.
 * Tasas cero que pagan otros, salarios, depa y lo del papá: seguir `datos/reglas.md`, incluidos los avisos que pide.

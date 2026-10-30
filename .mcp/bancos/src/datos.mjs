@@ -161,8 +161,26 @@ export function normalizarMovimiento(m, tipos) {
     comercio: (m.comercio ?? '').trim(),
     nota: (m.nota ?? '').trim(),
     ...(slug(m.de) ? { de: slug(m.de) } : {}),
+    ...plasticoDe(m),
     archivo: null,
   };
+}
+
+/**
+ * Tarjeta de crédito: `tarjeta` = la cuenta que se paga (los 4 últimos dígitos del titular) y
+ * `adicional` = el plástico adicional que hizo la compra; sin `adicional` la hizo el titular.
+ */
+export function plasticoDe(m) {
+  const t = checkDigitos(m.tarjeta, 'tarjeta');
+  const a = checkDigitos(m.adicional, 'adicional');
+  if (a && !t) throw new ToolError('adicional necesita su tarjeta (la cuenta titular).');
+  return { ...(t ? { tarjeta: t } : {}), ...(a && a !== t ? { adicional: a } : {}) };
+}
+
+function checkDigitos(v, campo) {
+  const d = String(v ?? '').replace(/\D/g, '').slice(-4);
+  if (v && d.length !== 4) throw new ToolError(`${campo} inválida: "${v}" (usar los 4 últimos dígitos)`);
+  return d;
 }
 
 /** Descripción común de las fechas: la del banco manda; la real es solo referencia. */
@@ -172,6 +190,12 @@ export const REFERENCIA_PROP = { type: 'string', description: 'Número del movim
 
 /** Descripción común del campo `de` (rubro de otra persona). */
 export const DE_PROP = { type: 'string', description: 'Rubro de otra persona cuando no es del hogar (dueño y Karen), p. ej. "papa" (lo que se le paga y lo que él aporta) o "primo". Vacío = hogar.' };
+
+export const TARJETA_PROP = { type: 'string', description: 'Tarjeta de crédito (cuenta BAC): 4 últimos dígitos de la cuenta titular, la que se paga, p. ej. "8608". Las compras de un adicional también llevan la del titular.' };
+export const ADICIONAL_PROP = { type: 'string', description: '4 últimos dígitos del plástico adicional que hizo la compra (sale en su propio bloque del estado). Vacío = la usó el titular.' };
+
+/** Plástico que hizo el movimiento: el adicional o, si no, la tarjeta titular. */
+export const plasticoUsado = (m) => m.adicional || m.tarjeta || '';
 
 /** Rubro de un movimiento o detalle: su `de`, o hogar. */
 export const rubroDe = (m) => m.de || HOGAR;

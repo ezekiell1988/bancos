@@ -1,9 +1,9 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import {
-  CLASES, CUENTAS, DE_PROP, FECHA_PROP, FECHA_REAL_PROP, MONEDAS, REFERENCIA_PROP, appendJsonl, copiarRespaldo, diaFile,
+  ADICIONAL_PROP, CLASES, CUENTAS, DE_PROP, FECHA_PROP, FECHA_REAL_PROP, MONEDAS, REFERENCIA_PROP, appendJsonl, copiarRespaldo, diaFile,
   getDatosDir, guardarDetalles, leerMovimientos, leerTodosLosDetalles, leerTodosLosTipos, mismoMovimiento, normalizarMovimiento,
-  planRespaldo, r2, sinUbicacion,
+  planRespaldo, r2, sinUbicacion, TARJETA_PROP,
 } from '../src/datos.mjs';
 import { refrescarSqlite } from '../src/sqlite.mjs';
 import { completarConPares, planVinculos } from '../src/vinculos.mjs';
@@ -39,6 +39,8 @@ export default {
             comercio: { type: 'string', description: 'Comercio, empresa o persona.' },
             nota: { type: 'string', description: 'Detalle opcional.' },
             de: DE_PROP,
+            tarjeta: TARJETA_PROP,
+            adicional: ADICIONAL_PROP,
           },
           required: ['fecha', 'clase', 'tipo', 'total', 'moneda'],
           additionalProperties: false,
