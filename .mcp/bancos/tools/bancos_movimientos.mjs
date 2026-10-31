@@ -7,7 +7,7 @@ export default {
   format: 'toon',
   order: 30,
   description:
-    'Lista los movimientos bancarios (nivel 1) de un mes o rango de fechas del banco, con id, cuenta, línea, referencia, rubro ' +
+    'Lista los movimientos bancarios (nivel 1) de un ciclo (19 al 18), mes o rango de fechas del banco, con id, cuenta, línea, referencia, rubro ' +
     '(hogar o el de, p. ej. papa), tarjeta y plástico (el adicional o el titular) y cuántos comprobantes (c) y facturas (f) tiene cada uno. fechaReal = fecha de compra, solo referencia. ' +
     'Filtros opcionales por cuenta, clase, tipo, tarjeta, plástico, rubro (de / excluirDe; por defecto no excluye nada) y texto en comercio, nota o referencia. ' +
     'Respuesta TOON. Para totales usar bancos_resumen; para el detalle de comprobantes y facturas, bancos_detalles.',

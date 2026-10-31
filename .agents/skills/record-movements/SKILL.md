@@ -75,10 +75,11 @@ El comprobante es el **pago** de una factura, y no es 1 a 1: una factura se pued
 
 ## Reportes y consultas
 
-* **Mes completo:** `bancos_resumen { mes }` → balance, rubros (hogar, papa…) y tipos por rubro. Incluye al papá.
+* **El periodo es el ciclo del 19 al 18, no el mes calendario.** Siempre usar `ciclo: "AAAA-MM"`, que va del 19 del mes anterior al 18 de ese mes (ciclo 2026-11 = 19-oct → 18-nov). Al hablar con el dueño, nombrar el ciclo por sus fechas («ciclo 19-oct → 18-nov»), nunca solo «octubre» o «noviembre». `mes` (1 al 31) solo si lo pide explícitamente. Un ingreso que se adelanta o atrasa unos días (p. ej. el salario de Karen el 31 en vez del 1) cae en el mismo ciclo si no cruza el 18/19.
+* **Ciclo completo:** `bancos_resumen { ciclo }` → balance, rubros (hogar, papa…) y tipos por rubro. Incluye al papá.
 * **Solo el hogar:** `excluirDe: ["papa"]` (y `"primo"` si hace falta). **Solo el papá, para mostrárselo:** `de: "papa"`.
-* **Detalle:** `bancos_movimientos` (con `c` y `f` = cuántos comprobantes y facturas tiene cada uno); `bancos_detalles { movimiento: "m-..." }` o `{ mes, conLineas: true }`.
-* **Qué falta conciliar:** `bancos_pendientes { mes }` → movimientos sin comprobante ni factura, comprobantes o facturas sin movimiento y facturas con saldo (pagadas en parte).
+* **Detalle:** `bancos_movimientos` (con `c` y `f` = cuántos comprobantes y facturas tiene cada uno); `bancos_detalles { movimiento: "m-..." }` o `{ ciclo, conLineas: true }`.
+* **Qué falta conciliar:** `bancos_pendientes { ciclo }` → movimientos sin comprobante ni factura, comprobantes o facturas sin movimiento y facturas con saldo (pagadas en parte).
 * **Preguntas cruzadas** (productos comprados, gasto por línea de factura, etc.): `bancos_sql` con un SELECT (tablas en su descripción). Los totales oficiales siguen saliendo de `movimientos`.
 
 ## Corregir

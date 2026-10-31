@@ -7,7 +7,7 @@ export default {
   format: 'toon',
   order: 32,
   description:
-    'Lista comprobantes (nivel 2) y facturas (nivel 3) de un mes o rango (por su fecha), o los de un movimiento (movimiento: m-...). ' +
+    'Lista comprobantes (nivel 2) y facturas (nivel 3) de un ciclo (19 al 18), mes o rango (por su fecha), o los de un movimiento (movimiento: m-...). ' +
     'Cada uno con su id y el movimiento al que está vinculado (vacío = pendiente; una factura con pagos toma los de sus comprobantes). ' +
     'pagos = comprobantes de la factura (o facturas que paga un comprobante); saldo = total de la factura menos lo pagado. ' +
     'conLineas:true agrega las líneas de las facturas. ' +
@@ -26,7 +26,7 @@ export default {
     additionalProperties: false,
   },
   async handler(args) {
-    const { desde, hasta } = args.movimiento && !args.mes && !args.desde && !args.hasta ? {} : resolverPeriodo(args);
+    const { desde, hasta } = args.movimiento && !args.ciclo && !args.mes && !args.desde && !args.hasta ? {} : resolverPeriodo(args);
     if (args.movimiento && !/^m-/.test(args.movimiento)) throw new ToolError('movimiento debe ser un id m-...');
     const buscar = args.texto ? slug(args.texto) : null;
     const niveles = args.nivel ? [args.nivel] : Object.keys(NIVELES);

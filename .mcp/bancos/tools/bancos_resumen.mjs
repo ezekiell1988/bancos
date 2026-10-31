@@ -31,7 +31,7 @@ export default {
   format: 'toon',
   order: 31,
   description:
-    'Reporte de un mes o rango, solo con movimientos bancarios (nivel 1, la base de verdad): balance ingresos - gastos por moneda, ' +
+    'Reporte de un ciclo (del 19 al 18, el periodo normal), mes o rango, solo con movimientos bancarios (nivel 1, la base de verdad): balance ingresos - gastos por moneda, ' +
     'balance por rubro (hogar = dueño y Karen; papa y otros por su de), totales por rubro, clase y tipo, ' +
     'y por tarjeta de crédito: lo de cada plástico (titular y adicionales) y el total que se paga junto. ' +
     'Por defecto incluye todo, también al papá. excluirDe: ["papa"] lo quita; de: "papa" deja solo lo suyo (para mostrárselo). ' +
@@ -100,6 +100,8 @@ export default {
     const bac = toolText(await callTool('bancos_resumen', { mes: '2026-10', cuenta: 'bac', excluirTipos: ['comida'] }));
     check('bancos_resumen filtra por cuenta y excluye tipos', /movimientos: 1/.test(bac), bac.slice(0, 200));
     const nov = toolText(await callTool('bancos_resumen', { mes: '2026-11' }));
+    const ciclo = toolText(await callTool('bancos_resumen', { ciclo: '2026-01' }));
+    check('bancos_resumen por ciclo va del 19 al 18', ciclo.includes('desde: 2025-12-19') && ciclo.includes('hasta: 2026-01-18'), ciclo.slice(0, 200));
     check('bancos_resumen no suma lo pendiente', /movimientos: 1/.test(nov) && !/pendientesSinMovimiento/.test(nov), nov.slice(0, 300));
   },
 };

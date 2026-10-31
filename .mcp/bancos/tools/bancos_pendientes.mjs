@@ -7,7 +7,7 @@ export default {
   format: 'toon',
   order: 33,
   description:
-    'Conciliación de un mes o rango: movimientos bancarios (nivel 1) sin comprobante ni factura, y comprobantes o facturas ' +
+    'Conciliación de un ciclo (19 al 18), mes o rango: movimientos bancarios (nivel 1) sin comprobante ni factura, y comprobantes o facturas ' +
     'sin movimiento (esperan el estado de cuenta o no se encontró su línea); una factura con pagos no cuenta aquí: se concilia por sus comprobantes. ' +
     'También las facturas con saldo (pagadas en parte por sus comprobantes). Filtros: cuenta, clase y rubro. Respuesta TOON.',
   inputSchema: {
