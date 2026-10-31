@@ -5,6 +5,7 @@
 | Tarea | Área | Riesgo |
 |-------|------|--------|
 | [TASK-EBC-DOC-05](tasks/TASK-EBC-DOC-05.md) | DOC | Bajo |
+| [TASK-EBC-MCP-05](tasks/TASK-EBC-MCP-05.md) | MCP | Bajo |
 
 ## En progreso
 
