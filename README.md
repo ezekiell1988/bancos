@@ -9,7 +9,7 @@ El código anterior (MCP .NET + SQL) quedó en la rama `legacy`, solo para consu
 
 | Nivel | Qué es | Dónde | ¿Suma en reportes? |
 |-------|--------|-------|--------------------|
-| 1. Movimiento | Línea del estado de cuenta (HTML del BCR, PDF de la BAC) | `datos/<cuenta>/AAAA-MM/AAAA-MM-DD.jsonl` | Sí: es la base de verdad |
+| 1. Movimiento | Línea del estado de cuenta (HTML del BCR, PDF de la BAC o del BN) | `datos/<cuenta>/AAAA-MM/AAAA-MM-DD.jsonl` | Sí: es la base de verdad |
 | 2. Comprobante | Pago: SINPE, voucher, con su número de movimiento | `datos/comprobantes/AAAA-MM/AAAA-MM-DD.jsonl` | No |
 | 3. Factura | Documento cobrado: detalle de productos o cargos | `datos/facturas/AAAA-MM/AAAA-MM-DD.jsonl` | No |
 
@@ -29,6 +29,7 @@ datos/
   tipos-gasto.jsonl, tipos-ingreso.jsonl
   bcr/AAAA-MM/AAAA-MM-DD.jsonl        nivel 1, cuenta BCR
   bac/AAAA-MM/AAAA-MM-DD.jsonl        nivel 1, tarjeta BAC
+  bncr/AAAA-MM/AAAA-MM-DD.jsonl       nivel 1, tarjeta del Banco Nacional
   comprobantes/AAAA-MM/AAAA-MM-DD.jsonl   nivel 2
   facturas/AAAA-MM/AAAA-MM-DD.jsonl       nivel 3
   multimedia/AAAA-MM/                 respaldos (HTML, PDF, fotos) de los 3 niveles
@@ -43,12 +44,12 @@ datos/
 ```
 
 - `id`: lo pone el MCP; lo usan los comprobantes y facturas.
-- `fecha`: fecha de proceso del banco (BCR «Fecha contable»; BAC, MMDD de la referencia). Es la que usan reportes y ciclos, y la del archivo del día.
+- `fecha`: fecha de proceso del banco (BCR «Fecha contable»; BAC, MMDD de la referencia; BN, la fecha de la transacción, que es la única que trae). Es la que usan reportes y ciclos, y la del archivo del día.
 - `fechaReal` (opcional): fecha de la compra o transacción, solo de referencia.
 - `referencia` (opcional): número del movimiento en el banco (BCR «Documento»; BAC, referencia).
 - `clase`: `gasto` o `ingreso`. `tipo`: id de `tipos-gasto.jsonl` o `tipos-ingreso.jsonl`. `moneda`: `CRC` o `USD`.
 - `de` (opcional): rubro de otra persona, p. ej. `"papa"`. Sin `de` = hogar.
-- `tarjeta` (solo `bac`): 4 últimos dígitos de la cuenta de tarjeta titular, la que se paga. `adicional` (opcional): plástico adicional que hizo la compra; va con la `tarjeta` de su titular porque sale en el mismo estado y se paga junto. Sin `adicional` = la usó el titular.
+- `tarjeta` (tarjetas `bac` y `bncr`): 4 últimos dígitos de la cuenta de tarjeta titular, la que se paga. `adicional` (opcional): plástico adicional que hizo la compra; va con la `tarjeta` de su titular porque sale en el mismo estado y se paga junto. Sin `adicional` = la usó el titular.
 - `archivo`: ruta relativa a `datos/` del respaldo, o `null`.
 
 ## Comprobante (nivel 2)

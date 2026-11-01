@@ -2,7 +2,7 @@
 name: record-movements
 description: >
   Llevar la contabilidad de la familia Baltodano Soto con el MCP bancos: anotar estados de cuenta
-  (HTML del BCR, PDF de la tarjeta BAC), comprobantes (SINPE, voucher) y facturas (supermercado,
+  (HTML del BCR, PDF de la tarjeta BAC o del BN), comprobantes (SINPE, voucher) y facturas (supermercado,
   servicios públicos) en sus 3 niveles, vincularlos y sacar reportes del hogar y del papá. Usar
   también para corregir un movimiento, ver qué falta conciliar o responder cuánto se gastó o ingresó.
   Triggers: estado de cuenta, Uber, recibo de Uber, BCR, BAC, tarjeta, comprobante, SINPE, voucher, factura, recibo, gasto,
@@ -17,7 +17,7 @@ Todo se escribe con el MCP `bancos`; nunca editar los jsonl a mano. Formato y ca
 
 | Nivel | Documento | Tool | Suma en reportes |
 |-------|-----------|------|------------------|
-| 1. Movimiento | Estado de cuenta: HTML de movimientos del BCR, PDF del estado de la BAC | `bancos_registrar` | **Sí** (base de verdad) |
+| 1. Movimiento | Estado de cuenta: HTML de movimientos del BCR, PDF del estado de la BAC o del BN | `bancos_registrar` | **Sí** (base de verdad) |
 | 2. Comprobante | Pago: SINPE, voucher, transferencia; trae el número de movimiento del banco | `bancos_comprobante` | No |
 | 3. Factura | Detalle de productos o cargos: súper, recibo de luz, agua, internet | `bancos_factura` | No |
 
@@ -37,22 +37,22 @@ El comprobante es el **pago** de una factura, y no es 1 a 1: una factura se pued
 ## Procedimiento
 
 1. **Leer el documento.** Los archivos de Telegram llegan a `~/Documents/ezekl/telegram-agent-remote/state/inbox/<chat>/`.
-   HTML del BCR: script corto (Python `-I`) que saque las columnas de la tabla. PDF de la BAC: `pdftotext -layout`.
+   HTML del BCR: script corto (Python `-I`) que saque las columnas de la tabla. PDF de la BAC o del BN: `pdftotext -layout`.
    Foto o PDF de comprobante o factura: leerlo con Read.
 2. **Decidir el nivel** con la tabla de arriba. Una foto de SINPE o un voucher es nivel 2 aunque sea el único papel que hay.
 3. **Campos del nivel 1** (cada línea del estado):
 
    | Campo | Regla |
    |-------|-------|
-   | `cuenta` | Tarjeta BAC → `bac`. Cuenta BCR (débito, SINPE, transferencias, salarios) → `bcr` |
-   | `fecha` | La de **proceso del banco**. BCR: «Fecha contable». BAC: las 4 primeras cifras de la referencia (MMDD; si el mes es menor que el de la compra, es del año siguiente). Intereses y cuotas de tasa cero: la fecha de corte |
+   | `cuenta` | Tarjeta BAC → `bac`. Tarjeta del Banco Nacional (BN) → `bncr`. Cuenta BCR (débito, SINPE, transferencias, salarios) → `bcr` |
+   | `fecha` | La de **proceso del banco**. BCR: «Fecha contable». BAC: las 4 primeras cifras de la referencia (MMDD; si el mes es menor que el de la compra, es del año siguiente). BN: la fecha de la transacción (es la única que trae). Intereses y cuotas de tasa cero: la fecha de corte |
    | `fechaReal` | Fecha de la compra, solo referencia (BCR «Fecha transacción»; BAC, la columna de fecha) |
    | `referencia` | BCR: columna «Documento». BAC: la referencia de la línea. Intereses y cuotas no traen: se deja vacía |
    | `clase` | Cargo, compra, débito → `gasto`. Depósito, crédito, salario → `ingreso` |
    | `tipo` | El más cercano de `bancos_tipos`; si ninguno sirve, `otros` y avisarle. Tipo nuevo solo si el dueño lo pide (`bancos_agregar_tipo`) |
    | `total` / `moneda` | Monto positivo; `₡` → `CRC`, `$` → `USD` |
    | `de` | Vacío si es del hogar; `papa` u otro según `datos/reglas.md` |
-   | `tarjeta` | Solo `bac`: 4 últimos dígitos de la cuenta de tarjeta (la que se paga), según `datos/reglas.md` |
+   | `tarjeta` | Solo tarjetas (`bac`, `bncr`): 4 últimos dígitos de la cuenta de tarjeta (la que se paga), según `datos/reglas.md` |
    | `adicional` | Si la línea está en el bloque de un plástico adicional del estado (otro nombre, p. ej. «KAREN»): sus 4 dígitos. Va con la `tarjeta` del titular. Sin él = titular |
    | `comercio` / `nota` | Corto, tal como aparece; la nota solo si aporta (no repetir la tarjeta) |
 
@@ -66,6 +66,7 @@ El comprobante es el **pago** de una factura, y no es 1 a 1: una factura se pued
 ## Casos especiales
 
 * Tarjeta con adicionales: es **una sola cuenta** (un estado, un saldo, un pago). En el PDF, cada plástico tiene su bloque con su número y nombre, en compras (B) y en otros cargos (D, el IVA). Todo lleva la `tarjeta` del titular; las líneas del bloque del adicional, además `adicional`. Intereses y comisiones son de la cuenta: sin `adicional`. `bancos_resumen` da `tarjetas`: lo de cada plástico y el `total` que se paga junto.
+* Tarjeta del BN (`bncr`): el PDF trae «Detalle de compras del periodo» (fecha de transacción, sin referencia) y «Otras líneas de financiamiento» (p. ej. BN Marchamos 12M, tasa cero). Cada compra es una línea; cada cuota de financiamiento, un `gasto` con la fecha de corte, el tipo de lo que se financió (marchamo → `transporte`) y nota con la cuota (N/M). Compras + cuotas = el pago de contado. Los pagos de la tarjeta (sección «pagos y créditos») no se anotan en `bncr`.
 * Pago de la tarjeta BAC desde el BCR: `gasto` en `bcr` con tipo `tarjeta`. Para el gasto real, `excluirTipos: ["tarjeta"]` (los consumos ya están en `bac`).
 * Un SINPE que cubre dos cosas (p. ej. alquiler y abono de otra persona): dos movimientos con la misma `referencia`, cada uno con su tipo y `de`.
 * Tasas cero que pagan otros, salarios, depa y lo del papá: seguir `datos/reglas.md`, incluidos los avisos que pide.
@@ -76,6 +77,8 @@ El comprobante es el **pago** de una factura, y no es 1 a 1: una factura se pued
 ## Reportes y consultas
 
 * **El periodo es el ciclo del 19 al 18, no el mes calendario.** Siempre usar `ciclo: "AAAA-MM"`, que va del 19 del mes anterior al 18 de ese mes (ciclo 2026-11 = 19-oct → 18-nov). Al hablar con el dueño, nombrar el ciclo por sus fechas («ciclo 19-oct → 18-nov»), nunca solo «octubre» o «noviembre». `mes` (1 al 31) solo si lo pide explícitamente. Un ingreso que se adelanta o atrasa unos días (p. ej. el salario de Karen el 31 en vez del 1) cae en el mismo ciclo si no cruza el 18/19.
+* **Pagar las tarjetas BAC:** `bancos_pago_tarjetas` lee el resumen del último estado (PDF), pasa los dólares a colones con la venta de la BAC de hoy, resta los pagos ya hechos desde el BCR y da `pedirAKaren` (lo que Karen pasa del BCR a la BAC). Devuelve el detalle como imagen PNG (`imagen`, en `datos/reportes/`): mandásela al dueño por Telegram en vez de la tabla en texto.
+* **Pagar la tarjeta BN de Karen:** `bancos_pago_tarjeta_bn` hace lo mismo con el último estado del BN (`…-estado-bn-2921.pdf`): dólares a colones con la venta del **BN** de hoy (no la de la BAC), resta los «Pago BN» del BCR desde el corte y da `faltaPagar`. También devuelve la imagen para mandarla por Telegram.
 * **Ciclo completo:** `bancos_resumen { ciclo }` → balance, rubros (hogar, papa…) y tipos por rubro. Incluye al papá.
 * **Solo el hogar:** `excluirDe: ["papa"]` (y `"primo"` si hace falta). **Solo el papá, para mostrárselo:** `de: "papa"`.
 * **Detalle:** `bancos_movimientos` (con `c` y `f` = cuántos comprobantes y facturas tiene cada uno); `bancos_detalles { movimiento: "m-..." }` o `{ ciclo, conLineas: true }`.

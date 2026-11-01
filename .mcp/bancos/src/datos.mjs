@@ -11,7 +11,7 @@ import { ToolError } from '../../_shared/results.mjs';
 
 export { ToolError };
 
-export const CUENTAS = ['bcr', 'bac'];
+export const CUENTAS = ['bcr', 'bac', 'bncr'];
 export const CLASES = ['gasto', 'ingreso'];
 export const MONEDAS = ['CRC', 'USD'];
 /** Niveles auxiliares: carpeta en datos/ y prefijo de su id. */
@@ -191,7 +191,7 @@ export const REFERENCIA_PROP = { type: 'string', description: 'Número del movim
 /** Descripción común del campo `de` (rubro de otra persona). */
 export const DE_PROP = { type: 'string', description: 'Rubro de otra persona cuando no es del hogar (dueño y Karen), p. ej. "papa" (lo que se le paga y lo que él aporta) o "primo". Vacío = hogar.' };
 
-export const TARJETA_PROP = { type: 'string', description: 'Tarjeta de crédito (cuenta BAC): 4 últimos dígitos de la cuenta titular, la que se paga, p. ej. "8608". Las compras de un adicional también llevan la del titular.' };
+export const TARJETA_PROP = { type: 'string', description: 'Tarjeta de crédito (cuentas bac y bncr): 4 últimos dígitos de la cuenta titular, la que se paga, p. ej. "8608". Las compras de un adicional también llevan la del titular.' };
 export const ADICIONAL_PROP = { type: 'string', description: '4 últimos dígitos del plástico adicional que hizo la compra (sale en su propio bloque del estado). Vacío = la usó el titular.' };
 
 /** Plástico que hizo el movimiento: el adicional o, si no, la tarjeta titular. */

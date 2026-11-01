@@ -12,7 +12,7 @@ export default {
   name: 'bancos_registrar',
   order: 20,
   description:
-    'Nivel 1 (base de verdad de los reportes): anota los movimientos de un estado de cuenta (HTML del BCR, PDF de la tarjeta BAC) ' +
+    'Nivel 1 (base de verdad de los reportes): anota los movimientos de un estado de cuenta (HTML del BCR, PDF de la tarjeta BAC o del BN) ' +
     'en datos/<cuenta>/AAAA-MM/AAAA-MM-DD.jsonl, con id propio, y copia el respaldo a datos/multimedia/AAAA-MM/. ' +
     'fecha = fecha de proceso del banco; fechaReal = fecha de compra, solo referencia; referencia = número del movimiento en el banco. ' +
     'Vincula solos los comprobantes y facturas pendientes (por referencia o por monto y fecha) y toma de ellos el tipo, el de y la nota. ' +
@@ -21,7 +21,7 @@ export default {
   inputSchema: {
     type: 'object',
     properties: {
-      cuenta: { type: 'string', enum: CUENTAS, description: 'bcr = cuenta BCR (gastos e ingresos como salarios); bac = tarjeta BAC.' },
+      cuenta: { type: 'string', enum: CUENTAS, description: 'bcr = cuenta BCR (gastos e ingresos como salarios); bac = tarjeta BAC; bncr = tarjeta del Banco Nacional.' },
       movimientos: {
         type: 'array',
         minItems: 1,

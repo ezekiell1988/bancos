@@ -21,7 +21,7 @@ export default {
           properties: {
             fecha: { type: 'string', description: 'AAAA-MM-DD del comprobante.' },
             hora: { type: 'string', description: 'HH:MM, si la trae.' },
-            cuenta: { type: 'string', enum: CUENTAS, description: 'Cuenta de donde salió o a donde entró, si se sabe (SINPE = bcr; voucher de la tarjeta = bac).' },
+            cuenta: { type: 'string', enum: CUENTAS, description: 'Cuenta de donde salió o a donde entró, si se sabe (SINPE = bcr; voucher de la tarjeta = bac o bncr).' },
             clase: { type: 'string', enum: CLASES },
             total: { type: 'number', description: 'Monto positivo.' },
             moneda: { type: 'string', enum: MONEDAS },
