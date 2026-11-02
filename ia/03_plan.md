@@ -1,6 +1,6 @@
 # 03 — Plan de Desarrollo
 
-> Última actualización: 2026-10-26
+> Última actualización: 2026-11-02
 
 ## Dirección actual
 
@@ -31,12 +31,13 @@ Contabilidad de la familia Baltodano Soto en 3 niveles: el estado de cuenta (BCR
 
 ### Fase 2 — MCP bancos ✅ Completada
 
-> Avance: 1 de 1 componentes completados (actualizado 2026-10-25).
+> Avance: 2 de 2 componentes completados (actualizado 2026-11-02).
 > Requisitos: REQ-001, REQ-002, REQ-003, REQ-004, REQ-005, REQ-006
 
 | Componente | Estado |
 |------------|--------|
 | MCP bancos | ✅ TASK-EBC-MCP-01 |
+| Arnés de pruebas MCP | ✅ TASK-EBC-MCP-06 |
 
 **Criterios de éxito:**
 

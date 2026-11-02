@@ -1,6 +1,6 @@
 # 05 — Progreso Actual
 
-> Última actualización: 2026-11-01 12:39 CR
+> Última actualización: 2026-11-02 09:31 CR
 > Fase activa: Fase 6 — Facturas con varios pagos (0 de 1 componentes completados)
 
 <!-- Con el MCP iaWorkflow, las dos líneas de arriba, «Completado en sesiones recientes» y la tabla de
@@ -13,6 +13,8 @@ Proyecto reiniciado como registro sencillo de movimientos en jsonl (`datos/`, fu
 
 ## Completado en sesiones recientes
 
+* **2026-11-02** — ISSUE-EBC-001 cerrado: Corregido con TASK-EBC-MCP-06: El arnés .mcp/_shared es un enlace a ~/.mcp/_shared, corregido allí (TASK-EBC-MCP-11 de ~/.mcp); smoke bancos termina al instante con TODO OK.
+* **2026-11-02** — TASK-EBC-MCP-06: El arnés .mcp/_shared es un enlace a ~/.mcp/_shared, corregido allí (TASK-EBC-MCP-11 de ~/.mcp); smoke bancos termina al instante con TODO OK.
 * **2026-11-01** — IA: MCP bancos: nueva cuenta `bncr` (tarjeta de crédito del Banco Nacional) en CUENTAS, descripciones, README y skill record-movements (cuotas de financiamiento BN con fecha de corte). Smoke test OK. Primer estado BN anotado (datos/ privado).
 * **2026-10-31** — EBC: Tools de consulta del MCP bancos aceptan `ciclo` (19 al 18) y el skill record-movements lo fija como periodo por defecto; smoke test OK (72 checks).
 * **2026-10-26** — TASK-EBC-DOC-04: Skill record-movements probado con documentos reales: 2 HTML de movimientos del BCR y 2 estados de la BAC (404 movimientos) más 15 comprobantes SINPE. Su versión por niveles quedó en TASK-EBC-DOC-06.
