@@ -29,7 +29,8 @@ Con el MCP: `ia_validate`, `ia_get_context` y, para lecturas puntuales (la tarea
 7. Antes de implementar, leer [`mapa-area-skill.md`](./mapa-area-skill.md) y cargar el skill técnico de su área. Si el archivo no existe o el área no está mapeada, avisar al usuario y proponer completarlo en lugar de implementar sin skill de dominio.
 8. Si se bloquea por una dependencia externa, usar `work_task` con `transition: "blocked"` y `reason`; para continuar, `transition: "resumed"` con un nuevo `reason` (ambas aceptan `nextStep`).
 9. Cerrarla con `finish_task`, que sincroniza plan (fila, `> Avance`, estado de la fase), cola y progreso (`Fase activa`, `En progreso`, completado reciente); no retocar esas partes a mano.
-10. Si un issue tardío invalida un cierre, usar `reopen_task`: la tarea vuelve a `Borrador` y hay que aprobarla otra vez con `approve_task`. Si no lo invalida, crear una tarea de corrección nueva y enlazarla con `ia_link_issue_to_task`. Una tarea borrada por error se recupera con `restore_task`.
+10. Si al trabajar una tarea aparece trabajo de **otra área** (p. ej. BE necesita un cambio de estructura en DB), no hacerlo dentro de esa tarea: crear la tarea del área con `create_task` y `parentTask` (la que la necesita) y `parentReason`. Quedan enlazadas (`Bloquea a` / `Depende de`) y en la misma fase; si la que la abre ya estaba aprobada y la nueva no es de riesgo alto, nace `Lista` con la aprobación heredada y hay que **avisarle al dueño** qué se abrió y por qué (si es de riesgo alto queda en `Borrador` hasta su OK). Encargarla al agente de su área (si el proyecto tiene delegación) o trabajarla aparte, y bloquear la propia con `work_task` `blocked` mientras espera. `finish_task` no cierra una tarea con dependencias abiertas; al cerrar la que bloqueaba devuelve `unblocks`: retomar esas. Para enlazar dos tareas que ya existen, `ia_link_tasks`.
+11. Si un issue tardío invalida un cierre, usar `reopen_task`: la tarea vuelve a `Borrador` y hay que aprobarla otra vez con `approve_task`. Si no lo invalida, crear una tarea de corrección nueva y enlazarla con `ia_link_issue_to_task`. Una tarea borrada por error se recupera con `restore_task`.
 
 No existe una transición de revisión: la revisión se hace con [`revision-codigo.md`](./revision-codigo.md) antes de `finish_task`. Las tareas V1 solo se migran con `migrate_tasks_to_v2` (preview primero).
 
@@ -43,6 +44,7 @@ Solo si el MCP no está disponible, seguir el mismo ciclo de vida editando `04_t
 * Las tareas completadas salen de `04_tasks/tasks/` hacia `04_tasks/done/YYYY-MM.md` (lo hace `finish_task`).
 * Nunca implementar una tarea en `Borrador` ni de riesgo alto sin aprobación explícita.
 * No actualizar manualmente archivos de tarea, índices o progreso cuando `iaWorkflow` está disponible.
+* Una tarea es de una sola área: el trabajo de otra área va en su propia tarea enlazada (`parentTask` / `ia_link_tasks`), no se mezcla.
 
 ## Errores comunes
 
