@@ -142,6 +142,9 @@ export function guardarMovimiento(ubicado, nuevo) {
 /** Quita los campos internos (cuenta y línea) que agrega la lectura. */
 export const sinUbicacion = ({ cuenta: _c, linea: _l, nivel: _n, ...resto }) => resto;
 
+/** Igual para comprobantes y facturas: su cuenta es un dato propio y se conserva. */
+export const detalleSinUbicacion = ({ linea: _l, nivel: _n, ...resto }) => resto;
+
 /** Valida un movimiento contra los tipos y lo normaliza al formato del README. */
 export function normalizarMovimiento(m, tipos) {
   checkFecha(m.fecha);

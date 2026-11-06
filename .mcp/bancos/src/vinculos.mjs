@@ -3,7 +3,7 @@
 import {
   NIVELES, ToolError, VENTANA, appendJsonl, buscarMovimiento, checkFecha, checkTipo, completarMovimiento, copiarRespaldo, detalleFile,
   emparejar, guardarMovimiento, leerDetalles, leerTodosLosDetalles, leerTodosLosMovimientos, nuevoId, ocupadosPor, planRespaldo, r2,
-  sinUbicacion, slug, sumarDias,
+  sinUbicacion, detalleSinUbicacion, slug, sumarDias,
 } from './datos.mjs';
 
 /** Comprobantes (pagos) de una factura (ADR-06). */
@@ -161,7 +161,7 @@ export function prepararDetalles(nivel, entradas, normalizar) {
     agregar.push({ d: { nivel, ...d }, respaldo: respaldos[i] });
   });
   const { vinculados, guardar: guardarMovimientos } = vincularNuevos(agregar.map((a) => a.d));
-  const filas = agregar.map((a) => sinUbicacion(a.d));
+  const filas = agregar.map((a) => detalleSinUbicacion(a.d));
   return {
     resumen: {
       anota: filas.length,

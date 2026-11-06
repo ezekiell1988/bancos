@@ -1,4 +1,4 @@
-import { buscarDetalle, guardarDetalle, guardarDetalles, leerDetalles, sinUbicacion } from '../src/datos.mjs';
+import { buscarDetalle, guardarDetalle, guardarDetalles, leerDetalles, detalleSinUbicacion } from '../src/datos.mjs';
 import { refrescarSqlite } from '../src/sqlite.mjs';
 import { pagosDe } from '../src/vinculos.mjs';
 
@@ -22,14 +22,14 @@ export default {
     const d = buscarDetalle(id);
     const facturas = d.nivel === 'comprobantes' ? leerDetalles('facturas').filter((f) => pagosDe(f).includes(d.id)) : [];
     const pagaA = facturas.length ? facturas.map((f) => f.id) : undefined;
-    if (confirm !== true) return { preview: true, applied: false, detalle: sinUbicacion(d), pagaA, message: 'Llamar de nuevo con confirm:true para borrarlo.' };
+    if (confirm !== true) return { preview: true, applied: false, detalle: detalleSinUbicacion(d), pagaA, message: 'Llamar de nuevo con confirm:true para borrarlo.' };
     guardarDetalle(d, null);
     guardarDetalles(facturas.map((f) => {
-      const nueva = { ...sinUbicacion(f), comprobantes: pagosDe(f).filter((x) => x !== d.id) };
+      const nueva = { ...detalleSinUbicacion(f), comprobantes: pagosDe(f).filter((x) => x !== d.id) };
       if (!nueva.comprobantes.length) delete nueva.comprobantes;
       return { detalle: f, nuevo: nueva };
     }));
-    return { applied: true, borrado: sinUbicacion(d), aviso: refrescarSqlite() };
+    return { applied: true, borrado: detalleSinUbicacion(d), aviso: refrescarSqlite() };
   },
   async smoke({ callTool, check, toolJson, state }) {
     const prev = toolJson(await callTool('bancos_borrar_detalle', { id: state.comprobanteSoda }));

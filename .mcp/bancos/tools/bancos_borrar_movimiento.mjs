@@ -1,4 +1,4 @@
-import { CUENTAS, guardarDetalles, guardarMovimiento, leerTodosLosDetalles, sinUbicacion, ubicarMovimiento } from '../src/datos.mjs';
+import { CUENTAS, guardarDetalles, guardarMovimiento, leerTodosLosDetalles, detalleSinUbicacion, sinUbicacion, ubicarMovimiento } from '../src/datos.mjs';
 import { refrescarSqlite } from '../src/sqlite.mjs';
 
 export default {
@@ -25,7 +25,7 @@ export default {
     const quedanPendientes = detalles.map((d) => d.id);
     if (args.confirm !== true) return { preview: true, applied: false, cuenta: m.cuenta, linea: m.linea, movimiento: sinUbicacion(m), quedanPendientes, message: 'Llamar de nuevo con confirm:true para borrarlo.' };
     guardarMovimiento(m, null);
-    guardarDetalles(detalles.map((d) => ({ detalle: d, nuevo: { ...sinUbicacion(d), movimiento: null } })));
+    guardarDetalles(detalles.map((d) => ({ detalle: d, nuevo: { ...detalleSinUbicacion(d), movimiento: null } })));
     return { applied: true, cuenta: m.cuenta, linea: m.linea, borrado: sinUbicacion(m), quedanPendientes, aviso: refrescarSqlite() };
   },
   async smoke({ callTool, check, toolJson, toolText, state }) {

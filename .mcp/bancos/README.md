@@ -21,6 +21,7 @@ Contabilidad familiar en 3 niveles sobre `datos/` (formato en el `README.md` del
 | `bancos_editar_movimiento` | Cambia tipo, `de`, `tarjeta`, `adicional`, comercio, nota, referencia o `fechaReal` (preview; `confirm: true`) |
 | `bancos_borrar_detalle` | Borra un comprobante o factura (preview; `confirm: true`) |
 | `bancos_vincular` | Vincula o desvincula a mano un comprobante o factura, o fija los pagos de una factura (preview; `confirm: true`) |
+| `bancos_fijar_cuenta` | Fija la cuenta de comprobantes o facturas que no la tienen, en lote; no pisa otra cuenta (preview; `apply: true`) |
 | `bancos_sql` | Consulta SELECT de solo lectura sobre `datos/bancos.sqlite` |
 | `bancos_sqlite_reconstruir` | Reconstruye `datos/bancos.sqlite` desde los jsonl |
 

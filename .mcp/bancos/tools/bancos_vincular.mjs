@@ -1,4 +1,4 @@
-import { ToolError, buscarDetalle, buscarMovimiento, completarMovimiento, guardarDetalle, guardarMovimiento, sinUbicacion } from '../src/datos.mjs';
+import { ToolError, buscarDetalle, buscarMovimiento, completarMovimiento, guardarDetalle, guardarMovimiento, detalleSinUbicacion, sinUbicacion } from '../src/datos.mjs';
 import { refrescarSqlite } from '../src/sqlite.mjs';
 import { estadoPago, mapaComprobantes, pagosDe } from '../src/vinculos.mjs';
 
@@ -10,7 +10,7 @@ function fijarPagos(f, ids, completar, confirm) {
     if (c.nivel !== 'comprobantes' || c.clase !== 'gasto') throw new ToolError(`${id} no es un comprobante de gasto.`);
     return c;
   });
-  const nueva = { ...sinUbicacion(f), movimiento: ids.length ? null : f.movimiento ?? null };
+  const nueva = { ...detalleSinUbicacion(f), movimiento: ids.length ? null : f.movimiento ?? null };
   delete nueva.comprobantes;
   if (ids.length) nueva.comprobantes = ids;
   const movimientos = new Map();
@@ -63,7 +63,7 @@ export default {
     const { nuevo, cambios } = m && completar ? completarMovimiento(m, d) : { nuevo: m, cambios: [] };
     const resumen = { detalle: d.id, antes: d.movimiento ?? '', despues: m?.id ?? '', cambiosAlMovimiento: cambios.join('; ') || 'ninguno' };
     if (confirm !== true) return { preview: true, applied: false, ...resumen, message: 'Llamar de nuevo con confirm:true para guardarlo.' };
-    guardarDetalle(d, { ...sinUbicacion(d), movimiento: m?.id ?? null });
+    guardarDetalle(d, { ...detalleSinUbicacion(d), movimiento: m?.id ?? null });
     if (cambios.length) guardarMovimiento(m, sinUbicacion(nuevo));
     return { applied: true, ...resumen, aviso: refrescarSqlite() };
   },

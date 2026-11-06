@@ -1,6 +1,6 @@
 # 05 — Progreso Actual
 
-> Última actualización: 2026-11-02 09:31 CR
+> Última actualización: 2026-11-06 08:10 CR
 > Fase activa: Fase 6 — Facturas con varios pagos (0 de 1 componentes completados)
 
 <!-- Con el MCP iaWorkflow, las dos líneas de arriba, «Completado en sesiones recientes» y la tabla de
@@ -13,6 +13,7 @@ Proyecto reiniciado como registro sencillo de movimientos en jsonl (`datos/`, fu
 
 ## Completado en sesiones recientes
 
+* **2026-11-06** — TASK-EBC-MCP-07: Helper detalleSinUbicacion conserva la cuenta en comprobantes y facturas; tool bancos_fijar_cuenta; smoke cubre; 43 detalles completados con evidencia, 26 quedaron vacíos.
 * **2026-11-02** — ISSUE-EBC-001 cerrado: Corregido con TASK-EBC-MCP-06: El arnés .mcp/_shared es un enlace a ~/.mcp/_shared, corregido allí (TASK-EBC-MCP-11 de ~/.mcp); smoke bancos termina al instante con TODO OK.
 * **2026-11-02** — TASK-EBC-MCP-06: El arnés .mcp/_shared es un enlace a ~/.mcp/_shared, corregido allí (TASK-EBC-MCP-11 de ~/.mcp); smoke bancos termina al instante con TODO OK.
 * **2026-11-01** — IA: MCP bancos: nueva cuenta `bncr` (tarjeta de crédito del Banco Nacional) en CUENTAS, descripciones, README y skill record-movements (cuotas de financiamiento BN con fecha de corte). Smoke test OK. Primer estado BN anotado (datos/ privado).

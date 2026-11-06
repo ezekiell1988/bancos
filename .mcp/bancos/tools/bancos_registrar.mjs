@@ -3,7 +3,7 @@ import path from 'node:path';
 import {
   ADICIONAL_PROP, CLASES, CUENTAS, DE_PROP, FECHA_PROP, FECHA_REAL_PROP, MONEDAS, REFERENCIA_PROP, appendJsonl, copiarRespaldo, diaFile,
   getDatosDir, guardarDetalles, leerMovimientos, leerTodosLosDetalles, leerTodosLosTipos, mismoMovimiento, normalizarMovimiento,
-  planRespaldo, r2, sinUbicacion, TARJETA_PROP,
+  planRespaldo, r2, detalleSinUbicacion, TARJETA_PROP,
 } from '../src/datos.mjs';
 import { refrescarSqlite } from '../src/sqlite.mjs';
 import { completarConPares, planVinculos } from '../src/vinculos.mjs';
@@ -98,7 +98,7 @@ export default {
     if (!finales.length) return { applied: false, ...resumen, message: 'Todos ya estaban anotados; no se guardó nada.' };
     if (respaldo) copiarRespaldo(respaldo);
     for (const [file, rows] of porArchivo) appendJsonl(file, rows);
-    guardarDetalles(pares.filter((p) => !p.soloCompleta).map((p) => ({ detalle: p.detalle, nuevo: { ...sinUbicacion(p.detalle), movimiento: p.movimiento.id } })));
+    guardarDetalles(pares.filter((p) => !p.soloCompleta).map((p) => ({ detalle: p.detalle, nuevo: { ...detalleSinUbicacion(p.detalle), movimiento: p.movimiento.id } })));
     return { applied: true, ...resumen, aviso: refrescarSqlite() };
   },
   async smoke({ callTool, check, toolJson, state }) {
