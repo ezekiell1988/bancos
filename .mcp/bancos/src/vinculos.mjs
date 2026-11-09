@@ -134,10 +134,11 @@ export function normalizarDetalle(nivel, d, tipos) {
   };
 }
 
-/** Mismo detalle: misma fecha, total y moneda; y misma referencia (o número) si ambos la tienen, si no mismo comercio. */
+/** Mismo detalle: misma fecha, total y moneda; misma hora si ambos la tienen; y misma referencia (o número) si ambos la tienen, si no mismo comercio. */
 export const mismoDetalle = (a, b) => {
   const ra = a.referencia ?? a.numero;
   const rb = b.referencia ?? b.numero;
+  if (a.hora && b.hora && a.hora !== b.hora) return false;
   return a.fecha === b.fecha && a.total === b.total && a.moneda === b.moneda && (ra && rb ? ra === rb : slug(a.comercio) === slug(b.comercio));
 };
 
