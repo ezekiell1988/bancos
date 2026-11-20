@@ -2,3 +2,6 @@
 datos/
 .local-secrets/
 .DS_Store
+dashboard/config.json
+dashboard/out/
+dashboard/logs/

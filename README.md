@@ -73,3 +73,11 @@ Pagada en dos abonos: en vez de `movimiento` lleva `"comprobantes":["c-5e6f7a8b"
 ```json
 {"id":"comida","nombre":"Comida"}
 ```
+
+## Dashboard de finanzas (`dashboard/`)
+
+Pestaña «💰 Finanzas» de la Mini App (al elegir el proyecto Bancos). Solo consulta: periodo (ciclo 19→18, mes o rango), resumen, gastos por tipo, pago de contado de las tarjetas, pendientes y movimientos por cuenta. Cada reporte tiene «Enviar al chat», que manda una imagen de 1080 px sin textos cortados.
+
+* Servidor: `node dashboard/server.mjs` (solo 127.0.0.1:4780); en la Mac lo deja arriba launchd (`~/Library/LaunchAgents/com.ezekl.bancos-dashboard.plist`).
+* Config: copiar `dashboard/config.example.json` a `dashboard/config.json` (ignorado en git) y poner el `chatId` del chat de Bancos.
+* Los números salen de los mismos handlers que `bancos_resumen`, `bancos_movimientos`, `bancos_pendientes` y `bancos_pago_tarjetas`.

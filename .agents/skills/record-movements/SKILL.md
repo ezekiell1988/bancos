@@ -95,3 +95,7 @@ El comprobante es el **pago** de una factura, y no es 1 a 1: una factura se pued
 ## Privacidad
 
 El repo es público: montos, comercios y archivos solo viven en `datos/`. No copiarlos a `ia/`, commits ni grupos de Telegram; solo al chat del dueño.
+
+## Reportes en imagen
+
+Para ver o mandar reportes por periodo (resumen, gastos por tipo, pago de tarjetas, pendientes, movimientos) está el dashboard de la Mini App, pestaña «💰 Finanzas»: cada reporte tiene «Enviar al chat» y llega como imagen legible. Preferirlo a mandar tablas por `telegram_grafico` cuando los montos o descripciones se cortan.

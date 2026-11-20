@@ -13,6 +13,7 @@ Sin servidor: el agente lee los documentos que le pasa el dueño y, con el MCP l
 |------------|-----------------|-------------|-------------|
 | Datos | Movimientos, comprobantes, facturas, tipos, respaldos e índice SQLite | `datos/` (fuera de git) | EBC |
 | MCP `bancos` | Anotar los 3 niveles, vincularlos, resumir por rubro, conciliar, corregir, consultar SQL; copiar respaldos | `.mcp/bancos/` | EBC |
+| Dashboard de finanzas | Servidor Node en 127.0.0.1:4780 (launchd `com.ezekl.bancos-dashboard`), reusa los handlers `bancos_*`; abre por el proxy `/svc/` de la Mini App (`miniapp.tabs` id `finanzas`); `enviar` genera un PNG de 1080 px con Chrome y lo manda por `bridge.sock` (op `send_photo`) al chat de Bancos | `dashboard/` | EBC |
 | Runtime compartido | Protocolo stdio, registry, resultados y arnés de smoke | `.mcp/_shared` → `~/.mcp/_shared` | EBC |
 | Skill del proyecto | Procedimiento para leer documentos y anotarlos con el MCP | `.agents/skills/` | EBC |
 

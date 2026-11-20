@@ -1,0 +1,6 @@
+{
+  "puerto": 4780,
+  "chatId": "ID_DEL_CHAT_DE_BANCOS",
+  "socket": "~/Documents/ezekl/telegram-agent-remote/state/bridge.sock",
+  "segundosEntreEnvios": 10
+}

@@ -37,6 +37,7 @@
 | `README.md` | Formato de `datos/`, de cada movimiento y de los tipos |
 | `datos/` | Movimientos, tipos y respaldos (fuera de git) |
 | `.mcp/bancos/` | MCP para anotar, vincular, consultar y corregir los 3 niveles |
+| `dashboard/` | Dashboard de finanzas (solo consulta) en la pestaña «💰 Finanzas» de la Mini App; manda reportes como imagen al chat |
 | `.agents/skills/` | Skills del proyecto (cómo procesar documentos) |
 | `ia/` | Contexto y plan del proyecto (workflow iaWorkflow) |
 
