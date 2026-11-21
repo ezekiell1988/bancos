@@ -1,4 +1,9 @@
-import { CUENTAS, HOGAR, RUBRO_PROPS, filtroRubro, leerDetalles, leerTodosLosMovimientos, plasticoUsado, r2, rubroDe, tarjetaDestino, tiposTraspaso } from '../src/datos.mjs';
+import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
+import { CUENTAS, getDatosDir, HOGAR, RUBRO_PROPS, filtroRubro, leerDetalles, leerTodosLosMovimientos, plasticoUsado, r2, rubroDe, tarjetaDestino, tiposTraspaso } from '../src/datos.mjs';
+import { INFODOLAR, cambioInfodolar, textoDelEstado } from '../src/pago.mjs';
+import { leerResumen } from './bancos_pago_tarjetas.mjs';
+import { leerEstadoBn } from './bancos_pago_tarjeta_bn.mjs';
 import { periodoProps, rangoCiclo, resolverPeriodo } from '../src/periodo.mjs';
 
 /** Suma un movimiento al acumulado de su clave. */
@@ -40,24 +45,74 @@ function cicloAnterior(desde, hasta) {
   return rangoCiclo(prev);
 }
 
-/** Control de la deuda de tarjeta: compras del ciclo anterior contra lo pagado (traspasos) en este periodo, por tarjeta y moneda. */
-function deudaTarjeta(desde, hasta, pagos) {
-  const prev = cicloAnterior(desde, hasta);
-  if (!prev) return [];
-  const compras = new Map();
-  for (const m of leerTodosLosMovimientos(prev.desde, prev.hasta, ['bac', 'bncr'])) {
-    const k = `${m.cuenta}|${m.moneda}`;
-    compras.set(k, r2((compras.get(k) ?? 0) + (m.clase === 'ingreso' ? -m.total : m.total)));
+/** Estado de cuenta (BAC o BN) cuyo corte abre el ciclo (del día anterior al inicio, p. ej. BAC 18-oct y BN 19-oct para el ciclo que empieza el 19-oct): su pago de contado en colones y dólares, sumado de todas sus tarjetas. */
+function contadoDelEstado(tarjeta, desde) {
+  const datosDir = getDatosDir();
+  const base = path.join(datosDir, 'multimedia');
+  if (!existsSync(base)) return null;
+  const d = new Date(`${desde}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - 1);
+  const ini = d.toISOString().slice(0, 10);
+  const patron = tarjeta === 'bac' ? /^(\d{4}-\d{2}-\d{2})-bac-estado-cuenta\.(pdf|txt)$/ : /^(\d{4}-\d{2}-\d{2})-estado-bn-\d{4}\.(pdf|txt)$/;
+  const files = readdirSync(base, { withFileTypes: true }).filter((x) => x.isDirectory())
+    .flatMap((x) => readdirSync(path.join(base, x.name)).map((f) => ({ f, m: patron.exec(f), dir: x.name })).filter((e) => e.m && e.m[1] >= ini && e.m[1] <= desde));
+  const e = files.sort((x, y) => x.m[1].localeCompare(y.m[1])).at(-1);
+  if (!e) return null;
+  try {
+    const texto = textoDelEstado(path.join(datosDir, 'multimedia', e.dir, e.f));
+    if (tarjeta === 'bac') {
+      const { corte, tarjetas } = leerResumen(texto);
+      if (!tarjetas.length) return null;
+      return { corte: corte ?? e.m[1], contadoCRC: r2(tarjetas.reduce((n, t) => n + t.contadoCRC, 0)), contadoUSD: r2(tarjetas.reduce((n, t) => n + t.contadoUSD, 0)) };
+    }
+    const r = leerEstadoBn(texto);
+    return r.contado ? { corte: r.corte ?? e.m[1], contadoCRC: r.contado[0], contadoUSD: r.contado[1] } : null;
+  } catch { return null; }
+}
+
+/** Control de la deuda de tarjeta: el pago de contado del estado que abre el ciclo (colones y dólares) contra lo pagado (traspasos en colones) en este periodo, por tarjeta, con la vista en colones. */
+async function deudaTarjeta(desde, hasta, pagos) {
+  if (!cicloAnterior(desde, hasta)) return [];
+  const filas = [];
+  for (const tarjeta of ['bac', 'bncr']) {
+    const pagado = pagos.get(`${tarjeta}|CRC`) ?? 0;
+    const c = contadoDelEstado(tarjeta, desde);
+    if (!c) {
+      if (pagado) filas.push({ tarjeta, estadoDeCuenta: 'sin estado de cuenta', pagado, diferenciaColones: null });
+      continue;
+    }
+    let venta = null;
+    const delDia = async () => {
+      if (venta === null) venta = (await cambioInfodolar(tarjeta === 'bac' ? INFODOLAR.bac : INFODOLAR.bncr))?.venta ?? 0;
+      return venta;
+    };
+    let tipoCambio = null;
+    if (c.contadoUSD > 0 && pagado > c.contadoCRC) {
+      const tc = (pagado - c.contadoCRC) / c.contadoUSD;
+      const v = await delDia();
+      if (!v || tc <= 1.15 * v) tipoCambio = { valor: tc, fuente: 'pago' };
+    }
+    if (!tipoCambio && c.contadoUSD > 0) {
+      const v = await delDia();
+      tipoCambio = v ? { valor: v, fuente: tarjeta === 'bac' ? 'bac del dia' : 'bn del dia' } : null;
+    }
+    if (!tipoCambio && c.contadoUSD > 0) {
+      filas.push({ tarjeta, corte: c.corte, contadoCRC: c.contadoCRC, contadoUSD: c.contadoUSD, pagado, tipoCambio: 'sin tipo de cambio (InfoDolar no respondió)', diferenciaColones: null });
+      continue;
+    }
+    const tc = tipoCambio?.valor ?? 0;
+    const contadoEnColones = r2(c.contadoCRC + c.contadoUSD * tc);
+    const dif = r2(contadoEnColones - pagado);
+    const aplicadoCRC = r2(Math.min(pagado, c.contadoCRC));
+    filas.push({
+      tarjeta, corte: c.corte, contadoCRC: c.contadoCRC, contadoUSD: c.contadoUSD, pagado,
+      ...(tipoCambio ? { tipoCambio: { ...tipoCambio, valor: r2(tipoCambio.valor) } } : {}),
+      contadoEnColones, diferenciaColones: dif,
+      aplicadoCRC, aplicadoUSD: tc ? r2((pagado - aplicadoCRC) / tc) : 0,
+      estado: dif > 0.01 ? 'pendiente' : dif < -0.01 ? 'a favor' : 'al dia',
+    });
   }
-  const claves = new Set([...compras.keys(), ...pagos.keys()]);
-  return [...claves].sort().map((k) => {
-    const [tarjeta, moneda] = k.split('|');
-    const compra = compras.get(k);
-    const pagado = pagos.get(k) ?? 0;
-    return compra === undefined
-      ? { tarjeta, moneda, comprasCicloAnterior: 'sin estado de cuenta', pagado, diferencia: null }
-      : { tarjeta, moneda, comprasCicloAnterior: compra, pagado, diferencia: r2(compra - pagado), estado: compra - pagado > 0.005 ? 'pendiente' : compra - pagado < -0.005 ? 'a favor' : 'al dia' };
-  });
+  return filas;
 }
 
 export default {
@@ -69,7 +124,7 @@ export default {
     'balance por rubro (hogar = dueño y Karen; papa y otros por su de), totales por rubro, clase y tipo, ' +
     'y por tarjeta de crédito: lo de cada plástico (titular y adicionales) y el total que se paga junto. ' +
     'Por defecto incluye todo, también al papá. excluirDe: ["papa"] lo quita; de: "papa" deja solo lo suyo (para mostrárselo). ' +
-    'Los traspasos (tipos con traspaso: true, como el pago de la tarjeta) no suman en balance, rubros ni tipos: salen aparte en «traspasos» (lo pagado a cada tarjeta) y «deudaTarjeta» (compras del ciclo anterior - pagado en este ciclo, solo si el periodo es un ciclo). incluirTraspasos: true los suma como gasto. ' +
+    'Los traspasos (tipos con traspaso: true, como el pago de la tarjeta) no suman en balance, rubros ni tipos: salen aparte en «traspasos» (lo pagado a cada tarjeta) y «deudaTarjeta» (pago de contado del estado de cuenta que abre el ciclo, en colones y dólares, contra lo pagado; con contadoEnColones al tipo de cambio del pago si ya se pagó, o a la venta del banco del día en InfoDolar; solo si el periodo es un ciclo). incluirTraspasos: true los suma como gasto. ' +
     'excluirTipos quita otros tipos por id. ' +
     'También cuenta los libros (pagos) del periodo que siguen sin movimiento (no suman). Respuesta TOON.',
   inputSchema: {
@@ -101,7 +156,7 @@ export default {
       const t = traspasosOut.get(k) ?? { tarjeta, moneda: m.moneda, cantidad: 0, total: 0 };
       t.cantidad += 1; t.total = r2(t.total + m.total); traspasosOut.set(k, t);
     }
-    const deuda = args.incluirTraspasos ? [] : deudaTarjeta(desde, hasta, pagos);
+    const deuda = args.incluirTraspasos ? [] : await deudaTarjeta(desde, hasta, pagos);
     const balance = new Map();
     const rubros = new Map();
     const tipos = new Map();
@@ -140,7 +195,7 @@ export default {
       ...(pendientes.length ? { pendientesSinMovimiento: pendientes } : {}),
     };
   },
-  async smoke({ callTool, check, toolText }) {
+  async smoke({ callTool, check, toolText, state }) {
     const text = toolText(await callTool('bancos_resumen', { mes: '2026-10' }));
     check('bancos_resumen calcula el balance en CRC', text.includes('CRC,500000,22500.5,477499.5,5'), text.slice(0, 400));
     check('bancos_resumen separa al papá como rubro', /hogar,CRC,500000,14000.5,485999.5,4/.test(text) && /papa,CRC,0,8500,-8500,1/.test(text), text.slice(0, 600));
@@ -164,11 +219,20 @@ export default {
     const sep = toolText(await callTool('bancos_resumen', { ciclo: '2026-09' }));
     check('bancos_resumen no suma el pago de tarjeta como gasto', !/tarjeta,CRC,1,45000/.test(sep) && !/CRC,0,45000/.test(sep), sep.slice(0, 500));
     check('bancos_resumen saca el pago en traspasos', /traspasos/.test(sep) && /bac,CRC,1,45000/.test(sep), sep.slice(0, 700));
-    check('bancos_resumen calcula la deuda de tarjeta: 50000 de compras - 45000 pagado = 5000 pendiente', /deudaTarjeta/.test(sep) && /bac,CRC,50000,45000,5000,pendiente/.test(sep), sep.slice(0, 900));
+    const estado = (corte, crcN, usdN) => `Fecha de corte: ${corte}\n  ****1111  VISA  Plan Z   CRC 1  0.00 0.00 ${crcN}\n    USD 1  0.00 0.00 ${usdN}\n`;
+    const multimedia = path.join(state.datosDir, 'multimedia', '2026-08');
+    mkdirSync(multimedia, { recursive: true });
+    writeFileSync(path.join(multimedia, '2026-08-18-bac-estado-cuenta.txt'), estado('18-AUG-26', '50,000.00', '0.00'));
+    const sepDeuda = toolText(await callTool('bancos_resumen', { ciclo: '2026-09' }));
+    check('bancos_resumen calcula la deuda de tarjeta con el pago de contado: 50000 - 45000 pagado = 5000 pendiente', /deudaTarjeta/.test(sepDeuda) && /bac,2026-08-18,50000,0,45000,50000,5000,45000,0,pendiente/.test(sepDeuda), sepDeuda.slice(0, 1200));
+    writeFileSync(path.join(multimedia, '2026-09-18-bac-estado-cuenta.txt'), estado('18-SEP-26', '10,000.00', '10.00'));
+    await callTool('bancos_registrar', { cuenta: 'bcr', apply: true, movimientos: [{ fecha: '2026-09-25', clase: 'gasto', tipo: 'tarjeta', total: 14600, moneda: 'CRC', comercio: 'BCR transferencia', nota: 'Pago tarjetas BAC' }] });
+    const octDeuda = toolText(await callTool('bancos_resumen', { ciclo: '2026-10' }));
+    check('bancos_resumen pagado: el tipo de cambio sale del pago ((14600 - 10000) / 10 = 460) y queda al día', /contadoUSD: 10/.test(octDeuda) && /valor: 460/.test(octDeuda) && /fuente: pago/.test(octDeuda) && /estado: al dia/.test(octDeuda), octDeuda.slice(0, 1500));
     const conTraspaso = toolText(await callTool('bancos_resumen', { ciclo: '2026-09', incluirTraspasos: true }));
     check('bancos_resumen con incluirTraspasos suma el pago como gasto', /tarjeta,CRC,1,45000/.test(conTraspaso) && !/traspasos/.test(conTraspaso), conTraspaso.slice(0, 500));
-    const sinEstado = toolText(await callTool('bancos_resumen', { ciclo: '2026-10' }));
-    check('bancos_resumen sin compras del ciclo anterior no inventa deuda', !/deudaTarjeta/.test(sinEstado) || !/bac,CRC,\d/.test(sinEstado.split('deudaTarjeta')[1] ?? ''), sinEstado.slice(0, 300));
+    const sinEstado = toolText(await callTool('bancos_resumen', { ciclo: '2026-07' }));
+    check('bancos_resumen sin estado de cuenta no inventa deuda', !/contadoCRC/.test(sinEstado), sinEstado.slice(0, 300));
     check('bancos_resumen cuenta el pago pendiente sin movimiento aparte', !/pendientesSinMovimiento/.test(nov), nov.slice(-300));
   },
 };

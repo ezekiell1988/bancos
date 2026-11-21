@@ -1,6 +1,6 @@
 # 05 — Progreso Actual
 
-> Última actualización: 2026-11-21 12:01 CR
+> Última actualización: 2026-11-21 12:40 CR
 > Fase activa: ninguna
 
 <!-- Con el MCP iaWorkflow, las dos líneas de arriba, «Completado en sesiones recientes» y la tabla de
@@ -13,6 +13,8 @@ Proyecto reiniciado como registro sencillo de movimientos en jsonl (`datos/`, fu
 
 ## Completado en sesiones recientes
 
+* **2026-11-21** — TASK-EBC-MCP-13: deudaTarjeta de bancos_resumen usa el pago de contado del estado que abre el ciclo (CRC y USD) y da la vista en colones con el tipo de cambio del pago o la venta del banco del día.
+* **2026-11-21** — EBC: Arreglo post FE-04: la tabla «Por categoría» del panel sumaba el pago de tarjeta (traspaso) en Gastos CRC; ahora lo excluye y su total cuadra con el chip de Gastos (ciclo 2026-11: ₡2.100.681). Panel reiniciado (launchd com.ezekl.bancos-dashboard). Commit 43ae241.
 * **2026-11-21** — TASK-EBC-FE-04: El resumen del panel muestra «Traspasos a tarjeta» y «Deuda de tarjeta» aparte de Gastos y balance.
 * **2026-11-21** — TASK-EBC-MCP-12: El pago de tarjeta es traspaso: bancos_resumen ya no lo suma como gasto y agrega los bloques traspasos y deudaTarjeta; incluirTraspasos lo vuelve a sumar.
 * **2026-11-21** — TASK-EBC-FE-03: Dashboard en 3 niveles: sección «Por categoría», pantalla de categoría con movimientos y pantalla de movimiento con partidas, facturas, líneas, ajustes e imagen. Atrás y Enviar al chat en cada nivel.
