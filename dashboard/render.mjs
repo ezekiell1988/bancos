@@ -1,10 +1,13 @@
 // HTML del dashboard y de los reportes. Una sola vista sirve a la pantalla y a la imagen (img=1: ancho fijo 1080 px, fuente grande).
 // Los números salen de los mismos handlers que los tools bancos_* del MCP, así cuadran con lo que ve el agente.
+import { existsSync } from 'node:fs';
+import path from 'node:path';
 import movimientos from '../.mcp/bancos/tools/bancos_movimientos.mjs';
 import pagoTarjetas from '../.mcp/bancos/tools/bancos_pago_tarjetas.mjs';
 import pendientes from '../.mcp/bancos/tools/bancos_pendientes.mjs';
 import resumen from '../.mcp/bancos/tools/bancos_resumen.mjs';
-import { CUENTAS, HOGAR, leerTipos } from '../.mcp/bancos/src/datos.mjs';
+import { CUENTAS, HOGAR, getDatosDir, leerTipos } from '../.mcp/bancos/src/datos.mjs';
+import { consultar } from '../.mcp/bancos/src/sqlite.mjs';
 import { cicloDe, rangoCiclo } from '../.mcp/bancos/src/periodo.mjs';
 import { esc, fechaCorta, fmt } from '../.mcp/bancos/src/pago.mjs';
 
@@ -254,9 +257,10 @@ export async function htmlIndex(p) {
   const pe = d.pe.ok;
   const faltan = pe ? (pe.libroSinMovimiento?.total ?? 0) + (pe.noCuadran?.total ?? 0) + (pe.sinCategoria?.total ?? 0) : null;
   const general = Object.keys(REPORTES).filter((id) => id !== 'pendientes');
+  const categorias = `<section class="card"><div class="cab"><h2>Por categoría</h2></div>${seccionCategorias(p)}</section>`;
   const tabs = `<div class="tabs"><button data-t="general">📊 Resumen</button><button data-t="conciliar">🧾 Conciliar${faltan === null ? '' : `<span class="cnt${faltan ? '' : ' cero'}">${faltan || '✓'}</span>`}</button></div>`;
   const cuerpo = `<div class="w"><h1>💰 Finanzas</h1><div class="sub">${r ? rango(r) : ''}${p.cuenta ? ` · ${p.cuenta.toUpperCase()}` : ''}</div>${selector}${tabs}`
-    + `<div class="panel" data-p="general">${general.map(tarjeta).join('')}</div><div class="panel" data-p="conciliar" hidden>${tarjeta('pendientes')}</div>`
+    + `<div class="panel" data-p="general">${tarjeta('resumen')}${categorias}${general.filter((id) => id !== 'resumen').map(tarjeta).join('')}</div><div class="panel" data-p="conciliar" hidden>${tarjeta('pendientes')}</div>`
     + '<div id="aviso"></div></div>';
   const js = `<script>
 const q=${JSON.stringify(queryDe(p))};const av=document.getElementById('aviso');
@@ -322,3 +326,128 @@ b.disabled=false;b.textContent=t};
 }
 
 export const tituloDetalle = (f) => rotuloFiltro(f);
+
+
+// ── Niveles: ciclo → categoría → movimiento → factura (modelo de 3 niveles, ADR-EBC-03) ──
+const CATEGORIA_ID = /^[\w.-]{1,40}$/;
+/** Condición SQL del periodo y la cuenta sobre una tabla con columnas ciclo, fecha y cuenta. */
+function condicionPeriodo(p, alias) {
+  const c = []; const a = [];
+  if (p.modo === 'ciclo') { c.push(`${alias}.ciclo = ?`); a.push(p.ciclo); }
+  else if (p.modo === 'mes') { c.push(`substr(${alias}.fecha, 1, 7) = ?`); a.push(p.mes); }
+  else { if (p.desde) { c.push(`${alias}.fecha >= ?`); a.push(p.desde); } if (p.hasta) { c.push(`${alias}.fecha <= ?`); a.push(p.hasta); } }
+  if (p.cuenta) { c.push(`${alias}.cuenta = ?`); a.push(p.cuenta); }
+  return { where: c.length ? c.join(' AND ') : '1=1', args: a };
+}
+/** consultar() del MCP no admite parámetros: se escapan los textos y los números ya vienen validados. */
+const sqlTexto = (t) => `'${String(t).replace(/'/g, "''")}'`;
+const conArgs = (sql, args) => { let i = 0; return sql.replace(/\?/g, () => sqlTexto(args[i++])); };
+const filasDe = (sql, args = []) => consultar(conArgs(sql, args), 5000).filas;
+
+/** Nivel 2: ingresos y gastos por categoría (partidas). Un movimiento repartido aparece en cada categoría con su monto. */
+function seccionCategorias(p) {
+  try {
+    const nombres = nombresTipo();
+    const { where, args } = condicionPeriodo(p, 'c');
+    const filas = filasDe(`SELECT c.clase, c.moneda, c.tipo, round(sum(c.monto), 2) AS total, count(DISTINCT c.movimiento_id) AS n FROM movimiento_categorias c WHERE ${where} GROUP BY 1, 2, 3 ORDER BY 1 DESC, 2, 4 DESC`, args);
+    if (!filas.length) return '<p class="vacio">Sin movimientos en este periodo.</p>';
+    const grupos = Object.groupBy(filas, (x) => `${x.clase}|${x.moneda}`);
+    return Object.entries(grupos).map(([k, lista]) => {
+      const [clase, moneda] = k.split('|');
+      const suma = lista.reduce((s, x) => s + x.total, 0);
+      const href = (x) => `categoria.html?${queryDe(p, { clase, moneda, tipo: x.tipo })}`;
+      return `<h3>${clase === 'ingreso' ? 'Ingresos' : 'Gastos'} · ${moneda}</h3>${tabla(['Categoría', 'Mov.', 'Monto'],
+        lista.map((x) => [`<a class="mt" href="${href(x)}">${esc(nombres.get(x.tipo) ?? x.tipo)}</a>`, String(x.n), `<a class="mt" href="${href(x)}">${moneyCorto(x.total, moneda)}</a>`]),
+        { total: [`Total ${moneda}`, '', moneyCorto(suma, moneda)] })}`;
+    }).join('');
+  } catch (e) { return aviso(e.message); }
+}
+
+const botonesNivel = (imagen, volver) => (imagen ? '' : `<div class="acc"><button class="btn sec" id="atras">◀ Atrás</button><button class="btn" id="enviar">Enviar al chat</button></div>`);
+/** Script de «Atrás» y «Enviar al chat» de los niveles; q = query de la propia pantalla. */
+const jsNivel = (imagen, id, q, volver) => (imagen ? '<script>document.documentElement.dataset.alto=document.documentElement.scrollHeight</script>'
+  : `<script>
+const q=${JSON.stringify(q)};const av=document.getElementById('aviso');
+function msg(t){av.textContent=t;av.style.display='block';clearTimeout(msg.t);msg.t=setTimeout(()=>av.style.display='none',3500)}
+document.getElementById('atras').onclick=()=>{if(history.length>1)history.back();else location.href=${JSON.stringify(volver)}};
+document.getElementById('enviar').onclick=async e=>{const b=e.currentTarget;b.disabled=true;const t=b.textContent;b.textContent='Enviando…';
+try{const r=await fetch('enviar?reporte=${id}&'+q);const j=await r.json();msg(j.mensaje||j.error||'Listo')}catch{msg('No se pudo enviar')}
+b.disabled=false;b.textContent=t};
+</script>`);
+
+/** Nivel 2 → movimientos del nivel 1 de una categoría, con el monto de la partida y el total del movimiento. */
+export async function htmlCategoria(p, q, { imagen = false } = {}) {
+  const clase = q.get('clase') === 'ingreso' ? 'ingreso' : 'gasto';
+  const moneda = q.get('moneda') === 'USD' ? 'USD' : 'CRC';
+  const tipo = CATEGORIA_ID.test(q.get('tipo') ?? '') ? q.get('tipo') : 'otros';
+  const nombre = nombresTipo().get(tipo) ?? tipo;
+  const titulo = `${clase === 'ingreso' ? 'Ingresos' : 'Gastos'} · ${nombre} · ${moneda}`;
+  const volver = `./?${queryDe(p)}`;
+  const m_ = imagen ? money : moneyCorto;
+  let cuerpoTabla;
+  try {
+    const { where, args } = condicionPeriodo(p, 'c');
+    const filas = filasDe(`SELECT c.movimiento_id, c.fecha, c.cuenta, c.comercio, c.monto, m.total, (SELECT count(*) FROM facturas f WHERE f.libro_id = c.libro_id) AS facturas FROM movimiento_categorias c JOIN movimientos m ON m.id = c.movimiento_id WHERE ${where} AND c.clase = ? AND c.moneda = ? AND c.tipo = ? ORDER BY c.fecha DESC, c.movimiento_id`, [...args, clase, moneda, tipo]);
+    const suma = filas.reduce((s, x) => s + x.monto, 0);
+    const link = (x, html) => (imagen ? html : `<a class="mt" href="movimiento.html?${queryDe(p, { id: x.movimiento_id })}">${html}</a>`);
+    cuerpoTabla = filas.length
+      ? tabla(['Movimiento', 'Cuenta', 'Total', 'Partida'], filas.slice(0, imagen ? MAX_FILAS.imagen : 500).map((x) => [
+        `<span class="fe">${fechaCorta(x.fecha)}</span> ${link(x, esc(x.comercio || '—'))}${x.facturas ? ' 🧾' : ''}`,
+        esc(x.cuenta.toUpperCase()), m_(x.total, moneda), `<span class="${clase === 'ingreso' ? 'm ingreso' : ''}">${m_(x.monto, moneda)}</span>`]),
+      { total: [`Total · ${filas.length} mov.`, '', '', m_(suma, moneda)], clase: 'det' })
+      : '<p class="vacio">Sin movimientos en esta categoría.</p>';
+  } catch (e) { cuerpoTabla = aviso(e.message); }
+  const sub = `${p.modo === 'ciclo' ? `Ciclo ${p.ciclo}` : p.modo === 'mes' ? p.mes : 'Rango'}${p.cuenta ? ` · ${p.cuenta.toUpperCase()}` : ''}`;
+  const cuerpo = `<div class="w">${botonesNivel(imagen)}<h1>${esc(titulo)}</h1><div class="sub">${sub} · 🧾 = tiene factura</div><section class="card">${cuerpoTabla}</section><div id="aviso"></div></div>`;
+  return pagina(titulo, cuerpo, { imagen, extra: jsNivel(imagen, 'categoria', queryDe(p, { clase, moneda, tipo }), volver) });
+}
+
+/** Nivel 1 → partidas (nivel 2) y facturas con sus líneas, ajustes e imagen (nivel 3). Sin nivel 3 muestra solo movimiento y partidas. */
+export async function htmlMovimiento(p, q, { imagen = false } = {}) {
+  const id = /^[\w.-]{1,40}$/.test(q.get('id') ?? '') ? q.get('id') : '';
+  const nombres = nombresTipo();
+  const volver = `./?${queryDe(p)}`;
+  let titulo = 'Movimiento'; let cuerpoMov = ''; let sub = '';
+  try {
+    const m = filasDe('SELECT * FROM movimientos WHERE id = ?', [id])[0];
+    if (!m) throw new Error('No existe ese movimiento.');
+    const m_ = imagen ? money : moneyCorto;
+    const firmado = m.clase === 'ingreso' ? m.total : -m.total;
+    titulo = m.comercio || m.nota || 'Movimiento';
+    sub = `${fechaCorta(m.fecha)} · ${m.cuenta.toUpperCase()} · ${m.clase === 'ingreso' ? 'Ingreso' : 'Gasto'}${m.referencia ? ` · ref. ${m.referencia}` : ''}`;
+    const partidas = m.libro_id ? filasDe('SELECT * FROM libro_partidas WHERE libro_id = ? ORDER BY n', [m.libro_id]) : [];
+    const partidasHtml = tabla(['Categoría', 'Monto'], (partidas.length ? partidas : [{ tipo: m.tipo || 'otros', monto: m.total }]).map((x) => [esc(nombres.get(x.tipo) ?? x.tipo) + (x.nota ? `<small>${esc(x.nota)}</small>` : ''), m_(x.monto, m.moneda)]), { total: ['Total del movimiento', m_(m.total, m.moneda)] });
+    const nota = m.nota ? `<p class="sub">${esc(m.nota)}</p>` : '';
+    const facturas = m.libro_id ? filasDe('SELECT * FROM facturas WHERE libro_id = ? ORDER BY fecha, id', [m.libro_id]) : [];
+    const facturasHtml = facturas.map((f) => {
+      const lineas = filasDe('SELECT * FROM factura_lineas WHERE factura_id = ? ORDER BY n', [f.id]);
+      const ajustes = filasDe('SELECT * FROM factura_ajustes WHERE factura_id = ? ORDER BY n', [f.id]);
+      const filas = lineas.map((l) => [
+        `${esc(l.descripcion || '—')}${l.cantidad ? `<small>${l.cantidad}${l.unidad ? ` ${esc(l.unidad)}` : ''}${l.precio ? ` × ${m_(l.precio, f.moneda)}` : ''}</small>` : ''}`,
+        l.impuesto ? m_(l.impuesto, f.moneda) : '', esc(nombres.get(l.tipo) ?? l.tipo ?? '—'), m_(l.total, f.moneda)]);
+      const extra = ajustes.map((a) => [esc(a.descripcion || 'Ajuste'), '', 'Ajuste', m_(a.total, f.moneda)]);
+      const ver = !imagen && f.archivo ? `<a class="btn sec" href="archivo?f=${encodeURIComponent(f.id)}" target="_blank" rel="noopener">Ver imagen</a>` : '';
+      return `<section class="card"><div class="cab"><h2>${esc(f.proveedor || 'Factura')}</h2>${ver}</div>`
+        + `<p class="sub">${[f.cedula ? `Céd. jurídica ${esc(f.cedula)}` : '', f.numero ? `N.º ${esc(f.numero)}` : '', fechaCorta(f.fecha)].filter(Boolean).join(' · ')}</p>`
+        + (filas.length || extra.length ? tabla(['Producto', 'Impuesto', 'Categoría', 'Total'], [...filas, ...extra], { total: ['Total factura', '', '', m_(f.total, f.moneda)], clase: 'det' }) : `<p class="vacio">Sin líneas. Total ${m_(f.total, f.moneda)}.</p>`)
+        + '</section>';
+    }).join('');
+    cuerpoMov = `<section class="card"><div class="cab"><h2>${m_(firmado, m.moneda)}</h2></div>${nota}${partidasHtml}</section>`
+      + (facturas.length ? `<h3>Facturas (${facturas.length})</h3>${facturasHtml}` : '<p class="vacio">Sin detalle de factura.</p>');
+  } catch (e) { cuerpoMov = aviso(e.message); }
+  const cuerpo = `<div class="w">${botonesNivel(imagen)}<h1>${esc(titulo)}</h1><div class="sub">${sub}</div>${cuerpoMov}<div id="aviso"></div></div>`;
+  return pagina(titulo, cuerpo, { imagen, extra: jsNivel(imagen, 'movimiento', queryDe(p, { id }), volver) });
+}
+
+const TIPOS_ARCHIVO = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.heic': 'image/heic', '.pdf': 'application/pdf' };
+/** Respaldo de una factura (imagen o PDF) desde datos/multimedia; null si no existe o sale de esa carpeta. */
+export function archivoDeFactura(id) {
+  if (!/^[\w.-]{1,40}$/.test(id ?? '')) return null;
+  const f = filasDe('SELECT archivo FROM facturas WHERE id = ?', [id])[0];
+  if (!f?.archivo) return null;
+  const base = path.resolve(getDatosDir(), 'multimedia');
+  const ruta = path.resolve(getDatosDir(), f.archivo);
+  const tipo = TIPOS_ARCHIVO[path.extname(ruta).toLowerCase()];
+  if (!ruta.startsWith(`${base}${path.sep}`) || !tipo || !existsSync(ruta)) return null;
+  return { ruta, tipo };
+}
