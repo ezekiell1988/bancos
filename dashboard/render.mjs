@@ -52,15 +52,17 @@ export function queryDe(p, extra = {}) {
   return q.toString();
 }
 
-const money = (n, moneda) => `${n < 0 ? '−' : ''}${moneda === 'USD' ? '$' : '₡'}${fmt(Math.abs(n), moneda === 'USD' ? 2 : 2)}`;
+const money = (n, moneda) => `${n < 0 ? '−' : ''}${moneda === 'USD' ? '$' : '₡'}${fmt(Math.abs(n), 2)}`;
+// En pantalla los colones van sin céntimos para que quepan en el iPhone; la imagen (1080 px) los conserva.
+const moneyCorto = (n, moneda) => (moneda === 'USD' ? money(n, moneda) : `${n < 0 ? '−' : ''}₡${fmt(Math.abs(n), 0)}`);
 const rubroNombre = (r) => (r === HOGAR ? 'Hogar' : r === 'papa' ? 'Papá' : r.charAt(0).toUpperCase() + r.slice(1));
 const nombresTipo = () => new Map([...leerTipos('gasto'), ...leerTipos('ingreso')].map((t) => [t.id, t.nombre]));
 const rango = (r) => `${fechaCorta(r.desde)} al ${fechaCorta(r.hasta)}`;
 
 function tabla(cabeza, filas, { total = null } = {}) {
-  return `<div class="tw"><table><thead><tr>${cabeza.map((c, i) => `<th${i ? ' class="n"' : ''}>${esc(c)}</th>`).join('')}</tr></thead><tbody>`
-    + filas.map((f) => `<tr>${f.map((c, i) => `<td${i ? ' class="n"' : ''}>${c}</td>`).join('')}</tr>`).join('')
-    + (total ? `<tr class="t">${total.map((c, i) => `<td${i ? ' class="n"' : ''}>${c}</td>`).join('')}</tr>` : '')
+  return `<div class="tw"><table${cabeza.length > 3 ? ' class="ap"' : ''}><thead><tr>${cabeza.map((c, i) => `<th${i ? ' class="n"' : ''}>${esc(c)}</th>`).join('')}</tr></thead><tbody>`
+    + filas.map((f) => `<tr>${f.map((c, i) => `<td${i ? ` class="n" data-l="${esc(cabeza[i])}"` : ''}>${c}</td>`).join('')}</tr>`).join('')
+    + (total ? `<tr class="t">${total.map((c, i) => `<td${i ? ` class="n" data-l="${esc(cabeza[i])}"` : ''}>${c}</td>`).join('')}</tr>` : '')
     + '</tbody></table></div>';
 }
 
@@ -73,7 +75,7 @@ export async function cargar(p, { imagen = false } = {}) {
     intentar(() => pendientes.handler(p.args)),
     intentar(() => pagoTarjetas.handler({ imagen: false })),
   ]);
-  return { p, r, m, pe, pago, max: imagen ? MAX_FILAS.imagen : MAX_FILAS.pantalla };
+  return { p, r, m, pe, pago, max: imagen ? MAX_FILAS.imagen : MAX_FILAS.pantalla, money: imagen ? money : moneyCorto };
 }
 
 const aviso = (e) => `<p class="vacio">No se pudo cargar: ${esc(e)}</p>`;
@@ -82,11 +84,11 @@ const secciones = {
   resumen(d) {
     if (d.r.error) return aviso(d.r.error);
     const r = d.r.ok;
-    const bal = r.balance.map((b) => `<div class="chips"><div class="chip"><span>Ingresos ${b.moneda}</span><b>${money(b.ingresos, b.moneda)}</b></div>`
-      + `<div class="chip"><span>Gastos ${b.moneda}</span><b>${money(b.gastos, b.moneda)}</b></div>`
-      + `<div class="chip ${b.balance < 0 ? 'alerta' : 'bien'}"><span>Balance ${b.moneda}</span><b>${money(b.balance, b.moneda)}</b></div></div>`).join('');
+    const bal = r.balance.map((b) => `<div class="chips"><div class="chip"><span>Ingresos ${b.moneda}</span><b>${d.money(b.ingresos, b.moneda)}</b></div>`
+      + `<div class="chip"><span>Gastos ${b.moneda}</span><b>${d.money(b.gastos, b.moneda)}</b></div>`
+      + `<div class="chip ${b.balance < 0 ? 'alerta' : 'bien'}"><span>Balance ${b.moneda}</span><b>${d.money(b.balance, b.moneda)}</b></div></div>`).join('');
     const rubros = r.rubros.length ? tabla(['Rubro', 'Ingresos', 'Gastos', 'Balance'],
-      r.rubros.map((x) => [`${esc(rubroNombre(x.rubro))} <small>${x.moneda} · ${x.movimientos} mov.</small>`, money(x.ingresos, x.moneda), money(x.gastos, x.moneda), `<b>${money(x.balance, x.moneda)}</b>`])) : '';
+      r.rubros.map((x) => [`${esc(rubroNombre(x.rubro))} <small>${x.moneda} · ${x.movimientos} mov.</small>`, d.money(x.ingresos, x.moneda), d.money(x.gastos, x.moneda), `<b>${d.money(x.balance, x.moneda)}</b>`])) : '';
     return `${bal || '<p class="vacio">Sin movimientos en este periodo.</p>'}${rubros}`;
   },
   tipos(d) {
@@ -99,16 +101,16 @@ const secciones = {
       const [rubro, moneda] = k.split('|');
       const suma = lista.reduce((s, t) => s + t.total, 0);
       return `<h3>${esc(rubroNombre(rubro))} · ${moneda}</h3>${tabla(['Tipo', 'Cant.', 'Total'],
-        lista.map((t) => [esc(nombres.get(t.tipo) ?? t.tipo), String(t.cantidad), money(t.total, moneda)]), { total: ['Total', String(lista.reduce((s, t) => s + t.cantidad, 0)), money(suma, moneda)] })}`;
+        lista.map((t) => [esc(nombres.get(t.tipo) ?? t.tipo), String(t.cantidad), d.money(t.total, moneda)]), { total: ['Total', String(lista.reduce((s, t) => s + t.cantidad, 0)), d.money(suma, moneda)] })}`;
     }).join('');
   },
   pago(d) {
     if (d.pago.error) return aviso(d.pago.error);
     const g = d.pago.ok;
-    const filas = g.tarjetas.map((t) => [`<b>${esc(t.plan)}</b><small>${esc(t.marca)} …${esc(t.tarjeta)}</small>`, money(t.colones, 'CRC'), money(t.dolares, 'USD'), `<b>${money(t.totalColones, 'CRC')}</b>`]);
-    return `<p class="sub">Estado del corte ${fechaCorta(g.corte)} · límite ${fechaCorta(g.limite)} · dólar ${money(g.tipoCambio.venta, 'CRC')}</p>`
-      + tabla(['Tarjeta', 'Colones', 'Dólares', 'Total en ₡'], filas, { total: ['Total', money(g.total.colones, 'CRC'), money(g.total.dolares, 'USD'), money(g.total.totalColones, 'CRC')] })
-      + `<div class="pedir"><span>Falta por pagar${g.pagosDesdeCorte.length ? ` (ya se pagó ${money(g.pagosDesdeCorte.reduce((s, x) => s + x.total, 0), 'CRC')})` : ''}</span><b>${money(g.pedirAKaren, 'CRC')}</b></div>`;
+    const filas = g.tarjetas.map((t) => [`<b>${esc(t.plan)}</b><small>${esc(t.marca)} …${esc(t.tarjeta)}</small>`, d.money(t.colones, 'CRC'), d.money(t.dolares, 'USD'), `<b>${d.money(t.totalColones, 'CRC')}</b>`]);
+    return `<p class="sub">Estado del corte ${fechaCorta(g.corte)} · límite ${fechaCorta(g.limite)} · dólar ${d.money(g.tipoCambio.venta, 'CRC')}</p>`
+      + tabla(['Tarjeta', 'Colones', 'Dólares', 'Total en ₡'], filas, { total: ['Total', d.money(g.total.colones, 'CRC'), d.money(g.total.dolares, 'USD'), d.money(g.total.totalColones, 'CRC')] })
+      + `<div class="pedir"><span>Falta por pagar${g.pagosDesdeCorte.length ? ` (ya se pagó ${d.money(g.pagosDesdeCorte.reduce((s, x) => s + x.total, 0), 'CRC')})` : ''}</span><b>${d.money(g.pedirAKaren, 'CRC')}</b></div>`;
   },
   pendientes(d) {
     if (d.pe.error) return aviso(d.pe.error);
@@ -118,9 +120,9 @@ const secciones = {
     const saldo = pe.facturasConSaldo ?? [];
     const lista = (titulo, filas) => (filas.length ? `<h3>${titulo} (${filas.length})</h3><div class="lista">${filas.slice(0, d.max).map((f) => f).join('')}${filas.length > d.max ? `<p class="vacio">y ${filas.length - d.max} más</p>` : ''}</div>` : '');
     const fila = (fecha, texto, sub, monto) => `<div class="f"><div class="d"><span class="fe">${fechaCorta(fecha)}</span> ${esc(texto)}${sub ? `<small>${esc(sub)}</small>` : ''}</div><div class="m">${monto}</div></div>`;
-    const html = lista('Movimientos sin comprobante ni factura', sinDetalle.map((x) => fila(x.fecha, x.comercio || x.tipo, `${x.cuenta.toUpperCase()} · ${x.clase}`, money(x.total, x.moneda))))
-      + lista('Comprobantes y facturas sin movimiento', sinMov.map((x) => fila(x.fecha, x.comercio, `${x.nivel === 2 ? 'Comprobante' : 'Factura'}${x.referencia ? ` ${x.referencia}` : ''}`, money(x.total, x.moneda))))
-      + lista('Facturas con saldo', saldo.map((x) => fila(x.fecha, x.comercio, `Pagado ${money(x.pagado ?? 0, x.moneda)}`, `saldo ${money(x.saldo, x.moneda)}`)));
+    const html = lista('Movimientos sin comprobante ni factura', sinDetalle.map((x) => fila(x.fecha, x.comercio || x.tipo, `${x.cuenta.toUpperCase()} · ${x.clase}`, d.money(x.total, x.moneda))))
+      + lista('Comprobantes y facturas sin movimiento', sinMov.map((x) => fila(x.fecha, x.comercio, `${x.nivel === 2 ? 'Comprobante' : 'Factura'}${x.referencia ? ` ${x.referencia}` : ''}`, d.money(x.total, x.moneda))))
+      + lista('Facturas con saldo', saldo.map((x) => fila(x.fecha, x.comercio, `Pagado ${d.money(x.pagado ?? 0, x.moneda)}`, `saldo ${d.money(x.saldo, x.moneda)}`)));
     return html || '<p class="vacio">Todo conciliado en este periodo ✅</p>';
   },
   movimientos(d) {
@@ -132,7 +134,7 @@ const secciones = {
       const signo = x.clase === 'ingreso' ? '' : '−';
       const sub = [x.cuenta.toUpperCase(), nombres.get(x.tipo) ?? x.tipo, x.rubro !== HOGAR ? rubroNombre(x.rubro) : ''].filter(Boolean).join(' · ');
       return `<div class="f"><div class="d"><span class="fe">${fechaCorta(x.fecha)}</span> ${esc(x.comercio || x.nota || '—')}<small>${esc(sub)}</small></div>`
-        + `<div class="m ${x.clase}">${signo}${money(x.total, x.moneda).replace('−', '')}</div></div>`;
+        + `<div class="m ${x.clase}">${signo}${d.money(x.total, x.moneda).replace('−', '')}</div></div>`;
     });
     return `<div class="lista">${filas.join('')}</div>${todos.length > d.max ? `<p class="vacio">Se muestran ${d.max} de ${todos.length}.</p>` : ''}`;
   },
@@ -142,7 +144,7 @@ const ESTILO = `
 :root{--fg:#1d2433;--mu:#5b6475;--bg:#f4f6fa;--card:#fff;--li:#e3e7ee;--ac:#2563eb;--ok:#15803d;--mal:#c2410c;--ch:#eef1f6}
 @media(prefers-color-scheme:dark){:root:not(.img){--fg:#e7eaf1;--mu:#9aa3b5;--bg:#12151c;--card:#1b2029;--li:#2a303c;--ac:#6ea0ff;--ok:#4ade80;--mal:#fb923c;--ch:#232936}}
 *{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
-body{margin:0;font:15px/1.4 -apple-system,'Helvetica Neue',sans-serif;color:var(--fg);background:var(--bg);overflow-wrap:anywhere}
+body{margin:0;font:15px/1.4 -apple-system,'Helvetica Neue',sans-serif;color:var(--fg);background:var(--bg);overflow-wrap:break-word}
 .w{padding:12px 16px 40px;max-width:900px;margin:0 auto}
 h1{font-size:20px;margin:6px 0 2px}h2{font-size:17px;margin:0}h3{font-size:14px;margin:16px 0 6px;color:var(--mu)}
 .sub{color:var(--mu);margin:2px 0 12px;font-size:13px}
@@ -170,6 +172,19 @@ tr.t td{border-top:2px solid var(--fg);border-bottom:0;font-weight:700}
 .pedir b{font-size:20px;color:#15803d;white-space:nowrap}
 .vacio{color:var(--mu);margin:8px 0}
 #aviso{position:fixed;left:16px;right:16px;bottom:16px;background:var(--fg);color:var(--bg);padding:12px 14px;border-radius:12px;display:none;text-align:center}
+@media(max-width:560px){
+html:not(.img) .chips{grid-template-columns:1fr;gap:4px}
+html:not(.img) .chip{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:8px 12px}
+html:not(.img) .chip span{display:inline;font-size:13px}html:not(.img) .chip b{font-size:16px;white-space:nowrap}
+html:not(.img) table.ap thead{display:none}
+html:not(.img) table.ap tr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 8px;padding:10px 0;border-bottom:1px solid var(--li)}
+html:not(.img) table.ap td{border:0;padding:0;text-align:left;white-space:nowrap}
+html:not(.img) table.ap td:first-child{grid-column:1/-1;white-space:normal;font-weight:600}
+html:not(.img) table.ap td:first-child small{display:inline;margin-left:6px;font-weight:400}
+html:not(.img) table.ap td.n::before{content:attr(data-l);display:block;font-size:11px;color:var(--mu);font-weight:400}
+html:not(.img) table.ap tr.t{border-top:2px solid var(--fg);border-bottom:0}
+html:not(.img) .cab h2{font-size:16px}
+}
 html.img{font-size:26px}html.img body{font-size:26px;width:1080px;background:#fff}
 html.img .w{max-width:none;padding:32px 36px}html.img h1{font-size:40px}html.img h2{font-size:32px}html.img h3{font-size:25px}
 html.img .sub,html.img td small,html.img .f small,html.img .fe,html.img th,html.img .chip span{font-size:21px}
