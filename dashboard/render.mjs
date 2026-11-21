@@ -239,8 +239,8 @@ export async function htmlIndex(p) {
   const enlace = (texto, params, on) => `<a href="?${new URLSearchParams(params)}${p.cuenta && !params.cuenta ? `&cuenta=${p.cuenta}` : ''}"${on ? ' class="on"' : ''}>${texto}</a>`;
   const ciclo = p.ciclo;
   const selector = `<div class="bar">${enlace('Ciclo', { ciclo }, p.modo === 'ciclo')}${enlace('Mes', { mes: p.mes }, p.modo === 'mes')}${enlace('Rango', { desde: p.desde ?? rangoCiclo(ciclo).desde, hasta: p.hasta ?? rangoCiclo(ciclo).hasta }, p.modo === 'rango')}</div>`
-    + (p.modo === 'ciclo' ? `<div class="bar">${enlace('◀', { ciclo: sumarCiclo(ciclo, -1) })}${enlace('Actual', {})}${enlace('▶', { ciclo: sumarCiclo(ciclo, 1) })}</div>` : '')
-    + (p.modo === 'mes' ? `<div class="bar">${enlace('◀', { mes: sumarCiclo(p.mes, -1) })}${enlace('Hoy', { mes: hoyCR().slice(0, 7) })}${enlace('▶', { mes: sumarCiclo(p.mes, 1) })}</div>` : '')
+    + (p.modo === 'ciclo' ? `<div class="bar">${enlace('◀', { ciclo: sumarCiclo(ciclo, -1) })}${enlace('Actual', {}, ciclo === cicloDe(hoyCR()))}${enlace('▶', { ciclo: sumarCiclo(ciclo, 1) })}</div>` : '')
+    + (p.modo === 'mes' ? `<div class="bar">${enlace('◀', { mes: sumarCiclo(p.mes, -1) })}${enlace('Hoy', { mes: hoyCR().slice(0, 7) }, p.mes === hoyCR().slice(0, 7))}${enlace('▶', { mes: sumarCiclo(p.mes, 1) })}</div>` : '')
     + (p.modo === 'rango' ? `<form class="rg"><input type="date" name="desde" value="${p.desde ?? ''}"><input type="date" name="hasta" value="${p.hasta ?? ''}">${p.cuenta ? `<input type="hidden" name="cuenta" value="${p.cuenta}">` : ''}<button class="btn">Ver</button></form>` : '')
     + `<div class="bar"><a href="?${queryDe({ ...p, cuenta: undefined })}"${p.cuenta ? '' : ' class="on"'}>Todas</a>${CUENTAS.map((c) => `<a href="?${queryDe({ ...p, cuenta: c })}"${p.cuenta === c ? ' class="on"' : ''}>${c.toUpperCase()}</a>`).join('')}</div>`;
   const tarjeta = (id) => `<section class="card"><div class="cab"><h2>${esc(REPORTES[id])}</h2><button class="btn" data-r="${id}">Enviar al chat</button></div>${secciones[id](d)}</section>`;
