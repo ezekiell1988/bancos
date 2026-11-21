@@ -1,6 +1,6 @@
 # 05 — Progreso Actual
 
-> Última actualización: 2026-11-21 09:11 CR
+> Última actualización: 2026-11-21 09:28 CR
 > Fase activa: Fase 6 — Facturas con varios pagos (0 de 1 componentes completados)
 
 <!-- Con el MCP iaWorkflow, las dos líneas de arriba, «Completado en sesiones recientes» y la tabla de
@@ -13,6 +13,7 @@ Proyecto reiniciado como registro sencillo de movimientos en jsonl (`datos/`, fu
 
 ## Completado en sesiones recientes
 
+* **2026-11-21** — EBC: TASK-EBC-MCP-08 probada por el dueño de punta a punta: el enlace de 1 hora llegó por WhatsApp, el dashboard abrió y «Enviar al chat» devolvió la imagen al mismo WhatsApp. La falla previa era de configuración del WhatsApp del bot (no llegaban mensajes de Meta desde el 16/11), no del código.
 * **2026-11-21** — TASK-EBC-MCP-08: Tool bancos_dashboard_enlace, destino WhatsApp en /enviar, números en config. Falta prueba real con WhatsApp (ventana de 24 h cerrada).
 * **2026-11-21** — TASK-EBC-FE-02: Los montos del dashboard abren un detalle con tabla de movimientos, total, Enviar al chat y Atrás.
 * **2026-11-19** — TASK-EBC-FE-01: Dashboard de finanzas (dashboard/) con pestaña «💰 Finanzas» declarada en la Mini App, reportes en imagen de 1080 px enviados al chat de Bancos, y servicio launchd.
