@@ -77,6 +77,12 @@ export function leerTipos(clase) {
   return readJsonl(tiposFile(clase));
 }
 
+/** Ids de los tipos de gasto que son traspaso (p. ej. el pago de la tarjeta): plata que se mueve, no gasto. */
+export const tiposTraspaso = () => new Set(leerTipos('gasto').filter((t) => t.traspaso).map((t) => t.id));
+
+/** Banco de la tarjeta que paga un traspaso del BCR: «BN» en la nota o el comercio = bncr; el resto, bac. */
+export const tarjetaDestino = (m) => (/\bBN\b|bncr|nacional/i.test(`${m.nota ?? ''} ${m.comercio ?? ''}`) ? 'bncr' : 'bac');
+
 export const leerTodosLosTipos = () => ({ gasto: leerTipos('gasto'), ingreso: leerTipos('ingreso') });
 
 export function checkTipo(tipos, clase, tipo) {

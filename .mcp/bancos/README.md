@@ -12,7 +12,7 @@ Contabilidad familiar en 3 niveles (Bancos, Libros, Cuentas por pagar; ADR-EBC-0
 | `bancos_comprobante` | **Nivel 2 (Libros).** Anota el pago (SINPE, voucher) con su categoría en `partidas`, 1 a 1 con su movimiento; pendiente si no está; `transito` (preview; `apply: true`) |
 | `bancos_factura` | **Nivel 3 (Cuentas por pagar).** Anota facturas y ajustes con proveedor, cédula, líneas (tipo e impuesto) que cuelgan de un libro; valida que sumen el pago (preview; `apply: true`) |
 | `bancos_movimientos` | Lista movimientos con id, rubro, tarjeta, plástico, su libro, sus partidas y cuántas facturas tienen (filtros `de`, `excluirDe`, `tarjeta`, `plastico`) |
-| `bancos_resumen` | Reporte del nivel 1 repartido por las partidas de su libro: balance, rubros (hogar, papa…), tipos y `tarjetas` (por plástico y total a pagar); `excluirDe`, `de`, `excluirTipos` |
+| `bancos_resumen` | Reporte del nivel 1 repartido por las partidas de su libro: balance, rubros (hogar, papa…), tipos y `tarjetas` (por plástico y total a pagar); `excluirDe`, `de`, `excluirTipos`, `incluirTraspasos`. Los traspasos (tipo `tarjeta`, `traspaso: true`) no suman como gasto: salen en `traspasos` y en `deudaTarjeta` (compras del ciclo anterior - pagado) |
 | `bancos_detalles` | Lista libros y facturas (por periodo o por movimiento), con partidas, cuadre y líneas |
 | `bancos_pago_tarjetas` | Pago de contado de las tarjetas BAC del último estado, en colones con la venta del dólar de la BAC (InfoDolar); resta lo ya pagado desde el BCR y da lo que Karen pasa a la BAC. Devuelve imagen PNG |
 | `bancos_pago_tarjeta_bn` | Igual, para la tarjeta del BN de Karen (…2921), con la venta del dólar del BN (InfoDolar); resta los «Pago BN» del BCR y da `faltaPagar`. Devuelve imagen PNG |

@@ -1,6 +1,6 @@
 # 05 — Progreso Actual
 
-> Última actualización: 2026-11-21 10:48 CR
+> Última actualización: 2026-11-21 11:59 CR
 > Fase activa: ninguna
 
 <!-- Con el MCP iaWorkflow, las dos líneas de arriba, «Completado en sesiones recientes» y la tabla de
@@ -13,6 +13,7 @@ Proyecto reiniciado como registro sencillo de movimientos en jsonl (`datos/`, fu
 
 ## Completado en sesiones recientes
 
+* **2026-11-21** — TASK-EBC-MCP-12: El pago de tarjeta es traspaso: bancos_resumen ya no lo suma como gasto y agrega los bloques traspasos y deudaTarjeta; incluirTraspasos lo vuelve a sumar.
 * **2026-11-21** — TASK-EBC-FE-03: Dashboard en 3 niveles: sección «Por categoría», pantalla de categoría con movimientos y pantalla de movimiento con partidas, facturas, líneas, ajustes e imagen. Atrás y Enviar al chat en cada nivel.
 * **2026-11-21** — TASK-EBC-MCP-10: MCP bancos con el modelo de 3 niveles de ADR-EBC-03 (Bancos, Libros con la categoría en partidas, Cuentas por pagar con facturas y ajustes). Datos migrados con respaldo; totales por ciclo iguales antes y después. SQLite con libros, partidas, facturas y vistas; skill, README y arquitectura al día. Quedan 2 casos a revisar a mano (factura con 2 pagos y diferencia de ₡1,20).
 * **2026-11-21** — TASK-EBC-MCP-04: Cerrada por reemplazo: ADR-06 quedó reemplazada por ADR-EBC-03. Lo que falte de facturas con pagos se absorbe en TASK-EBC-MCP-10 (nivel 2 con uno o varios nivel 3).

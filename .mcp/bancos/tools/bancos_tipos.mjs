@@ -5,7 +5,7 @@ export default {
   format: 'toon',
   order: 10,
   description:
-    'Lista los tipos de gasto y de ingreso válidos (id y nombre) de datos/tipos-*.jsonl. ' +
+    'Lista los tipos de gasto y de ingreso válidos (id y nombre; traspaso: true = no cuenta como gasto, p. ej. el pago de la tarjeta) de datos/tipos-*.jsonl. ' +
     'Usar antes de bancos_registrar para elegir el tipo de cada movimiento. Respuesta TOON.',
   inputSchema: {
     type: 'object',
@@ -16,7 +16,7 @@ export default {
   },
   async handler({ clase }) {
     const clases = clase ? [clase] : CLASES;
-    return { tipos: clases.flatMap((c) => leerTipos(c).map((t) => ({ clase: c, id: t.id, nombre: t.nombre }))) };
+    return { tipos: clases.flatMap((c) => leerTipos(c).map((t) => ({ clase: c, id: t.id, nombre: t.nombre, ...(t.traspaso ? { traspaso: true } : {}) }))) };
   },
   async smoke({ callTool, check, toolText }) {
     const text = toolText(await callTool('bancos_tipos', {}));
