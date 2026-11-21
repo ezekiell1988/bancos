@@ -37,7 +37,7 @@ export function periodoDe(q) {
     const mes = q.get('mes');
     return { modo: 'mes', args: { mes, ...cuenta }, cuenta: cuenta.cuenta, ciclo: cicloDe(`${mes}-01`), mes };
   }
-  const ciclo = /^\d{4}-(0[1-9]|1[0-2])$/.test(q.get('ciclo') ?? '') ? q.get('ciclo') : cicloDe(hoyCR());
+  const ciclo = /^\d{4}-(0[1-9]|1[0-2])$/.test(q.get('ciclo') ?? '') ? q.get('ciclo') : sumarCiclo(cicloDe(hoyCR()), -1);
   return { modo: 'ciclo', args: { ciclo, ...cuenta }, cuenta: cuenta.cuenta, ciclo, mes: ciclo };
 }
 
@@ -239,7 +239,7 @@ export async function htmlIndex(p) {
   const enlace = (texto, params, on) => `<a href="?${new URLSearchParams(params)}${p.cuenta && !params.cuenta ? `&cuenta=${p.cuenta}` : ''}"${on ? ' class="on"' : ''}>${texto}</a>`;
   const ciclo = p.ciclo;
   const selector = `<div class="bar">${enlace('Ciclo', { ciclo }, p.modo === 'ciclo')}${enlace('Mes', { mes: p.mes }, p.modo === 'mes')}${enlace('Rango', { desde: p.desde ?? rangoCiclo(ciclo).desde, hasta: p.hasta ?? rangoCiclo(ciclo).hasta }, p.modo === 'rango')}</div>`
-    + (p.modo === 'ciclo' ? `<div class="bar">${enlace('◀', { ciclo: sumarCiclo(ciclo, -1) })}${enlace('Actual', {}, ciclo === cicloDe(hoyCR()))}${enlace('▶', { ciclo: sumarCiclo(ciclo, 1) })}</div>` : '')
+    + (p.modo === 'ciclo' ? `<div class="bar">${enlace('◀', { ciclo: sumarCiclo(ciclo, -1) })}${enlace('Actual', { ciclo: cicloDe(hoyCR()) }, ciclo === cicloDe(hoyCR()))}${enlace('▶', { ciclo: sumarCiclo(ciclo, 1) })}</div>` : '')
     + (p.modo === 'mes' ? `<div class="bar">${enlace('◀', { mes: sumarCiclo(p.mes, -1) })}${enlace('Hoy', { mes: hoyCR().slice(0, 7) }, p.mes === hoyCR().slice(0, 7))}${enlace('▶', { mes: sumarCiclo(p.mes, 1) })}</div>` : '')
     + (p.modo === 'rango' ? `<form class="rg"><input type="date" name="desde" value="${p.desde ?? ''}"><input type="date" name="hasta" value="${p.hasta ?? ''}">${p.cuenta ? `<input type="hidden" name="cuenta" value="${p.cuenta}">` : ''}<button class="btn">Ver</button></form>` : '')
     + `<div class="bar"><a href="?${queryDe({ ...p, cuenta: undefined })}"${p.cuenta ? '' : ' class="on"'}>Todas</a>${CUENTAS.map((c) => `<a href="?${queryDe({ ...p, cuenta: c })}"${p.cuenta === c ? ' class="on"' : ''}>${c.toUpperCase()}</a>`).join('')}</div>`;
