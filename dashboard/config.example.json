@@ -2,5 +2,11 @@
   "puerto": 4780,
   "chatId": "ID_DEL_CHAT_DE_BANCOS",
   "socket": "~/Documents/ezekl/telegram-agent-remote/state/bridge.sock",
-  "segundosEntreEnvios": 10
+  "segundosEntreEnvios": 10,
+  "whatsapp": {
+    "yo": "+506XXXXXXXX",
+    "novia": "+506XXXXXXXX"
+  },
+  "chatDuenoId": "ID_PRIVADO_DEL_DUENO",
+  "pestana": "finanzas"
 }

@@ -80,5 +80,6 @@ Pestaña «💰 Finanzas» de la Mini App (al elegir el proyecto Bancos). Solo c
 
 * Servidor: `node dashboard/server.mjs` (solo 127.0.0.1:4780); en la Mac lo deja arriba launchd (`~/Library/LaunchAgents/com.ezekl.bancos-dashboard.plist`).
 * Config: copiar `dashboard/config.example.json` a `dashboard/config.json` (ignorado en git) y poner el `chatId` del chat de Bancos.
+* Por WhatsApp: la tool `bancos_dashboard_enlace { para: 'yo' | 'novia' }` manda un enlace de 1 hora (firmado por el bot) solo a los números de `whatsapp` en `config.json` (también deben estar en `whatsappEnlace` de la pestaña en la config del bot). Desde ese enlace, «Enviar al chat» contesta al mismo WhatsApp (header `x-canal-destino`). El número escribió al bot en las últimas 24 h, o Meta no deja mandarlo.
 * Detalle: cada monto es un enlace a `detalle.html` (filtros `f_clase`, `f_rubro`, `f_moneda`, `f_tipo`, `f_tarjeta`, `f_desde`, `f_hasta`) con la tabla de movimientos que lo forman, total, «Enviar al chat» (`/enviar?reporte=detalle`) y «Atrás». En las tarjetas del pago muestra además el monto del estado y lo que falta anotar.
 * Los números salen de los mismos handlers que `bancos_resumen`, `bancos_movimientos`, `bancos_pendientes` y `bancos_pago_tarjetas`.

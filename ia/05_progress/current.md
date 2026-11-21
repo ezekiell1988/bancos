@@ -1,6 +1,6 @@
 # 05 — Progreso Actual
 
-> Última actualización: 2026-11-21 08:49 CR
+> Última actualización: 2026-11-21 09:11 CR
 > Fase activa: Fase 6 — Facturas con varios pagos (0 de 1 componentes completados)
 
 <!-- Con el MCP iaWorkflow, las dos líneas de arriba, «Completado en sesiones recientes» y la tabla de
@@ -13,6 +13,7 @@ Proyecto reiniciado como registro sencillo de movimientos en jsonl (`datos/`, fu
 
 ## Completado en sesiones recientes
 
+* **2026-11-21** — TASK-EBC-MCP-08: Tool bancos_dashboard_enlace, destino WhatsApp en /enviar, números en config. Falta prueba real con WhatsApp (ventana de 24 h cerrada).
 * **2026-11-21** — TASK-EBC-FE-02: Los montos del dashboard abren un detalle con tabla de movimientos, total, Enviar al chat y Atrás.
 * **2026-11-19** — TASK-EBC-FE-01: Dashboard de finanzas (dashboard/) con pestaña «💰 Finanzas» declarada en la Mini App, reportes en imagen de 1080 px enviados al chat de Bancos, y servicio launchd.
 * **2026-11-06** — TASK-EBC-MCP-07: Helper detalleSinUbicacion conserva la cuenta en comprobantes y facturas; tool bancos_fijar_cuenta; smoke cubre; 43 detalles completados con evidencia, 26 quedaron vacíos.

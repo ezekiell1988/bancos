@@ -50,12 +50,13 @@ function bridge(req) {
   });
 }
 
-async function enviar(q) {
+/** dest: header x-canal-destino que el proxy del bot pone desde el token firmado (wa<número>); sin él va al chat de Telegram. */
+async function enviar(q, dest) {
   const id = q.get('reporte');
   const f = filtroDe(q);
   if (id !== 'detalle' && !REPORTES[id]) return { status: 400, json: { error: 'Reporte desconocido.' } };
   const p = periodoDe(q);
-  const clave = `${id}|${queryDe(p, Object.fromEntries(Object.entries(f).map(([k, x]) => [`f_${k}`, x])))}`;
+  const clave = `${dest ?? ''}|${id}|${queryDe(p, Object.fromEntries(Object.entries(f).map(([k, x]) => [`f_${k}`, x])))}`;
   const ahora = Date.now();
   if (ahora - (recientes.get(clave) ?? 0) < cfg.segundosEntreEnvios * 1000) return { json: { mensaje: 'Ya se mandó hace un momento ✅' } };
   if (ocupado) return { status: 429, json: { error: 'Ya hay un envío en curso.' } };
@@ -65,7 +66,7 @@ async function enviar(q) {
     const out = path.join(SALIDA, `${id}-${ahora}.png`);
     const extra = id === 'detalle' ? { img: 1, ...Object.fromEntries(Object.entries(f).map(([k, x]) => [`f_${k}`, x])) } : { reporte: id, img: 1 };
     await capturar(`http://127.0.0.1:${cfg.puerto}/${id === 'detalle' ? 'detalle' : 'reporte'}.html?${queryDe(p, extra)}`, out);
-    await bridge({ op: 'send_photo', chatId: cfg.chatId, path: out, caption: `💰 ${id === 'detalle' ? tituloDetalle(f) : REPORTES[id]} · ${p.modo === 'ciclo' ? `ciclo ${p.ciclo}` : p.modo === 'mes' ? p.mes : 'rango'}${p.cuenta ? ` · ${p.cuenta.toUpperCase()}` : ''}` });
+    await bridge({ op: 'send_photo', chatId: dest ?? cfg.chatId, path: out, caption: `💰 ${id === 'detalle' ? tituloDetalle(f) : REPORTES[id]} · ${p.modo === 'ciclo' ? `ciclo ${p.ciclo}` : p.modo === 'mes' ? p.mes : 'rango'}${p.cuenta ? ` · ${p.cuenta.toUpperCase()}` : ''}` });
     return { json: { mensaje: 'Enviado al chat ✅' } };
   } catch (e) {
     recientes.delete(clave);
@@ -84,7 +85,7 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/' || url.pathname === '/index.html') return send(200, 'text/html', await htmlIndex(periodoDe(url.searchParams)));
     if (url.pathname === '/reporte.html') return send(200, 'text/html', await htmlReporte(periodoDe(url.searchParams), url.searchParams.get('reporte'), { imagen: url.searchParams.get('img') === '1' }));
     if (url.pathname === '/detalle.html') return send(200, 'text/html', await htmlDetalle(periodoDe(url.searchParams), filtroDe(url.searchParams), { imagen: url.searchParams.get('img') === '1' }));
-    if (url.pathname === '/enviar') { const r = await enviar(url.searchParams); return send(r.status ?? 200, 'application/json', JSON.stringify(r.json)); }
+    if (url.pathname === '/enviar') { const r = await enviar(url.searchParams, /^wa\d{8,15}$/.test(String(req.headers['x-canal-destino'] ?? '')) ? req.headers['x-canal-destino'] : null); return send(r.status ?? 200, 'application/json', JSON.stringify(r.json)); }
     if (url.pathname === '/health') return send(200, 'text/plain', 'ok');
     return send(404, 'text/plain', 'No existe');
   } catch (e) {

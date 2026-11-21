@@ -98,4 +98,4 @@ El repo es público: montos, comercios y archivos solo viven en `datos/`. No cop
 
 ## Reportes en imagen
 
-Para ver o mandar reportes por periodo (resumen, gastos por tipo, pago de tarjetas, pendientes, movimientos) está el dashboard de la Mini App, pestaña «💰 Finanzas»: cada reporte tiene «Enviar al chat» y llega como imagen legible. Preferirlo a mandar tablas por `telegram_grafico` cuando los montos o descripciones se cortan.
+Para ver o mandar reportes por periodo (resumen, gastos por tipo, pago de tarjetas, pendientes, movimientos) está el dashboard de la Mini App, pestaña «💰 Finanzas»: cada reporte tiene «Enviar al chat» y llega como imagen legible. Preferirlo a mandar tablas por `telegram_grafico` cuando los montos o descripciones se cortan. Para abrirlo desde el celular sin Telegram: «mandame el dashboard» → `bancos_dashboard_enlace` (`para: yo` o `novia`) manda por WhatsApp un enlace de 1 hora; solo a esos dos números.
