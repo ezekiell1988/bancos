@@ -1,20 +1,20 @@
 # TASK-EBC-MCP-12 — Pago de tarjeta como traspaso y control de deuda de tarjeta
 
 **schemaVersion:** 2
-**Estado:** Borrador
+**Estado:** Lista
 **DevOps:** —
 **CRM:** —
 **Autor:** Ezequiel Baltodano Cubillo `<ezekiell1988@hotmail.com>`
-**Aprobado por:** —
+**Aprobado por:** aprobación explícita
 **Rama:** —
 **createdAt:** 2026-11-21T11:56:22.519-06:00
-**approvedAt:** —
+**approvedAt:** 2026-11-21T11:58:48.723-06:00
 **startedAt:** —
 **finishedAt:** —
 **Área:** MCP
 **Prioridad:** alta
 **Riesgo:** medio
-**Aprobación:** pendiente
+**Aprobación:** aprobada
 **parentId:** —
 **workItemType:** Task
 **workstream:** ia-workflow
@@ -117,4 +117,5 @@ Revertir el commit: el cálculo vuelve a sumar el pago como gasto; los datos ano
 
 ```jsonl
 {"schemaVersion":2,"eventId":"eff7a3dd-f02b-4cc2-8160-9068a8ecdebc","taskId":"TASK-EBC-MCP-12","event":"created","occurredAt":"2026-11-21T11:56:22.519-06:00","actor":"MCP iaWorkflow","reason":"Tarea creada en Borrador."}
+{"schemaVersion":2,"eventId":"b90e689e-297e-413e-b500-bbbf64257dab","taskId":"TASK-EBC-MCP-12","event":"approved","occurredAt":"2026-11-21T11:58:48.723-06:00","actor":"MCP iaWorkflow","reason":"aprobación explícita"}
 ```

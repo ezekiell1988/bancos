@@ -1,20 +1,20 @@
 # TASK-EBC-FE-04 — Panel: traspasos y deuda de tarjeta aparte de los gastos
 
 **schemaVersion:** 2
-**Estado:** Borrador
+**Estado:** Lista
 **DevOps:** —
 **CRM:** —
 **Autor:** Ezequiel Baltodano Cubillo `<ezekiell1988@hotmail.com>`
-**Aprobado por:** —
+**Aprobado por:** aprobación explícita
 **Rama:** —
 **createdAt:** 2026-11-21T11:56:33.217-06:00
-**approvedAt:** —
+**approvedAt:** 2026-11-21T11:58:49.078-06:00
 **startedAt:** —
 **finishedAt:** —
 **Área:** FE
 **Prioridad:** media
 **Riesgo:** bajo
-**Aprobación:** pendiente
+**Aprobación:** aprobada
 **parentId:** —
 **workItemType:** Task
 **workstream:** ia-workflow
@@ -99,4 +99,5 @@ Revertir el commit del panel; el MCP sigue funcionando igual.
 
 ```jsonl
 {"schemaVersion":2,"eventId":"1f74201c-bb38-4cf2-a411-ba492d5cd197","taskId":"TASK-EBC-FE-04","event":"created","occurredAt":"2026-11-21T11:56:33.217-06:00","actor":"MCP iaWorkflow","reason":"Tarea creada en Borrador."}
+{"schemaVersion":2,"eventId":"71168347-24d9-47b5-a7d2-bec4acf40f09","taskId":"TASK-EBC-FE-04","event":"approved","occurredAt":"2026-11-21T11:58:49.078-06:00","actor":"MCP iaWorkflow","reason":"aprobación explícita"}
 ```
