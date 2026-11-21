@@ -13,7 +13,9 @@ Sin tareas registradas.
 
 ## Lista
 
-Sin tareas registradas.
+| Tarea | Área | Riesgo |
+|-------|------|--------|
+| [TASK-EBC-FE-06](tasks/TASK-EBC-FE-06.md) | FE | Bajo |
 
 ## Bloqueadas
 
