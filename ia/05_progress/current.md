@@ -1,6 +1,6 @@
 # 05 — Progreso Actual
 
-> Última actualización: 2026-11-21 12:40 CR
+> Última actualización: 2026-11-21 13:18 CR
 > Fase activa: ninguna
 
 <!-- Con el MCP iaWorkflow, las dos líneas de arriba, «Completado en sesiones recientes» y la tabla de
@@ -13,6 +13,7 @@ Proyecto reiniciado como registro sencillo de movimientos en jsonl (`datos/`, fu
 
 ## Completado en sesiones recientes
 
+* **2026-11-21** — TASK-EBC-FE-05: «Deuda de tarjeta» muestra corte, pago de contado (₡ y $), pagado y diferencia, con botón «Ver en colones» que muestra el tipo de cambio y su fuente. Revisión visual por el túnel corrigió un desborde de 3 px a 375 y el «Pagado» por moneda (ahora solo la parte aplicada en colones).
 * **2026-11-21** — TASK-EBC-MCP-13: deudaTarjeta de bancos_resumen usa el pago de contado del estado que abre el ciclo (CRC y USD) y da la vista en colones con el tipo de cambio del pago o la venta del banco del día.
 * **2026-11-21** — EBC: Arreglo post FE-04: la tabla «Por categoría» del panel sumaba el pago de tarjeta (traspaso) en Gastos CRC; ahora lo excluye y su total cuadra con el chip de Gastos (ciclo 2026-11: ₡2.100.681). Panel reiniciado (launchd com.ezekl.bancos-dashboard). Commit 43ae241.
 * **2026-11-21** — TASK-EBC-FE-04: El resumen del panel muestra «Traspasos a tarjeta» y «Deuda de tarjeta» aparte de Gastos y balance.

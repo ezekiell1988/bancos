@@ -106,15 +106,32 @@ function traspasos(d, r) {
     liga(d, { clase: 'gasto', ...(tipo ? { tipo } : {}), moneda: t.moneda }, d.money(t.total, t.moneda))]);
   return `<h3>Traspasos a tarjeta</h3><p class="sub">No suman en Gastos ni en el balance.</p>${tabla(['Tarjeta', 'Pagado'], filas)}`;
 }
-/** Control de deuda: compras del ciclo anterior contra lo pagado en este ciclo. */
+/** Control de deuda: pago de contado del estado que abre el ciclo contra lo pagado; vista por moneda o en colones (botón, sin recargar). */
 function deuda(d, r) {
   if (!r.deudaTarjeta?.length) return '';
+  const cs = (x) => d.money(x, 'CRC');
+  const us = (x) => d.money(x, 'USD');
+  const fuente = { pago: 'del pago', 'bac del dia': 'BAC del día', 'bn del dia': 'BN del día' };
+  const dif = (x, n, m) => (Math.abs(n) < 0.01 ? '<b class="bien-t">al día</b>' : n > 0 ? `<b class="debe">${m(n)}</b>` : `<b class="bien-t">${m(-n)} a favor</b>`);
   const filas = r.deudaTarjeta.map((x) => {
-    const sin = x.diferencia === null || x.diferencia === undefined;
-    const estado = sin ? '<span class="aviso-e">sin estado de cuenta</span>' : x.estado === 'pendiente' ? `<b class="debe">${d.money(x.diferencia, x.moneda)}</b>` : x.estado === 'a favor' ? `<b class="bien-t">${d.money(-x.diferencia, x.moneda)} a favor</b>` : '<b class="bien-t">al día</b>';
-    return [`${esc(nombreTarjeta(x.tarjeta))} <small>${x.moneda} · compras ${sin ? 'sin estado' : d.money(x.comprasCicloAnterior, x.moneda)}</small>`, d.money(x.pagado, x.moneda), estado];
+    const nombre = esc(nombreTarjeta(x.tarjeta));
+    if (x.contadoCRC === undefined) return [`${nombre} <small>sin estado de cuenta</small>`, '', cs(x.pagado), '<span class="aviso-e">sin estado de cuenta</span>'];
+    const cab = `${nombre} <small>corte ${esc(String(x.corte))}</small>`;
+    if (x.diferenciaColones === null || x.diferenciaColones === undefined) {
+      return [cab, `${cs(x.contadoCRC)}<br>${us(x.contadoUSD)}`, cs(x.pagado), '<span class="aviso-e">sin tipo de cambio</span>'];
+    }
+    const tc = x.tipoCambio ? `<small class="tc">cambio ${fmt(x.tipoCambio.valor, 2)} (${fuente[x.tipoCambio.fuente] ?? esc(x.tipoCambio.fuente)})</small>` : '';
+    const pendCRC = x.contadoCRC - x.aplicadoCRC;
+    const pendUSD = x.contadoUSD - x.aplicadoUSD;
+    const porMoneda = Math.abs(pendCRC) < 0.01 && Math.abs(pendUSD) < 0.01 ? '<b class="bien-t">al día</b>'
+      : `${dif(x, pendCRC, cs)}<br>${dif(x, pendUSD, us)}`;
+    return [cab,
+      `<span class="vm">${cs(x.contadoCRC)}<br>${us(x.contadoUSD)}</span><span class="vc">${cs(x.contadoEnColones)}${tc ? `<br>${tc}` : ''}</span>`,
+      `<span class="vm">${cs(x.aplicadoCRC)}<br>${us(x.aplicadoUSD)}</span><span class="vc">${cs(x.pagado)}</span>`,
+      `<span class="vm">${porMoneda}</span><span class="vc">${dif(x, x.diferenciaColones, cs)}</span>`];
   });
-  return `<h3>Deuda de tarjeta</h3><p class="sub">Compras del ciclo anterior contra lo pagado en este ciclo.</p>${tabla(['Tarjeta', 'Pagado', 'Diferencia'], filas)}`;
+  const boton = d.imagen ? '' : '<button type="button" class="btn sec vb" onclick="var w=this.closest(\'.dv\');var c=w.classList.toggle(\'col\');this.textContent=c?\'Ver por moneda\':\'Ver en colones\'">Ver en colones</button>';
+  return `<div class="dv${d.imagen ? ' col' : ''}"><h3>Deuda de tarjeta</h3><p class="sub">Pago de contado del estado de cuenta contra lo pagado en este ciclo.</p>${boton}${tabla(['Tarjeta', 'Pago de contado', 'Pagado', 'Diferencia'], filas)}</div>`;
 }
 
 const secciones = {
@@ -199,6 +216,7 @@ form.rg input,form.rg select{font:14px inherit;font-family:inherit;padding:7px;b
 .chips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}
 .chip{background:var(--ch);border-radius:12px;padding:8px 10px;min-width:0}.chip span{display:block;font-size:12px;color:var(--mu)}.chip b{font-size:15px}
 .chip.alerta b{color:var(--mal)}.chip.bien b{color:var(--ok)}
+.dv .vc{display:none}.dv.col .vm{display:none}.dv.col .vc{display:inline}.dv .vb{margin:0 0 8px}.dv td b{white-space:normal}.dv small.tc{display:inline;font-weight:400;color:var(--mu);font-size:11px;white-space:normal}
 .debe{color:var(--mal)}.bien-t{color:var(--ok)}.aviso-e{display:inline-block;background:#fff4d6;color:#8a5a00;border-radius:8px;padding:2px 8px;font-size:12px}
 .tw{width:100%}table{width:100%;border-collapse:collapse;table-layout:auto}
 th{font-size:12px;color:var(--mu);text-align:left;padding:6px 4px;border-bottom:2px solid var(--li)}
