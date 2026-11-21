@@ -10,7 +10,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { initDatos } from '../.mcp/bancos/src/datos.mjs';
-import { htmlIndex, htmlReporte, periodoDe, queryDe, REPORTES } from './render.mjs';
+import { filtroDe, htmlDetalle, htmlIndex, htmlReporte, periodoDe, queryDe, REPORTES, tituloDetalle } from './render.mjs';
 
 const aqui = path.dirname(fileURLToPath(import.meta.url));
 const cfg = JSON.parse(readFileSync(path.join(aqui, 'config.json'), 'utf8'));
@@ -52,9 +52,10 @@ function bridge(req) {
 
 async function enviar(q) {
   const id = q.get('reporte');
-  if (!REPORTES[id]) return { status: 400, json: { error: 'Reporte desconocido.' } };
+  const f = filtroDe(q);
+  if (id !== 'detalle' && !REPORTES[id]) return { status: 400, json: { error: 'Reporte desconocido.' } };
   const p = periodoDe(q);
-  const clave = `${id}|${queryDe(p)}`;
+  const clave = `${id}|${queryDe(p, Object.fromEntries(Object.entries(f).map(([k, x]) => [`f_${k}`, x])))}`;
   const ahora = Date.now();
   if (ahora - (recientes.get(clave) ?? 0) < cfg.segundosEntreEnvios * 1000) return { json: { mensaje: 'Ya se mandó hace un momento ✅' } };
   if (ocupado) return { status: 429, json: { error: 'Ya hay un envío en curso.' } };
@@ -62,8 +63,9 @@ async function enviar(q) {
   recientes.set(clave, ahora);
   try {
     const out = path.join(SALIDA, `${id}-${ahora}.png`);
-    await capturar(`http://127.0.0.1:${cfg.puerto}/reporte.html?${queryDe(p, { reporte: id, img: 1 })}`, out);
-    await bridge({ op: 'send_photo', chatId: cfg.chatId, path: out, caption: `💰 ${REPORTES[id]} · ${p.modo === 'ciclo' ? `ciclo ${p.ciclo}` : p.modo === 'mes' ? p.mes : 'rango'}${p.cuenta ? ` · ${p.cuenta.toUpperCase()}` : ''}` });
+    const extra = id === 'detalle' ? { img: 1, ...Object.fromEntries(Object.entries(f).map(([k, x]) => [`f_${k}`, x])) } : { reporte: id, img: 1 };
+    await capturar(`http://127.0.0.1:${cfg.puerto}/${id === 'detalle' ? 'detalle' : 'reporte'}.html?${queryDe(p, extra)}`, out);
+    await bridge({ op: 'send_photo', chatId: cfg.chatId, path: out, caption: `💰 ${id === 'detalle' ? tituloDetalle(f) : REPORTES[id]} · ${p.modo === 'ciclo' ? `ciclo ${p.ciclo}` : p.modo === 'mes' ? p.mes : 'rango'}${p.cuenta ? ` · ${p.cuenta.toUpperCase()}` : ''}` });
     return { json: { mensaje: 'Enviado al chat ✅' } };
   } catch (e) {
     recientes.delete(clave);
@@ -81,6 +83,7 @@ const server = http.createServer(async (req, res) => {
   try {
     if (url.pathname === '/' || url.pathname === '/index.html') return send(200, 'text/html', await htmlIndex(periodoDe(url.searchParams)));
     if (url.pathname === '/reporte.html') return send(200, 'text/html', await htmlReporte(periodoDe(url.searchParams), url.searchParams.get('reporte'), { imagen: url.searchParams.get('img') === '1' }));
+    if (url.pathname === '/detalle.html') return send(200, 'text/html', await htmlDetalle(periodoDe(url.searchParams), filtroDe(url.searchParams), { imagen: url.searchParams.get('img') === '1' }));
     if (url.pathname === '/enviar') { const r = await enviar(url.searchParams); return send(r.status ?? 200, 'application/json', JSON.stringify(r.json)); }
     if (url.pathname === '/health') return send(200, 'text/plain', 'ok');
     return send(404, 'text/plain', 'No existe');

@@ -57,10 +57,24 @@ const money = (n, moneda) => `${n < 0 ? '−' : ''}${moneda === 'USD' ? '$' : '�
 const moneyCorto = (n, moneda) => (moneda === 'USD' ? money(n, moneda) : `${n < 0 ? '−' : ''}₡${fmt(Math.abs(n), 0)}`);
 const rubroNombre = (r) => (r === HOGAR ? 'Hogar' : r === 'papa' ? 'Papá' : r.charAt(0).toUpperCase() + r.slice(1));
 const nombresTipo = () => new Map([...leerTipos('gasto'), ...leerTipos('ingreso')].map((t) => [t.id, t.nombre]));
+
+const FILTROS = ['estado', 'clase', 'rubro', 'moneda', 'tipo', 'tarjeta', 'desde', 'hasta'];
+/** Filtro del detalle desde la URL (claves f_*), solo valores sencillos. */
+export function filtroDe(q) {
+  const f = {};
+  for (const k of FILTROS) { const v = q.get(`f_${k}`); if (v && /^[\w.-]{1,40}$/.test(v)) f[k] = v; }
+  return f;
+}
+const queryFiltro = (f) => Object.fromEntries(Object.entries(f).map(([k, v]) => [`f_${k}`, v]));
+/** Envuelve un monto en un enlace a su detalle (en la imagen va como texto). */
+const liga = (d, f, html) => (d.imagen ? html : `<a class="mt" href="detalle.html?${queryDe(d.p, queryFiltro(f))}">${html}</a>`);
+const fechaMas = (f, dias) => { const x = new Date(`${f}T12:00:00Z`); x.setUTCDate(x.getUTCDate() + dias); return x.toISOString().slice(0, 10); };
+const mesAntes = (f) => { const x = new Date(`${f}T12:00:00Z`); x.setUTCMonth(x.getUTCMonth() - 1); return x.toISOString().slice(0, 10); };
+const diaDespues = (f) => fechaMas(f, 1);
 const rango = (r) => `${fechaCorta(r.desde)} al ${fechaCorta(r.hasta)}`;
 
-function tabla(cabeza, filas, { total = null } = {}) {
-  return `<div class="tw"><table${cabeza.length > 3 ? ' class="ap"' : ''}><thead><tr>${cabeza.map((c, i) => `<th${i ? ' class="n"' : ''}>${esc(c)}</th>`).join('')}</tr></thead><tbody>`
+function tabla(cabeza, filas, { total = null, clase = '' } = {}) {
+  return `<div class="tw"><table${cabeza.length > 3 ? ` class="ap ${clase}"` : ''}><thead><tr>${cabeza.map((c, i) => `<th${i ? ' class="n"' : ''}>${esc(c)}</th>`).join('')}</tr></thead><tbody>`
     + filas.map((f) => `<tr>${f.map((c, i) => `<td${i ? ` class="n" data-l="${esc(cabeza[i])}"` : ''}>${c}</td>`).join('')}</tr>`).join('')
     + (total ? `<tr class="t">${total.map((c, i) => `<td${i ? ` class="n" data-l="${esc(cabeza[i])}"` : ''}>${c}</td>`).join('')}</tr>` : '')
     + '</tbody></table></div>';
@@ -75,7 +89,7 @@ export async function cargar(p, { imagen = false } = {}) {
     intentar(() => pendientes.handler(p.args)),
     intentar(() => pagoTarjetas.handler({ imagen: false })),
   ]);
-  return { p, r, m, pe, pago, max: imagen ? MAX_FILAS.imagen : MAX_FILAS.pantalla, money: imagen ? money : moneyCorto };
+  return { p, r, m, pe, pago, imagen, max: imagen ? MAX_FILAS.imagen : MAX_FILAS.pantalla, money: imagen ? money : moneyCorto };
 }
 
 const aviso = (e) => `<p class="vacio">No se pudo cargar: ${esc(e)}</p>`;
@@ -84,11 +98,11 @@ const secciones = {
   resumen(d) {
     if (d.r.error) return aviso(d.r.error);
     const r = d.r.ok;
-    const bal = r.balance.map((b) => `<div class="chips"><div class="chip"><span>Ingresos ${b.moneda}</span><b>${d.money(b.ingresos, b.moneda)}</b></div>`
-      + `<div class="chip"><span>Gastos ${b.moneda}</span><b>${d.money(b.gastos, b.moneda)}</b></div>`
-      + `<div class="chip ${b.balance < 0 ? 'alerta' : 'bien'}"><span>Balance ${b.moneda}</span><b>${d.money(b.balance, b.moneda)}</b></div></div>`).join('');
+    const bal = r.balance.map((b) => `<div class="chips"><div class="chip"><span>Ingresos ${b.moneda}</span><b>${liga(d, { moneda: b.moneda, clase: 'ingreso' }, d.money(b.ingresos, b.moneda))}</b></div>`
+      + `<div class="chip"><span>Gastos ${b.moneda}</span><b>${liga(d, { moneda: b.moneda, clase: 'gasto' }, d.money(b.gastos, b.moneda))}</b></div>`
+      + `<div class="chip ${b.balance < 0 ? 'alerta' : 'bien'}"><span>Balance ${b.moneda}</span><b>${liga(d, { moneda: b.moneda }, d.money(b.balance, b.moneda))}</b></div></div>`).join('');
     const rubros = r.rubros.length ? tabla(['Rubro', 'Ingresos', 'Gastos', 'Balance'],
-      r.rubros.map((x) => [`${esc(rubroNombre(x.rubro))} <small>${x.moneda} · ${x.movimientos} mov.</small>`, d.money(x.ingresos, x.moneda), d.money(x.gastos, x.moneda), `<b>${d.money(x.balance, x.moneda)}</b>`])) : '';
+      r.rubros.map((x) => [`${esc(rubroNombre(x.rubro))} <small>${x.moneda} · ${x.movimientos} mov.</small>`, liga(d, { rubro: x.rubro, moneda: x.moneda, clase: 'ingreso' }, d.money(x.ingresos, x.moneda)), liga(d, { rubro: x.rubro, moneda: x.moneda, clase: 'gasto' }, d.money(x.gastos, x.moneda)), `<b>${liga(d, { rubro: x.rubro, moneda: x.moneda }, d.money(x.balance, x.moneda))}</b>`])) : '';
     return `${bal || '<p class="vacio">Sin movimientos en este periodo.</p>'}${rubros}`;
   },
   tipos(d) {
@@ -101,13 +115,15 @@ const secciones = {
       const [rubro, moneda] = k.split('|');
       const suma = lista.reduce((s, t) => s + t.total, 0);
       return `<h3>${esc(rubroNombre(rubro))} · ${moneda}</h3>${tabla(['Tipo', 'Cant.', 'Total'],
-        lista.map((t) => [esc(nombres.get(t.tipo) ?? t.tipo), String(t.cantidad), d.money(t.total, moneda)]), { total: ['Total', String(lista.reduce((s, t) => s + t.cantidad, 0)), d.money(suma, moneda)] })}`;
+        lista.map((t) => [esc(nombres.get(t.tipo) ?? t.tipo), liga(d, { rubro, moneda, clase: 'gasto', tipo: t.tipo }, String(t.cantidad)), liga(d, { rubro, moneda, clase: 'gasto', tipo: t.tipo }, d.money(t.total, moneda))]), { total: ['Total', String(lista.reduce((s, t) => s + t.cantidad, 0)), liga(d, { rubro, moneda, clase: 'gasto' }, d.money(suma, moneda))] })}`;
     }).join('');
   },
   pago(d) {
     if (d.pago.error) return aviso(d.pago.error);
     const g = d.pago.ok;
-    const filas = g.tarjetas.map((t) => [`<b>${esc(t.plan)}</b><small>${esc(t.marca)} …${esc(t.tarjeta)}</small>`, d.money(t.colones, 'CRC'), d.money(t.dolares, 'USD'), `<b>${d.money(t.totalColones, 'CRC')}</b>`]);
+    const ini = diaDespues(mesAntes(g.corte));
+    const ft = (t, moneda) => ({ tarjeta: t.tarjeta, desde: ini, hasta: g.corte, ...(moneda ? { moneda } : {}), estado: String(moneda === 'USD' ? t.dolares : moneda === 'CRC' ? t.colones : t.totalColones) });
+    const filas = g.tarjetas.map((t) => [`<b>${esc(t.plan)}</b><small>${esc(t.marca)} …${esc(t.tarjeta)}</small>`, liga(d, ft(t, 'CRC'), d.money(t.colones, 'CRC')), liga(d, ft(t, 'USD'), d.money(t.dolares, 'USD')), `<b>${liga(d, ft(t), d.money(t.totalColones, 'CRC'))}</b>`]);
     return `<p class="sub">Estado del corte ${fechaCorta(g.corte)} · límite ${fechaCorta(g.limite)} · dólar ${d.money(g.tipoCambio.venta, 'CRC')}</p>`
       + tabla(['Tarjeta', 'Colones', 'Dólares', 'Total en ₡'], filas, { total: ['Total', d.money(g.total.colones, 'CRC'), d.money(g.total.dolares, 'USD'), d.money(g.total.totalColones, 'CRC')] })
       + `<div class="pedir"><span>Falta por pagar${g.pagosDesdeCorte.length ? ` (ya se pagó ${d.money(g.pagosDesdeCorte.reduce((s, x) => s + x.total, 0), 'CRC')})` : ''}</span><b>${d.money(g.pedirAKaren, 'CRC')}</b></div>`;
@@ -170,6 +186,9 @@ tr.t td{border-top:2px solid var(--fg);border-bottom:0;font-weight:700}
 .fe{color:var(--mu);font-size:12px;margin-right:4px}.m{text-align:right;white-space:nowrap;font-weight:600}.m.ingreso{color:var(--ok)}
 .pedir{margin-top:12px;background:#e8f5ec;border-radius:12px;padding:12px 14px;display:flex;justify-content:space-between;gap:10px;align-items:center;color:#1f6b3a}
 .pedir b{font-size:20px;color:#15803d;white-space:nowrap}
+.mt{color:inherit;text-decoration:underline dotted;text-underline-offset:3px;text-decoration-thickness:1px}
+.btn.sec{background:var(--ch);color:var(--fg);border:1px solid var(--li)}
+.acc{display:flex;gap:8px;margin:8px 0}.acc .btn{flex:1;padding:11px 12px;font-size:15px}
 .vacio{color:var(--mu);margin:8px 0}
 #aviso{position:fixed;left:16px;right:16px;bottom:16px;background:var(--fg);color:var(--bg);padding:12px 14px;border-radius:12px;display:none;text-align:center}
 @media(max-width:560px){
@@ -184,6 +203,12 @@ html:not(.img) table.ap td:first-child small{display:inline;margin-left:6px;font
 html:not(.img) table.ap td.n::before{content:attr(data-l);display:block;font-size:11px;color:var(--mu);font-weight:400}
 html:not(.img) table.ap tr.t{border-top:2px solid var(--fg);border-bottom:0}
 html:not(.img) .cab h2{font-size:16px}
+html:not(.img) table.det tr{grid-template-columns:auto minmax(0,1fr) auto}
+html:not(.img) table.det td{white-space:normal}
+html:not(.img) table.det td.n:last-child{text-align:right;white-space:nowrap}
+html:not(.img) table.ap td.n:empty{display:none}
+html:not(.img) table.ap tr.t td:last-child{grid-column:1/-1;display:flex;justify-content:space-between}
+html:not(.img) table.ap tr.t td.n::before{display:inline}
 }
 html.img{font-size:26px}html.img body{font-size:26px;width:1080px;background:#fff}
 html.img .w{max-width:none;padding:32px 36px}html.img h1{font-size:40px}html.img h2{font-size:32px}html.img h3{font-size:25px}
@@ -231,3 +256,54 @@ b.disabled=false;b.textContent=t});
   void q;
   return pagina('Finanzas', cuerpo, { extra: js });
 }
+
+
+const rotuloFiltro = (f) => {
+  const nombres = nombresTipo();
+  return [f.rubro ? rubroNombre(f.rubro) : '', f.tipo ? (nombres.get(f.tipo) ?? f.tipo) : '', f.clase === 'ingreso' ? 'Ingresos' : f.clase === 'gasto' ? 'Gastos' : f.tarjeta ? 'Tarjeta' : 'Balance', f.tarjeta ? `tarjeta …${f.tarjeta}` : '', f.moneda ?? ''].filter(Boolean).join(' · ');
+};
+
+/** Vista de detalle: los movimientos que forman un monto del dashboard, con total, «Enviar al chat» y «Atrás». */
+export async function htmlDetalle(p, f, { imagen = false } = {}) {
+  const args = { ...p.args };
+  if (f.desde || f.hasta) { delete args.ciclo; delete args.mes; args.desde = f.desde; args.hasta = f.hasta; }
+  if (f.rubro) args.de = f.rubro;
+  for (const k of ['clase', 'tipo', 'tarjeta']) if (f[k]) args[k] = f[k];
+  const titulo = rotuloFiltro(f);
+  let m;
+  try { m = await movimientos.handler(args); } catch (e) { return pagina(titulo, `<div class="w"><h1>${esc(titulo)}</h1>${aviso(e.message)}</div>`, { imagen }); }
+  const nombres = nombresTipo();
+  const lista = m.movimientos.filter((x) => !f.moneda || x.moneda === f.moneda);
+  const money_ = imagen ? money : moneyCorto;
+  const firmado = (x) => (f.clase || x.clase === 'ingreso' ? x.total : -x.total);
+  const porMoneda = [...Object.entries(Object.groupBy(lista, (x) => x.moneda))].map(([mo, xs]) => [mo, xs.reduce((s, x) => s + firmado(x), 0), xs.length]);
+  const filas = lista.slice(0, imagen ? MAX_FILAS.imagen : 500).map((x) => [
+    `<span class="fe">${fechaCorta(x.fecha)}</span> ${esc(x.comercio || x.nota || '—')}`,
+    esc(x.cuenta.toUpperCase()),
+    esc([nombres.get(x.tipo) ?? x.tipo, x.rubro !== HOGAR ? rubroNombre(x.rubro) : ''].filter(Boolean).join(' · ')),
+    `<span class="${x.clase === 'ingreso' ? 'm ingreso' : ''}">${money_(firmado(x), x.moneda)}</span>`,
+  ]);
+  const totales = porMoneda.map(([mo, t, n]) => [`Total ${mo} · ${n} mov.`, '', '', money_(t, mo)]);
+  const cuerpoTabla = lista.length
+    ? tabla(['Movimiento', 'Cuenta', 'Tipo', 'Monto'], filas, { total: totales[0], clase: 'det' }).replace('</tbody>', `${totales.slice(1).map((t) => `<tr class="t">${t.map((c, i) => `<td${i ? ' class="n"' : ''}>${c}</td>`).join('')}</tr>`).join('')}</tbody>`)
+      + (lista.length > (imagen ? MAX_FILAS.imagen : 500) ? `<p class="vacio">Se muestran ${imagen ? MAX_FILAS.imagen : 500} de ${lista.length}.</p>` : '')
+    : '<p class="vacio">Sin movimientos para este monto.</p>';
+  const est = Number(f.estado);
+  const anotado = porMoneda.length === 1 ? -porMoneda[0][1] : null;
+  const nota = f.tarjeta ? `<div class="pedir" style="background:var(--ch);color:var(--fg)"><span>Estado del banco${f.moneda && anotado !== null ? ` · falta anotar ${money_(est - anotado, f.moneda)}` : ''}</span><b style="color:var(--fg)">${money_(est, f.moneda ?? 'CRC')}</b></div><p class="sub">Los movimientos son los anotados en el periodo del corte; el estado del banco incluye lo que aún no está anotado.</p>` : '';
+  const sub = `${rango(m)}${p.cuenta ? ` · ${p.cuenta.toUpperCase()}` : ''}`;
+  const botones = imagen ? '' : `<div class="acc"><button class="btn sec" id="atras">◀ Atrás</button><button class="btn" id="enviar">Enviar al chat</button></div>`;
+  const js = imagen ? '<script>document.documentElement.dataset.alto=document.documentElement.scrollHeight</script>'
+    : `<script>
+const q=${JSON.stringify(queryDe(p, queryFiltro(f)))};const av=document.getElementById('aviso');
+function msg(t){av.textContent=t;av.style.display='block';clearTimeout(msg.t);msg.t=setTimeout(()=>av.style.display='none',3500)}
+document.getElementById('atras').onclick=()=>{if(history.length>1)history.back();else location.href='./?'+${JSON.stringify(queryDe(p))}};
+document.getElementById('enviar').onclick=async e=>{const b=e.currentTarget;b.disabled=true;const t=b.textContent;b.textContent='Enviando…';
+try{const r=await fetch('enviar?reporte=detalle&'+q);const j=await r.json();msg(j.mensaje||j.error||'Listo')}catch{msg('No se pudo enviar')}
+b.disabled=false;b.textContent=t};
+</script>`;
+  const cuerpo = `<div class="w">${botones}<h1>${esc(titulo)}</h1><div class="sub">${sub}</div>${nota}<section class="card">${cuerpoTabla}</section><div id="aviso"></div></div>`;
+  return pagina(titulo, cuerpo, { imagen, extra: js });
+}
+
+export const tituloDetalle = (f) => rotuloFiltro(f);
