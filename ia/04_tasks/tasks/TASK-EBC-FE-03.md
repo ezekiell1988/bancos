@@ -1,20 +1,20 @@
 # TASK-EBC-FE-03 — Dashboard en 3 niveles: ciclo → categoría → movimiento → factura
 
 **schemaVersion:** 2
-**Estado:** Borrador
+**Estado:** Lista
 **DevOps:** —
 **CRM:** —
 **Autor:** Ezequiel Baltodano Cubillo `<ezekiell1988@hotmail.com>`
-**Aprobado por:** —
+**Aprobado por:** Ezequiel Baltodano Cubillo (EBC), por Telegram: opción A
 **Rama:** —
 **createdAt:** 2026-11-21T10:29:42.388-06:00
-**approvedAt:** —
+**approvedAt:** 2026-11-21T10:32:25.761-06:00
 **startedAt:** —
 **finishedAt:** —
 **Área:** FE
 **Prioridad:** alta
 **Riesgo:** medio
-**Aprobación:** pendiente
+**Aprobación:** aprobada
 **parentId:** —
 **workItemType:** Task
 **workstream:** ia-workflow
@@ -106,4 +106,5 @@ Revertir el commit de dashboard/ y reiniciar el servicio launchd com.ezekl.banco
 
 ```jsonl
 {"schemaVersion":2,"eventId":"658d97e2-7ff2-4be7-9325-e196f574902f","taskId":"TASK-EBC-FE-03","event":"created","occurredAt":"2026-11-21T10:29:42.388-06:00","actor":"MCP iaWorkflow","reason":"Tarea creada en Borrador."}
+{"schemaVersion":2,"eventId":"422b6cb2-54eb-4b15-bb7d-eea79c634b4b","taskId":"TASK-EBC-FE-03","event":"approved","occurredAt":"2026-11-21T10:32:25.761-06:00","actor":"MCP iaWorkflow","reason":"Ezequiel Baltodano Cubillo (EBC), por Telegram: opción A"}
 ```

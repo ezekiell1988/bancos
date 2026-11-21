@@ -1,20 +1,20 @@
 # TASK-EBC-MCP-10 — Modelo de 3 niveles contables en el MCP bancos (categoría en Libros)
 
 **schemaVersion:** 2
-**Estado:** Borrador
+**Estado:** Lista
 **DevOps:** —
 **CRM:** —
 **Autor:** Ezequiel Baltodano Cubillo `<ezekiell1988@hotmail.com>`
-**Aprobado por:** —
+**Aprobado por:** Ezequiel Baltodano Cubillo (EBC), por Telegram: opción A
 **Rama:** —
 **createdAt:** 2026-11-21T10:29:28.566-06:00
-**approvedAt:** —
+**approvedAt:** 2026-11-21T10:32:24.966-06:00
 **startedAt:** —
 **finishedAt:** —
 **Área:** MCP
 **Prioridad:** alta
 **Riesgo:** alto
-**Aprobación:** pendiente
+**Aprobación:** aprobada
 **parentId:** —
 **workItemType:** Task
 **workstream:** ia-workflow
@@ -119,4 +119,5 @@ Relación con TASK-EBC-MCP-04 (facturas con varios comprobantes, En progreso): A
 
 ```jsonl
 {"schemaVersion":2,"eventId":"53404f3a-fb44-481b-bb10-76ba828e80aa","taskId":"TASK-EBC-MCP-10","event":"created","occurredAt":"2026-11-21T10:29:28.566-06:00","actor":"MCP iaWorkflow","reason":"Tarea creada en Borrador."}
+{"schemaVersion":2,"eventId":"200ac533-738c-4ef0-b52d-9d8df93f310a","taskId":"TASK-EBC-MCP-10","event":"approved","occurredAt":"2026-11-21T10:32:24.967-06:00","actor":"MCP iaWorkflow","reason":"Ezequiel Baltodano Cubillo (EBC), por Telegram: opción A"}
 ```

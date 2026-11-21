@@ -55,6 +55,7 @@ Sin servidor: el agente lee los documentos que le pasa el dueño y, con el MCP l
 
 <!-- El MCP iaWorkflow agrega aquí «* <fase> completada — pendiente de architecture.» al completarse una
 fase de 03_plan.md (reemplaza el marcador de abajo). Resolver cada línea con resolve_phase_review. -->
+* Fase 6 — Facturas con varios pagos completada — pendiente de architecture.
 
 ## Revisiones arquitectónicas de fases
 * Fase 3 — Skill para anotar documentos: not_applicable. Evidencia: La fase solo agregó el skill record-movements; no cambió componentes ni contratos (los cambios de arquitectura son de la Fase 5).

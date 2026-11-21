@@ -5,6 +5,7 @@
 <!-- El MCP iaWorkflow agrega aquí «* <fase> completada — pendiente de retrospective.» al completarse una
 fase de 03_plan.md (reemplaza el marcador de abajo). Documentar la retrospectiva y resolver cada línea
 con resolve_phase_review. -->
+* Fase 6 — Facturas con varios pagos completada — pendiente de retrospective.
 
 ## Revisiones de retrospectiva de fases
 * Fase 3 — Skill para anotar documentos: recorded. Evidencia: El skill se probó con los estados reales de BCR y BAC; en el uso aparecieron la regla de fecha del banco (ADR-02), el rubro del papá (ADR-01/04) y la necesidad de separar comprobantes y facturas (ADR-03).

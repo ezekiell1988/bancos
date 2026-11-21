@@ -6,18 +6,17 @@
 |-------|------|--------|
 | [TASK-EBC-DOC-05](tasks/TASK-EBC-DOC-05.md) | DOC | Bajo |
 | [TASK-EBC-MCP-05](tasks/TASK-EBC-MCP-05.md) | MCP | Bajo |
-| [TASK-EBC-MCP-10](tasks/TASK-EBC-MCP-10.md) | MCP | Alto |
-| [TASK-EBC-FE-03](tasks/TASK-EBC-FE-03.md) | FE | Medio |
 
 ## En progreso
 
-| Tarea | Área | Riesgo |
-|-------|------|--------|
-| [TASK-EBC-MCP-04](tasks/TASK-EBC-MCP-04.md) | MCP | Bajo |
+Sin tareas registradas.
 
 ## Lista
 
-Sin tareas registradas.
+| Tarea | Área | Riesgo |
+|-------|------|--------|
+| [TASK-EBC-MCP-10](tasks/TASK-EBC-MCP-10.md) | MCP | Alto |
+| [TASK-EBC-FE-03](tasks/TASK-EBC-FE-03.md) | FE | Medio |
 
 ## Bloqueadas
 
