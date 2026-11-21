@@ -1,6 +1,6 @@
 # MCP bancos
 
-Contabilidad familiar en 3 niveles sobre `datos/` (formato en el `README.md` del repo). Node sin dependencias
+Contabilidad familiar en 3 niveles (Bancos, Libros, Cuentas por pagar; ADR-EBC-03) sobre `datos/` (formato en el `README.md` del repo). Node sin dependencias
 (SQLite con `node:sqlite` de Node 24), sobre el runtime compartido `../_shared` (enlace a `~/.mcp/_shared`).
 
 | Tool | Qué hace |
@@ -8,22 +8,23 @@ Contabilidad familiar en 3 niveles sobre `datos/` (formato en el `README.md` del
 | `bancos_tipos` | Lista los tipos de gasto e ingreso |
 | `bancos_agregar_tipo` | Agrega un tipo (preview; `apply: true`) |
 | `bancos_renombrar_tipo` | Cambia el nombre visible de un tipo (preview; `apply: true`) |
-| `bancos_registrar` | **Nivel 1.** Anota las líneas de un estado de cuenta (BCR, BAC o BN) con id, fecha del banco y referencia; vincula los comprobantes y facturas pendientes (preview; `apply: true`) |
-| `bancos_comprobante` | **Nivel 2.** Anota SINPE o vouchers con su referencia y los vincula a su movimiento, o los deja pendientes (preview; `apply: true`) |
-| `bancos_factura` | **Nivel 3.** Anota facturas con sus líneas y sus pagos (`comprobantes`, uno o varios) o las vincula a su movimiento; da pagado y saldo (preview; `apply: true`) |
-| `bancos_movimientos` | Lista movimientos con id, rubro, tarjeta, plástico y cuántos comprobantes y facturas tienen (filtros `de`, `excluirDe`, `tarjeta`, `plastico`) |
-| `bancos_resumen` | Reporte del nivel 1: balance, rubros (hogar, papa…), tipos y `tarjetas` (por plástico y total a pagar); `excluirDe`, `de`, `excluirTipos` |
-| `bancos_detalles` | Lista comprobantes y facturas (por periodo o por movimiento), con sus pagos, saldo y líneas |
+| `bancos_registrar` | **Nivel 1.** Anota las líneas de un estado de cuenta (BCR, BAC o BN) con id, fecha del banco y referencia; crea el libro de cada movimiento (con `tipo` o «otros») o vincula el pago pendiente (preview; `apply: true`) |
+| `bancos_comprobante` | **Nivel 2 (Libros).** Anota el pago (SINPE, voucher) con su categoría en `partidas`, 1 a 1 con su movimiento; pendiente si no está; `transito` (preview; `apply: true`) |
+| `bancos_factura` | **Nivel 3 (Cuentas por pagar).** Anota facturas y ajustes con proveedor, cédula, líneas (tipo e impuesto) que cuelgan de un libro; valida que sumen el pago (preview; `apply: true`) |
+| `bancos_movimientos` | Lista movimientos con id, rubro, tarjeta, plástico, su libro, sus partidas y cuántas facturas tienen (filtros `de`, `excluirDe`, `tarjeta`, `plastico`) |
+| `bancos_resumen` | Reporte del nivel 1 repartido por las partidas de su libro: balance, rubros (hogar, papa…), tipos y `tarjetas` (por plástico y total a pagar); `excluirDe`, `de`, `excluirTipos` |
+| `bancos_detalles` | Lista libros y facturas (por periodo o por movimiento), con partidas, cuadre y líneas |
 | `bancos_pago_tarjetas` | Pago de contado de las tarjetas BAC del último estado, en colones con la venta del dólar de la BAC (InfoDolar); resta lo ya pagado desde el BCR y da lo que Karen pasa a la BAC. Devuelve imagen PNG |
 | `bancos_pago_tarjeta_bn` | Igual, para la tarjeta del BN de Karen (…2921), con la venta del dólar del BN (InfoDolar); resta los «Pago BN» del BCR y da `faltaPagar`. Devuelve imagen PNG |
-| `bancos_pendientes` | Movimientos sin comprobante ni factura, comprobantes o facturas sin movimiento y facturas con saldo |
-| `bancos_borrar_movimiento` | Borra un movimiento por id o línea; sus detalles quedan pendientes (preview; `confirm: true`) |
-| `bancos_editar_movimiento` | Cambia tipo, `de`, `tarjeta`, `adicional`, comercio, nota, referencia o `fechaReal` (preview; `confirm: true`) |
-| `bancos_borrar_detalle` | Borra un comprobante o factura (preview; `confirm: true`) |
-| `bancos_vincular` | Vincula o desvincula a mano un comprobante o factura, o fija los pagos de una factura (preview; `confirm: true`) |
-| `bancos_fijar_cuenta` | Fija la cuenta de comprobantes o facturas que no la tienen, en lote; no pisa otra cuenta (preview; `apply: true`) |
+| `bancos_pendientes` | Libros sin movimiento (menos en tránsito), movimientos sin categoría o en «otros» y sumas que no cuadran |
+| `bancos_borrar_movimiento` | Borra un movimiento por id o línea; su libro con documento o facturas queda sin movimiento (preview; `confirm: true`) |
+| `bancos_editar_movimiento` | Cambia categoría (`tipo` o `partidas`), `de`, `tarjeta`, `adicional`, comercio, nota, referencia o `fechaReal` (preview; `confirm: true`) |
+| `bancos_borrar_detalle` | Borra un libro (con sus facturas: `conFacturas`) o una factura (preview; `confirm: true`) |
+| `bancos_vincular` | Vincula o desvincula un libro a su movimiento (1 a 1), lo marca en tránsito, o pasa una factura a otro libro (preview; `confirm: true`) |
+| `bancos_fijar_cuenta` | Fija la cuenta de libros o facturas que no la tienen, en lote; no pisa otra cuenta (preview; `apply: true`) |
 | `bancos_sql` | Consulta SELECT de solo lectura sobre `datos/bancos.sqlite` |
 | `bancos_sqlite_reconstruir` | Reconstruye `datos/bancos.sqlite` desde los jsonl |
+| `bancos_migrar_libros` | Migra `datos/` al modelo de ADR-EBC-03 una sola vez (respaldo automático, informe de lo que no cuadró y totales por ciclo antes/después) |
 
 Los tools de escritura reconstruyen la base SQLite solos al guardar. Flag: `--datos-dir` (default `<repo>/datos`).
 Prueba: `node .mcp/bancos/tests/smoke.mjs`.

@@ -1,6 +1,6 @@
-import { CLASES, CUENTAS, RUBRO_PROPS, filtroRubro, leerTodosLosDetalles, leerTodosLosMovimientos, plasticoUsado, rubroDe, slug } from '../src/datos.mjs';
+import { CLASES, CUENTAS, RUBRO_PROPS, filtroRubro, leerTodosLosMovimientos, plasticoUsado, rubroDe, slug } from '../src/datos.mjs';
 import { periodoProps, resolverPeriodo } from '../src/periodo.mjs';
-import { mapaComprobantes, movimientosDeFactura } from '../src/vinculos.mjs';
+import { facturasPorLibro } from '../src/vinculos.mjs';
 
 export default {
   name: 'bancos_movimientos',
@@ -8,9 +8,9 @@ export default {
   order: 30,
   description:
     'Lista los movimientos bancarios (nivel 1) de un ciclo (19 al 18), mes o rango de fechas del banco, con id, cuenta, línea, referencia, rubro ' +
-    '(hogar o el de, p. ej. papa), tarjeta y plástico (el adicional o el titular) y cuántos comprobantes (c) y facturas (f) tiene cada uno. fechaReal = fecha de compra, solo referencia. ' +
+    '(hogar o el de, p. ej. papa), tarjeta y plástico (el adicional o el titular) su libro (nivel 2, donde vive la categoría: tipo = la principal y partidas = todas) y cuántas facturas (f) cuelgan de él. fechaReal = fecha de compra, solo referencia. ' +
     'Filtros opcionales por cuenta, clase, tipo, tarjeta, plástico, rubro (de / excluirDe; por defecto no excluye nada) y texto en comercio, nota o referencia. ' +
-    'Respuesta TOON. Para totales usar bancos_resumen; para el detalle de comprobantes y facturas, bancos_detalles.',
+    'Respuesta TOON. Para totales usar bancos_resumen; para el detalle de libros y facturas, bancos_detalles.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -28,16 +28,8 @@ export default {
   async handler(args) {
     const { desde, hasta } = resolverPeriodo(args);
     const buscar = args.texto ? slug(args.texto) : null;
-    const detalles = leerTodosLosDetalles();
-    const pagos = mapaComprobantes(detalles);
-    const cuenta = (nivel) => {
-      const n = new Map();
-      for (const d of detalles.filter((x) => x.nivel === nivel)) {
-        for (const id of nivel === 'facturas' ? movimientosDeFactura(d, pagos) : [d.movimiento].filter(Boolean)) n.set(id, (n.get(id) ?? 0) + 1);
-      }
-      return n;
-    };
-    const [comp, fact] = [cuenta('comprobantes'), cuenta('facturas')];
+    const facturas = facturasPorLibro();
+    const nFacturas = (m) => (m.libro ? facturas.get(m.libro)?.length ?? 0 : 0);
     const movimientos = leerTodosLosMovimientos(desde, hasta, args.cuenta ? [args.cuenta] : CUENTAS)
       .filter(filtroRubro(args.de, args.excluirDe))
       .filter((m) => (!args.clase || m.clase === args.clase) && (!args.tipo || m.tipo === args.tipo)
@@ -48,14 +40,14 @@ export default {
         id: m.id ?? '', fecha: m.fecha, fechaReal: m.fechaReal ?? '', cuenta: m.cuenta, linea: m.linea, referencia: m.referencia ?? '',
         clase: m.clase, tipo: m.tipo, total: m.total, moneda: m.moneda, comercio: m.comercio, nota: m.nota, rubro: rubroDe(m),
         tarjeta: m.tarjeta ?? '', plastico: plasticoUsado(m),
-        c: comp.get(m.id) ?? 0, f: fact.get(m.id) ?? 0, archivo: m.archivo ?? '',
+        libro: m.libro ?? '', partidas: (m.partidas ?? []).map((p) => `${p.tipo}:${p.monto}`).join(' '), f: nFacturas(m), archivo: m.archivo ?? '',
       }));
     return { desde, hasta, total: movimientos.length, movimientos };
   },
   async smoke({ callTool, check, toolText, toolJson }) {
     const text = toolText(await callTool('bancos_movimientos', { mes: '2026-10' }));
     check('bancos_movimientos lista lo anotado del mes', /total: 5/.test(text) && text.includes('Soda X'), text.slice(0, 300));
-    check('bancos_movimientos marca comprobante, factura y rubro', /1001,gasto,comida,8500,CRC,Soda X,almuerzo papá,papa,,,1,1/.test(text) && /Súper Y,,hogar,,,0,1/.test(text), text.slice(0, 900));
+    check('bancos_movimientos muestra el libro, las partidas y las facturas', /Soda X,almuerzo papá,papa,,,l-[0-9a-f]{8},comida:5000 supermercado:3500,0/.test(text) && /Súper Y,,hogar,,,l-[0-9a-f]{8},.*,1/.test(text), text.slice(0, 900));
     const filtro = toolText(await callTool('bancos_movimientos', { mes: '2026-10', texto: 'super' }));
     check('bancos_movimientos filtra por texto sin tildes', /total: 1/.test(filtro), filtro.slice(0, 120));
     const sinPapa = toolText(await callTool('bancos_movimientos', { mes: '2026-10', excluirDe: ['papa'] }));

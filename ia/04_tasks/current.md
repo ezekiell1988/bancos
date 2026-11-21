@@ -15,7 +15,6 @@ Sin tareas registradas.
 
 | Tarea | Área | Riesgo |
 |-------|------|--------|
-| [TASK-EBC-MCP-10](tasks/TASK-EBC-MCP-10.md) | MCP | Alto |
 | [TASK-EBC-FE-03](tasks/TASK-EBC-FE-03.md) | FE | Medio |
 
 ## Bloqueadas

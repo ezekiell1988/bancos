@@ -1,5 +1,5 @@
-// Dominio del registro: rutas de datos/, lectura y escritura de jsonl, tipos, movimientos (nivel 1)
-// y detalles (nivel 2 comprobantes, nivel 3 facturas). Ver ADR-03 en ia/.
+// Dominio del registro: rutas de datos/, lectura y escritura de jsonl, tipos, movimientos (nivel 1 Bancos)
+// y detalles (nivel 2 libros con la categoría en partidas, nivel 3 facturas). Ver ADR-EBC-03 en ia/.
 // datos/ vive en la raíz del repo y está fuera de git (repo público). --datos-dir lo cambia (smoke).
 import { randomBytes } from 'node:crypto';
 import { appendFileSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
@@ -14,8 +14,11 @@ export { ToolError };
 export const CUENTAS = ['bcr', 'bac', 'bncr'];
 export const CLASES = ['gasto', 'ingreso'];
 export const MONEDAS = ['CRC', 'USD'];
-/** Niveles auxiliares: carpeta en datos/ y prefijo de su id. */
-export const NIVELES = { comprobantes: 'c', facturas: 'f' };
+/** Niveles 2 y 3: carpeta en datos/ y prefijo de su id (l- libro o pago, f- factura o ajuste). */
+export const NIVELES = { libros: 'l', facturas: 'f' };
+/** Diferencia aceptada al cuadrar sumas (redondeos): 1 colón o 5 centavos de dólar. */
+export const toleranciaCuadre = (moneda) => (moneda === 'USD' ? 0.05 : 1);
+export const cuadra = (a, b, moneda) => Math.abs(a - b) <= toleranciaCuadre(moneda) + 1e-9;
 /** Rubro de los movimientos sin `de` (el dueño y Karen). */
 export const HOGAR = 'hogar';
 
@@ -63,7 +66,7 @@ export function appendJsonl(file, rows) {
   appendFileSync(file, rows.map((r) => JSON.stringify(r)).join('\n') + '\n');
 }
 
-/** Id corto y estable: m- movimiento, c- comprobante, f- factura. */
+/** Id corto y estable: m- movimiento, l- libro, f- factura. */
 export const nuevoId = (prefijo) => `${prefijo}-${randomBytes(4).toString('hex')}`;
 
 // --- Tipos ---
@@ -106,10 +109,29 @@ function archivosDeDia(base, desde, hasta) {
   return out;
 }
 
-/** Movimientos de una cuenta entre dos fechas (incluidas), con la línea de su archivo. */
+/** Libros (nivel 2) por id de su movimiento. */
+function librosPorMovimiento() {
+  const porMov = new Map();
+  for (const file of archivosDeDia(path.join(datosDir, 'libros'), '0000-01-01', '9999-12-31')) {
+    for (const l of readJsonl(file)) if (l.movimiento) porMov.set(l.movimiento, l);
+  }
+  return porMov;
+}
+
+/** Categoría principal de unas partidas: la de mayor monto. */
+export const tipoPrincipal = (partidas = []) => [...partidas].sort((a, b) => b.monto - a.monto)[0]?.tipo;
+
+/**
+ * Movimientos de una cuenta entre dos fechas (incluidas), con la línea de su archivo. La categoría vive en su libro
+ * (nivel 2): se agregan `libro`, `partidas` y `tipo` (la categoría principal) solo al leer; no se guardan en el movimiento.
+ */
 export function leerMovimientos(cuenta, desde = '0000-01-01', hasta = '9999-12-31') {
+  const libros = librosPorMovimiento();
   return archivosDeDia(path.join(datosDir, cuenta), desde, hasta)
-    .flatMap((file) => readJsonl(file).map((m, i) => ({ cuenta, linea: i + 1, ...m })));
+    .flatMap((file) => readJsonl(file).map((m, i) => {
+      const l = libros.get(m.id);
+      return { cuenta, linea: i + 1, ...m, ...(l ? { libro: l.id, partidas: l.partidas, tipo: tipoPrincipal(l.partidas) } : {}) };
+    }));
 }
 
 export const leerTodosLosMovimientos = (desde, hasta, cuentas = CUENTAS) => cuentas.flatMap((c) => leerMovimientos(c, desde, hasta));
@@ -135,22 +157,29 @@ export function guardarMovimiento(ubicado, nuevo) {
   const file = diaFile(ubicado.cuenta, ubicado.fecha);
   const rows = readJsonl(file);
   if (rows[ubicado.linea - 1]?.id !== ubicado.id) throw new ToolError(`La línea ${ubicado.linea} de ${ubicado.cuenta} ${ubicado.fecha} cambió; volver a consultar.`);
-  if (nuevo) rows[ubicado.linea - 1] = nuevo; else rows.splice(ubicado.linea - 1, 1);
+  if (nuevo) {
+    const { libro: _l, partidas: _p, tipo: _t, ...limpio } = nuevo;
+    rows[ubicado.linea - 1] = limpio;
+  } else rows.splice(ubicado.linea - 1, 1);
   writeJsonl(file, rows);
 }
 
 /** Quita los campos internos (cuenta y línea) que agrega la lectura. */
 export const sinUbicacion = ({ cuenta: _c, linea: _l, nivel: _n, ...resto }) => resto;
 
+/** Campos de un movimiento que se guardan en su archivo (sin lo que viene del libro). */
+export const sinDerivados = ({ cuenta: _c, linea: _l, libro: _b, partidas: _p, tipo: _t, ...resto }) => resto;
+
 /** Igual para comprobantes y facturas: su cuenta es un dato propio y se conserva. */
 export const detalleSinUbicacion = ({ linea: _l, nivel: _n, ...resto }) => resto;
 
-/** Valida un movimiento contra los tipos y lo normaliza al formato del README. */
+/** Valida un movimiento contra los tipos y lo normaliza al formato del README. `tipo` (default otros) no se guarda: va a la partida de su libro. */
 export function normalizarMovimiento(m, tipos) {
   checkFecha(m.fecha);
   if (m.fechaReal) checkFecha(m.fechaReal, 'fechaReal');
   if (!(m.total > 0)) throw new ToolError(`total debe ser mayor que 0 (${m.fecha} ${m.comercio ?? ''})`);
-  checkTipo(tipos, m.clase, m.tipo);
+  const tipo = m.tipo || 'otros';
+  checkTipo(tipos, m.clase, tipo);
   const referencia = String(m.referencia ?? '').trim();
   return {
     id: nuevoId('m'),
@@ -158,7 +187,7 @@ export function normalizarMovimiento(m, tipos) {
     ...(m.fechaReal && m.fechaReal !== m.fecha ? { fechaReal: m.fechaReal } : {}),
     ...(referencia ? { referencia } : {}),
     clase: m.clase,
-    tipo: m.tipo,
+    tipo,
     total: r2(m.total),
     moneda: m.moneda,
     comercio: (m.comercio ?? '').trim(),
@@ -238,7 +267,7 @@ export const leerTodosLosDetalles = () => Object.keys(NIVELES).flatMap((n) => le
 export function buscarDetalle(id) {
   const nivel = Object.keys(NIVELES).find((n) => id?.startsWith(`${NIVELES[n]}-`));
   const d = nivel && leerDetalles(nivel).find((x) => x.id === id);
-  if (!d) throw new ToolError(`No existe el comprobante o factura ${id}. Ver bancos_detalles.`);
+  if (!d) throw new ToolError(`No existe el libro o factura ${id}. Ver bancos_detalles.`);
   return d;
 }
 
@@ -279,49 +308,43 @@ function rangoReferencia(a, b) {
   return 2;
 }
 
-/** Ventana de fechas en que el banco procesa lo de un comprobante o factura. */
+/** Ventana de fechas en que el banco procesa lo de un pago (libro). */
 export const VENTANA = { antes: 3, despues: 10 };
 /** Las facturas (servicios) se pagan semanas después y a veces con diferencia de céntimos. */
 export const VENTANA_FACTURA = { antes: 3, despues: 35, tolerancia: 1 };
 
 /**
- * Empareja detalles pendientes con movimientos: misma moneda y total, misma clase (las facturas son gastos),
- * misma cuenta si el detalle la trae, y fecha del banco dentro de la ventana. Prefiere misma referencia,
- * después la fecha real igual a la del detalle y la fecha más cercana. Cada movimiento toma un solo detalle
- * de cada nivel (`ocupados`: Set de "nivel|idMovimiento").
+ * Empareja libros sin movimiento con movimientos: misma moneda y total, misma clase, misma cuenta si el libro la trae,
+ * y fecha del banco dentro de la ventana. Prefiere misma referencia, después la fecha real igual y la fecha más cercana.
+ * Cada movimiento toma un solo libro (`ocupados`: Set de ids de movimiento que ya tienen un libro con documento).
  */
-export function emparejar(detalles, movimientos, ocupados = new Set()) {
+export function emparejar(libros, movimientos, ocupados = new Set(), ventana = { ...VENTANA, tolerancia: 0.01 }) {
   const pares = [];
-  for (const d of [...detalles].sort((a, b) => a.fecha.localeCompare(b.fecha) || (a.hora ?? '').localeCompare(b.hora ?? ''))) {
+  for (const d of [...libros].sort((a, b) => a.fecha.localeCompare(b.fecha) || (a.hora ?? '').localeCompare(b.hora ?? ''))) {
     const clase = d.nivel === 'facturas' ? 'gasto' : d.clase;
-    const v = d.nivel === 'facturas' ? VENTANA_FACTURA : { ...VENTANA, tolerancia: 0.01 };
+    const v = d.nivel === 'facturas' ? VENTANA_FACTURA : ventana;
     const candidatos = movimientos
-      .filter((m) => !ocupados.has(`${d.nivel}|${m.id}`) && m.moneda === d.moneda && Math.abs(m.total - d.total) <= v.tolerancia + 1e-9
+      .filter((m) => !ocupados.has(m.id) && m.moneda === d.moneda && Math.abs(m.total - d.total) <= v.tolerancia + 1e-9
         && m.clase === clase && (!d.cuenta || m.cuenta === d.cuenta)
         && difDias(m.fecha, d.fecha) >= -v.antes && difDias(m.fecha, d.fecha) <= v.despues)
       .map((m) => ({ m, rango: [rangoReferencia(d.referencia, m.referencia), (m.fechaReal ?? m.fecha) === d.fecha ? 0 : 1, Math.abs(difDias(m.fecha, d.fecha))] }))
       .sort((a, b) => a.rango[0] - b.rango[0] || a.rango[1] - b.rango[1] || a.rango[2] - b.rango[2]);
     if (!candidatos.length) continue;
     const [mejor] = candidatos;
-    ocupados.add(`${d.nivel}|${mejor.m.id}`);
+    ocupados.add(mejor.m.id);
     const empate = candidatos.filter((c) => c.rango.join() === mejor.rango.join()).length > 1;
     pares.push({ detalle: d, movimiento: mejor.m, por: ['referencia', 'monto y fecha', 'monto (referencia distinta)'][mejor.rango[0]], empate });
   }
   return pares;
 }
 
-/** Movimientos que ya tienen un detalle de cada nivel. */
-export const ocupadosPor = (detalles) => new Set(detalles.filter((d) => d.movimiento).map((d) => `${d.nivel}|${d.movimiento}`));
-
 /**
- * Lo que un comprobante o factura le completa a su movimiento: el tipo (si es de la misma clase), el `de`
- * y la nota si el movimiento no tiene. Devuelve el movimiento nuevo y la lista de cambios.
+ * Lo que un libro le completa a su movimiento: el `de` y la nota si el movimiento no tiene.
+ * (La categoría ya no va en el movimiento: vive en las partidas del libro.) Devuelve el movimiento nuevo y los cambios.
  */
 export function completarMovimiento(m, d) {
   const nuevo = { ...m };
   const cambios = [];
-  const clase = d.nivel === 'facturas' ? 'gasto' : d.clase;
-  if (d.tipo && d.tipo !== m.tipo && clase === m.clase) { nuevo.tipo = d.tipo; cambios.push(`tipo ${m.tipo} → ${d.tipo}`); }
   if (d.de && d.de !== m.de) { nuevo.de = d.de; cambios.push(`de ${m.de ?? HOGAR} → ${d.de}`); }
   if (d.nota && !m.nota) { nuevo.nota = d.nota; cambios.push(`nota "${d.nota}"`); }
   return { nuevo, cambios };

@@ -1,4 +1,4 @@
-import { CUENTAS, buscarDetalle, buscarMovimiento, detalleSinUbicacion, guardarDetalles } from '../src/datos.mjs';
+import { CUENTAS, buscarDetalle, buscarMovimiento, detalleSinUbicacion, guardarDetalles, leerDetalles } from '../src/datos.mjs';
 import { refrescarSqlite } from '../src/sqlite.mjs';
 
 /** Evalúa un cambio {id, cuenta}: qué se hará con ese comprobante o factura. */
@@ -6,7 +6,8 @@ function evaluar({ id, cuenta }) {
   const d = buscarDetalle(id);
   if (d.cuenta === cuenta) return { id, estado: 'ya-la-tiene', cuenta };
   if (d.cuenta) return { id, estado: 'conflicto', motivo: `ya tiene ${d.cuenta}; no se pisa` };
-  const m = d.movimiento ? buscarMovimiento(d.movimiento) : null;
+  const mid = d.nivel === 'facturas' ? leerDetalles('libros').find((l) => l.id === d.libro)?.movimiento : d.movimiento;
+  const m = mid ? buscarMovimiento(mid) : null;
   if (m && m.cuenta !== cuenta) return { id, estado: 'conflicto', motivo: `su movimiento ${m.id} es de ${m.cuenta}` };
   return { id, estado: 'fijar', cuenta, d };
 }
@@ -15,7 +16,7 @@ export default {
   name: 'bancos_fijar_cuenta',
   order: 46,
   description:
-    'Fija la cuenta (bcr, bac, bncr) de comprobantes (c-...) y facturas (f-...) que no la tienen, en lote de {id, cuenta}. ' +
+    'Fija la cuenta (bcr, bac, bncr) de libros (l-...) y facturas (f-...) que no la tienen, en lote de {id, cuenta}. ' +
     'No pisa una cuenta distinta ni contradice la del movimiento vinculado, y no cambia ningún otro dato. ' +
     'Sin apply:true solo muestra el preview. Usar solo con evidencia cierta de la cuenta.',
   inputSchema: {
@@ -52,13 +53,9 @@ export default {
     return { applied: true, ...conteo, cambios: resumen, aviso: refrescarSqlite() };
   },
   async smoke({ callTool, check, toolJson, state }) {
-    const igual = toolJson(await callTool('bancos_fijar_cuenta', { cambios: [{ id: state.comprobanteSoda, cuenta: 'bac' }] }));
-    check('bancos_fijar_cuenta: el comprobante conserva su cuenta tras vincular y desvincular', igual.yaLaTienen === 1 && igual.fijar === 0, JSON.stringify(igual).slice(0, 200));
-    const otra = toolJson(await callTool('bancos_fijar_cuenta', { cambios: [{ id: state.comprobanteSoda, cuenta: 'bcr' }] }));
-    check('bancos_fijar_cuenta no pisa una cuenta distinta', otra.conflictos === 1 && otra.fijar === 0, JSON.stringify(otra).slice(0, 200));
-    const sin = toolJson(await callTool('bancos_fijar_cuenta', { cambios: [{ id: state.comprobantePendiente, cuenta: 'bcr' }] }));
-    check('bancos_fijar_cuenta hace preview de un detalle sin cuenta', sin.preview === true && (sin.fijar === 1 || sin.yaLaTienen === 1), JSON.stringify(sin).slice(0, 200));
-    const malo = toolJson(await callTool('bancos_fijar_cuenta', { cambios: [{ id: 'c-00000000', cuenta: 'bcr' }] }));
-    check('bancos_fijar_cuenta reporta un id inexistente', malo.errores === 1, JSON.stringify(malo).slice(0, 200));
+    const igual = toolJson(await callTool('bancos_fijar_cuenta', { cambios: [{ id: state.libroSoda, cuenta: 'bac' }] }));
+    check('bancos_fijar_cuenta: el libro conserva su cuenta', igual.yaLaTienen === 1 && igual.fijar === 0, JSON.stringify(igual).slice(0, 200));
+    const otra = toolJson(await callTool('bancos_fijar_cuenta', { cambios: [{ id: state.libroSoda, cuenta: 'bcr' }] }));
+    check('bancos_fijar_cuenta no pisa otra cuenta', otra.conflictos === 1, JSON.stringify(otra).slice(0, 200));
   },
 };

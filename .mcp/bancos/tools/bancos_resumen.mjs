@@ -1,15 +1,21 @@
 import { CUENTAS, HOGAR, RUBRO_PROPS, filtroRubro, leerDetalles, leerTodosLosMovimientos, plasticoUsado, r2, rubroDe } from '../src/datos.mjs';
 import { periodoProps, resolverPeriodo } from '../src/periodo.mjs';
-import { pagosDe } from '../src/vinculos.mjs';
 
 /** Suma un movimiento al acumulado de su clave. */
 function sumar(mapa, clave, base, m) {
-  const t = mapa.get(clave) ?? { ...base, ingresos: 0, gastos: 0, balance: 0, movimientos: 0 };
+  const t = mapa.get(clave) ?? { ...base, ingresos: 0, gastos: 0, balance: 0, movimientos: 0, ids: new Set() };
   if (m.clase === 'ingreso') t.ingresos = r2(t.ingresos + m.total); else t.gastos = r2(t.gastos + m.total);
   t.balance = r2(t.ingresos - t.gastos);
-  t.movimientos += 1;
+  t.ids.add(m.id);
+  t.movimientos = t.ids.size;
   mapa.set(clave, t);
 }
+
+/** Un movimiento se reparte en sus partidas (nivel 2): cada una con su categoría, su monto y su rubro. Sin libro, todo va a «otros». */
+const partidasDe = (m) => (m.partidas?.length ? m.partidas : [{ tipo: 'otros', monto: m.total }])
+  .map((p) => ({ ...m, tipo: p.tipo, total: p.monto, de: p.de ?? m.de }));
+
+const sinIds = ({ ids: _i, ...t }) => t;
 
 /** Filas por plástico (el titular primero) y, si la tarjeta tiene adicionales, su total: lo que se paga junto. */
 function porTarjeta(filas) {
@@ -31,12 +37,12 @@ export default {
   format: 'toon',
   order: 31,
   description:
-    'Reporte de un ciclo (del 19 al 18, el periodo normal), mes o rango, solo con movimientos bancarios (nivel 1, la base de verdad): balance ingresos - gastos por moneda, ' +
+    'Reporte de un ciclo (del 19 al 18, el periodo normal), mes o rango, sobre los movimientos bancarios (nivel 1, la base de verdad) repartidos en las partidas de su libro (nivel 2, la categoría; sin libro = «otros»): balance ingresos - gastos por moneda, ' +
     'balance por rubro (hogar = dueño y Karen; papa y otros por su de), totales por rubro, clase y tipo, ' +
     'y por tarjeta de crédito: lo de cada plástico (titular y adicionales) y el total que se paga junto. ' +
     'Por defecto incluye todo, también al papá. excluirDe: ["papa"] lo quita; de: "papa" deja solo lo suyo (para mostrárselo). ' +
     'excluirTipos: ["tarjeta"] da el gasto real sin el pago de la tarjeta BAC desde el BCR. ' +
-    'También cuenta los comprobantes y facturas del periodo que siguen sin movimiento (no suman). Respuesta TOON.',
+    'También cuenta los libros (pagos) del periodo que siguen sin movimiento (no suman). Respuesta TOON.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -51,6 +57,7 @@ export default {
     const { desde, hasta } = resolverPeriodo(args);
     const fueraTipos = new Set(args.excluirTipos ?? []);
     const movs = leerTodosLosMovimientos(desde, hasta, args.cuenta ? [args.cuenta] : CUENTAS)
+      .flatMap(partidasDe)
       .filter(filtroRubro(args.de, args.excluirDe))
       .filter((m) => !fueraTipos.has(m.tipo));
     const balance = new Map();
@@ -67,25 +74,25 @@ export default {
       if (m.tarjeta) sumar(plasticos, `${m.tarjeta}|${plasticoUsado(m)}|${m.moneda}`, { tarjeta: m.tarjeta, plastico: plasticoUsado(m), moneda: m.moneda }, m);
     }
     const orden = (r) => (r === HOGAR ? '' : r);
-    const pendientes = ['comprobantes', 'facturas'].flatMap((nivel) => {
+    const pendientes = (() => {
       const p = new Map();
-      for (const d of leerDetalles(nivel, desde, hasta).filter((x) => !x.movimiento && !pagosDe(x).length && (!args.cuenta || x.cuenta === args.cuenta))) {
-        const e = p.get(d.moneda) ?? { nivel, moneda: d.moneda, cantidad: 0, total: 0 };
+      for (const d of leerDetalles('libros', desde, hasta).filter((x) => !x.movimiento && !x.transito && (!args.cuenta || x.cuenta === args.cuenta))) {
+        const e = p.get(d.moneda) ?? { nivel: 'libros', moneda: d.moneda, cantidad: 0, total: 0 };
         e.cantidad += 1; e.total = r2(e.total + d.total); p.set(d.moneda, e);
       }
       return [...p.values()];
-    });
+    })();
     return {
       desde,
       hasta,
       cuenta: args.cuenta ?? 'todas',
       rubro: args.de ?? 'todos',
       excluidos: [...(args.excluirDe ?? []), ...fueraTipos].join(', ') || 'ninguno',
-      movimientos: movs.length,
-      balance: [...balance.values()],
-      rubros: [...rubros.values()].sort((a, b) => orden(a.rubro).localeCompare(orden(b.rubro)) || a.moneda.localeCompare(b.moneda)),
+      movimientos: new Set(movs.map((m) => m.id)).size,
+      balance: [...balance.values()].map(sinIds),
+      rubros: [...rubros.values()].map(sinIds).sort((a, b) => orden(a.rubro).localeCompare(orden(b.rubro)) || a.moneda.localeCompare(b.moneda)),
       tipos: [...tipos.values()].sort((a, b) => orden(a.rubro).localeCompare(orden(b.rubro)) || a.clase.localeCompare(b.clase) || b.total - a.total),
-      ...(plasticos.size ? { tarjetas: porTarjeta([...plasticos.values()]) } : {}),
+      ...(plasticos.size ? { tarjetas: porTarjeta([...plasticos.values()].map(sinIds)) } : {}),
       ...(pendientes.length ? { pendientesSinMovimiento: pendientes } : {}),
     };
   },
@@ -93,15 +100,17 @@ export default {
     const text = toolText(await callTool('bancos_resumen', { mes: '2026-10' }));
     check('bancos_resumen calcula el balance en CRC', text.includes('CRC,500000,22500.5,477499.5,5'), text.slice(0, 400));
     check('bancos_resumen separa al papá como rubro', /hogar,CRC,500000,14000.5,485999.5,4/.test(text) && /papa,CRC,0,8500,-8500,1/.test(text), text.slice(0, 600));
+    check('bancos_resumen reparte el movimiento en las categorías de sus partidas', /gasto,supermercado,CRC,\d,\d+/.test(text) && /gasto,comida,CRC,\d,\d+/.test(text), text.slice(0, 900));
     const sinPapa = toolText(await callTool('bancos_resumen', { mes: '2026-10', excluirDe: ['papa'] }));
     check('bancos_resumen excluye al papá con excluirDe', sinPapa.includes('CRC,500000,14000.5,485999.5,4') && !/papa,CRC/.test(sinPapa), sinPapa.slice(0, 400));
     const papa = toolText(await callTool('bancos_resumen', { mes: '2026-10', de: 'papa' }));
     check('bancos_resumen da solo lo del papá', /movimientos: 1/.test(papa) && papa.includes('CRC,0,8500,-8500,1'), papa.slice(0, 300));
     const bac = toolText(await callTool('bancos_resumen', { mes: '2026-10', cuenta: 'bac', excluirTipos: ['comida'] }));
-    check('bancos_resumen filtra por cuenta y excluye tipos', /movimientos: 1/.test(bac), bac.slice(0, 200));
+    check('bancos_resumen excluye una categoría solo por la parte que le toca', /CRC,0,9500,-9500,2/.test(bac), bac.slice(0, 300));
     const nov = toolText(await callTool('bancos_resumen', { mes: '2026-11' }));
     const ciclo = toolText(await callTool('bancos_resumen', { ciclo: '2026-01' }));
     check('bancos_resumen por ciclo va del 19 al 18', ciclo.includes('desde: 2025-12-19') && ciclo.includes('hasta: 2026-01-18'), ciclo.slice(0, 200));
-    check('bancos_resumen no suma lo pendiente', /movimientos: 1/.test(nov) && !/pendientesSinMovimiento/.test(nov), nov.slice(0, 300));
+    check('bancos_resumen del retiro: 5000 en 2 partidas (3000 comida, 2000 supermercado)', /gasto,comida,CRC,1,3000/.test(nov) && /gasto,supermercado,CRC,\d,(2000|5500)/.test(nov), nov.slice(0, 900));
+    check('bancos_resumen cuenta el pago pendiente sin movimiento aparte', !/pendientesSinMovimiento/.test(nov), nov.slice(-300));
   },
 };

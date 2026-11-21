@@ -13,20 +13,19 @@ description: >
 
 Todo se escribe con el MCP `bancos`; nunca editar los jsonl a mano. Formato y carpetas: `README.md` del repo.
 
-## Niveles
+## Niveles (ADR-EBC-03)
 
-| Nivel | Documento | Tool | Suma en reportes |
-|-------|-----------|------|------------------|
-| 1. Movimiento | Estado de cuenta: HTML de movimientos del BCR, PDF del estado de la BAC o del BN | `bancos_registrar` | **Sí** (base de verdad) |
-| 2. Comprobante | Pago: SINPE, voucher, transferencia; trae el número de movimiento del banco | `bancos_comprobante` | No |
-| 3. Factura | Detalle de productos o cargos: súper, recibo de luz, agua, internet | `bancos_factura` | No |
+| Nivel | Qué es | Documento | Tool | Suma en reportes |
+|-------|--------|-----------|------|------------------|
+| 1. Bancos | Movimiento del estado de cuenta (ciclo 19 al 18: BCR débito de Karen, BAC tarjetas, BN tarjetas) | HTML del BCR, PDF de la BAC o del BN | `bancos_registrar` | **Sí** (base de verdad) |
+| 2. Libros | El **pago**, 1 a 1 con un movimiento; lleva la **categoría** en `partidas` | SINPE, voucher, colilla, o un documento que diga «pago de factura X» (nunca la factura) | `bancos_comprobante` | Reparte el nivel 1 por categoría |
+| 3. Cuentas por pagar | La **factura**: proveedor, cédula jurídica, número, líneas, ajustes | Súper, recibo de luz, agua, internet | `bancos_factura` | No |
 
-Los niveles 2 y 3 sirven para saber qué fue un movimiento: le pasan su `tipo`, `de` y `nota` al vincularse.
-Si su movimiento todavía no está (el estado no ha llegado), quedan **pendientes** y se vinculan solos al anotar el estado.
-
-El comprobante es el **pago** de una factura, y no es 1 a 1: una factura se puede pagar en varios comprobantes
-(abonos, cuotas) y un comprobante puede pagar varias facturas. La factura con comprobantes se concilia por ellos
-(sus movimientos son los de sus pagos) y muestra lo pagado y el saldo.
+* **La categoría vive en el nivel 2**: una o varias `partidas: [{tipo, monto}]` que suman siempre el total del movimiento. Lo que no se sabe va a «otros» y se revisa al cerrar el ciclo.
+* Todo movimiento tiene su libro: `bancos_registrar` lo crea solo (sin documento) con el `tipo` que se le dé; si había un pago pendiente, se vincula y trae su categoría. Un pago anotado después **reemplaza** al libro sin documento del movimiento.
+* Un libro sin movimiento es una diferencia por conciliar, salvo que se marque en tránsito (`transito: "razón"`).
+* El nivel 3 **siempre cuelga de un libro** (`libro` o `movimiento`); no hay factura suelta. Un libro tiene una o varias facturas y la **suma de sus facturas (con ajustes) es igual al monto del pago**. Cada línea lleva su `tipo`; al cuadrar, las partidas del libro son la suma de las líneas por categoría.
+* Un sobrante que no se gastó (p. ej. vuelto devuelto por SINPE) es otra factura con `clase: "ajuste"`, con su respaldo y su propia categoría. Ejemplo: retiro de ₡5.000 → factura ₡3.000 (comida) + ajuste ₡2.000 (personal), en la misma llamada de `bancos_factura` con `movimiento: "m-..."`. Ejemplo de compra en Palí con 2 artículos personales: 1 factura con líneas de 2 categorías, 1 pago con 2 partidas.
 
 ## Rubros
 
@@ -49,7 +48,7 @@ El comprobante es el **pago** de una factura, y no es 1 a 1: una factura se pued
    | `fechaReal` | Fecha de la compra, solo referencia (BCR «Fecha transacción»; BAC, la columna de fecha) |
    | `referencia` | BCR: columna «Documento». BAC: la referencia de la línea. Intereses y cuotas no traen: se deja vacía |
    | `clase` | Cargo, compra, débito → `gasto`. Depósito, crédito, salario → `ingreso` |
-   | `tipo` | El más cercano de `bancos_tipos`; si ninguno sirve, `otros` y avisarle. Tipo nuevo solo si el dueño lo pide (`bancos_agregar_tipo`) |
+   | `tipo` | La categoría de su libro: la más cercana de `bancos_tipos`; si ninguno sirve, `otros` (o sin tipo) y avisarle. Tipo nuevo solo si el dueño lo pide (`bancos_agregar_tipo`) |
    | `total` / `moneda` | Monto positivo; `₡` → `CRC`, `$` → `USD` |
    | `de` | Vacío si es del hogar; `papa` u otro según `datos/reglas.md` |
    | `tarjeta` | Solo tarjetas (`bac`, `bncr`): 4 últimos dígitos de la cuenta de tarjeta (la que se paga), según `datos/reglas.md` |
@@ -57,10 +56,10 @@ El comprobante es el **pago** de una factura, y no es 1 a 1: una factura se pued
    | `comercio` / `nota` | Corto, tal como aparece; la nota solo si aporta (no repetir la tarjeta) |
 
 4. **Campos de los niveles 2 y 3:**
-   * Comprobante: `fecha`, `hora`, `cuenta`, `clase`, `total`, `moneda`, `comercio` (destinatario), `referencia` (en el SINPE del BCR, el «Documento»), `nota` (el motivo) y `origen` (la foto). Poner `tipo` y `de` si el comprobante los aclara.
-   * Factura: `fecha`, `comercio`, `numero`, `total` (lo pagado, con IVA), `moneda`, `lineas` (`descripcion`, `cantidad`, `unidad`, `precio`, `total`; `tipo` opcional para una línea distinta, p. ej. `salud` en el súper) y `origen`. Si se pagó con comprobantes ya anotados, `comprobantes: ["c-...", ...]` (uno por pago); entonces no lleva `movimiento`. Un pago que llega después se agrega con `bancos_vincular { detalle: "f-...", comprobantes: [lista completa] }`.
+   * Pago (libro): `fecha`, `hora`, `cuenta`, `clase`, `total`, `moneda`, `comercio` (destinatario), `referencia` (en el SINPE del BCR, el «Documento»), `nota` (el motivo) y `origen` (la foto). Categoría: `tipo` si es una sola, o `partidas: [{tipo, monto}]` que sumen el total. `de` si es de otra persona. `transito: "razón"` si aún no sale en el banco.
+   * Factura: `fecha`, `proveedor`, `cedula` (jurídica), `numero`, `total` (con IVA), `moneda`, `lineas` (`descripcion`, `cantidad`, `unidad`, `precio`, `impuesto`, `total`, **`tipo` de cada línea**), `ajustes` (descuentos o redondeo al final), `clase` (`factura` o `ajuste`) y `origen`. Cuelga de su pago: `movimiento: "m-..."` o `libro: "l-..."`; sin ninguno se busca el movimiento por monto y fecha, y si no hay se crea un pago sin movimiento (pendiente). Si el pago es de varias facturas, anotarlas todas en la misma llamada (o `parcial: true` si la otra llega después). Para pasar una factura a otro pago: `bancos_vincular { detalle: "f-...", libro: "l-..." }`.
 5. **Anotar:** el tool sin `apply` (preview) → revisar `vinculados` (con `cambios` y `empate`), `pendientes`, `omitidosPorDuplicado` y `avisos` → repetir con `apply: true`. El respaldo se copia solo a `datos/multimedia/AAAA-MM/`.
-   Un estado con muchas líneas va en un solo `bancos_registrar` por cuenta, con el estado como `origen`.
+   Un estado con muchas líneas va en un solo `bancos_registrar` por cuenta, con el estado como `origen`. Si `bancos_factura` da error de suma, es que las facturas del pago no llegan a su monto.
 6. **Responder corto:** cuántos anotó y en qué nivel, total por moneda, cuántos se vincularon y cuántos quedan pendientes.
 
 ## Casos especiales
@@ -70,8 +69,8 @@ El comprobante es el **pago** de una factura, y no es 1 a 1: una factura se pued
 * Pago de la tarjeta BAC desde el BCR: `gasto` en `bcr` con tipo `tarjeta`. Para el gasto real, `excluirTipos: ["tarjeta"]` (los consumos ya están en `bac`).
 * Un SINPE que cubre dos cosas (p. ej. alquiler y abono de otra persona): dos movimientos con la misma `referencia`, cada uno con su tipo y `de`.
 * Tasas cero que pagan otros, salarios, depa y lo del papá: seguir `datos/reglas.md`, incluidos los avisos que pide.
-* Recibo de Uber (PDF o captura): nivel 2, `bancos_comprobante`. PDF: `pdftotext -layout`. Uber siempre comparte el recibo como 2 archivos juntos: uno de ~1 KB vacío (ignorarlo sin avisar) y el PDF real (cientos de KB); usar solo el más pesado y no pedirle al dueño que mande uno solo (lo genera la página de Uber; él no lo controla). Pueden llegar en 2 mensajes seguidos: si en el mensaje solo viene el vacío, buscar en el inbox el PDF real de la misma hora (segundos de diferencia) y anotarlo; si el otro ya estaba anotado, no duplicarlo. Cuenta `bac`, `clase: gasto`, `tipo: transporte`, `comercio: "Uber"`, `fecha` y `hora` del viaje, `total` = total cobrado. `nota` = origen → destino con el **nombre del lugar**: el recibo trae plus codes (p. ej. `XXXX+XXX`) y la tabla «Lugares de Uber» de `datos/reglas.md` dice qué lugar es cada uno; uno nuevo se le pregunta al dueño y se agrega ahí. Cruzar el viaje con lo anotado cerca (p. ej. una compra del súper minutos antes) para saber a qué corresponde. Si el viaje es del papá (o lleva sus compras a su casa), `de: "papa"` (ver `datos/reglas.md`). En la BAC sale con la fecha del viaje como `fechaReal`; la propina o un ajuste pueden venir como cargo aparte.
-* `empate: true` en un vínculo: había varios movimientos iguales; si el comprobante tenía nota o tipo propios, revisar con `bancos_detalles` y corregir con `bancos_vincular`.
+* Recibo de Uber (PDF o captura): nivel 2 (pago), `bancos_comprobante`. PDF: `pdftotext -layout`. Uber siempre comparte el recibo como 2 archivos juntos: uno de ~1 KB vacío (ignorarlo sin avisar) y el PDF real (cientos de KB); usar solo el más pesado y no pedirle al dueño que mande uno solo (lo genera la página de Uber; él no lo controla). Pueden llegar en 2 mensajes seguidos: si en el mensaje solo viene el vacío, buscar en el inbox el PDF real de la misma hora (segundos de diferencia) y anotarlo; si el otro ya estaba anotado, no duplicarlo. Cuenta `bac`, `clase: gasto`, `tipo: transporte`, `comercio: "Uber"`, `fecha` y `hora` del viaje, `total` = total cobrado. `nota` = origen → destino con el **nombre del lugar**: el recibo trae plus codes (p. ej. `XXXX+XXX`) y la tabla «Lugares de Uber» de `datos/reglas.md` dice qué lugar es cada uno; uno nuevo se le pregunta al dueño y se agrega ahí. Cruzar el viaje con lo anotado cerca (p. ej. una compra del súper minutos antes) para saber a qué corresponde. Si el viaje es del papá (o lleva sus compras a su casa), `de: "papa"` (ver `datos/reglas.md`). En la BAC sale con la fecha del viaje como `fechaReal`; la propina o un ajuste pueden venir como cargo aparte.
+* `empate: true` en un vínculo: había varios movimientos iguales; revisar con `bancos_detalles` y corregir con `bancos_vincular`.
 * Si algo no está claro (cuenta, clase, una fecha ilegible): preguntar una sola cosa, con opciones y una recomendada, antes de anotar.
 
 ## Reportes y consultas
@@ -81,15 +80,15 @@ El comprobante es el **pago** de una factura, y no es 1 a 1: una factura se pued
 * **Pagar la tarjeta BN de Karen:** `bancos_pago_tarjeta_bn` hace lo mismo con el último estado del BN (`…-estado-bn-2921.pdf`): dólares a colones con la venta del **BN** de hoy (no la de la BAC), resta los «Pago BN» del BCR desde el corte y da `faltaPagar`. También devuelve la imagen para mandarla por Telegram.
 * **Ciclo completo:** `bancos_resumen { ciclo }` → balance, rubros (hogar, papa…) y tipos por rubro. Incluye al papá.
 * **Solo el hogar:** `excluirDe: ["papa"]` (y `"primo"` si hace falta). **Solo el papá, para mostrárselo:** `de: "papa"`.
-* **Detalle:** `bancos_movimientos` (con `c` y `f` = cuántos comprobantes y facturas tiene cada uno); `bancos_detalles { movimiento: "m-..." }` o `{ ciclo, conLineas: true }`.
-* **Qué falta conciliar:** `bancos_pendientes { ciclo }` → solo lo que tiene documento: comprobantes o facturas sin movimiento y facturas con saldo (pagadas en parte), más `sinCategoria` (movimientos con tipo «otros» o sin tipo, para ponerles uno). Un movimiento sin papel no es pendiente: solo necesita su tipo. Las facturas se vinculan a un pago hasta 35 días después y con ±₡1; los comprobantes, con ventana y monto exactos.
+* **Detalle:** `bancos_movimientos` (con su libro, sus `partidas` y `f` = cuántas facturas cuelgan); `bancos_detalles { movimiento: "m-..." }` o `{ ciclo, conLineas: true }`.
+* **Qué falta conciliar:** `bancos_pendientes { ciclo }` → `libroSinMovimiento` (pagos sin línea del banco; los en tránsito salen aparte en `enTransito`), `sinCategoria` (movimientos sin libro o con partidas en «otros») y `noCuadran` (facturas contra el pago, partidas contra líneas). Un movimiento sin documento no es pendiente: solo necesita su categoría. Las facturas se vinculan a un movimiento hasta 35 días después y con ±₡1; los pagos, con ventana de -3/+10 días y monto exacto.
 * **Preguntas cruzadas** (productos comprados, gasto por línea de factura, etc.): `bancos_sql` con un SELECT (tablas en su descripción). Los totales oficiales siguen saliendo de `movimientos`.
 
 ## Corregir
 
-* Tipo, `de`, comercio, nota, referencia o `fechaReal` de un movimiento: `bancos_editar_movimiento { id, ..., confirm: true }`.
-* Fecha, total o clase: `bancos_borrar_movimiento { id, confirm: true }` → volver a anotar (sus detalles quedan pendientes y se vuelven a vincular).
-* Vínculo equivocado: `bancos_vincular { detalle, movimiento }` (o `movimiento: ""` para soltarlo). Comprobante o factura mal anotado: `bancos_borrar_detalle` y volver a anotar.
+* Categoría (`tipo` o `partidas`), `de`, comercio, nota, referencia o `fechaReal` de un movimiento: `bancos_editar_movimiento { id, ..., confirm: true }` (la categoría se guarda en su libro).
+* Fecha, total o clase: `bancos_borrar_movimiento { id, confirm: true }` → volver a anotar (su libro con documento o facturas queda sin movimiento y se vuelve a vincular; uno sin documento se borra con él).
+* Vínculo equivocado: `bancos_vincular { detalle: "l-...", movimiento }` (o `movimiento: ""` para soltarlo; 1 a 1, mismo monto). Pago o factura mal anotado: `bancos_borrar_detalle` (un pago con facturas pide `conFacturas: true`) y volver a anotar.
 * Nombre de un tipo: `bancos_renombrar_tipo` (el id no cambia).
 
 ## Privacidad

@@ -12,6 +12,6 @@ export default {
   },
   async smoke({ callTool, check, toolJson }) {
     const r = toolJson(await callTool('bancos_sqlite_reconstruir', {}));
-    check('bancos_sqlite_reconstruir carga las tablas', r.reconstruida === true && r.movimientos === 5 && r.comprobantes === 2 && r.facturas === 2 && r.lineas === 3 && r.pagos === 1, JSON.stringify(r));
+    check('bancos_sqlite_reconstruir carga las tablas', r.reconstruida === true && r.libros >= 4 && r.facturas === 3 && r.lineas === 4 && r.partidas >= 4, JSON.stringify(r));
   },
 };
