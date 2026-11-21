@@ -6,7 +6,7 @@ import movimientos from '../.mcp/bancos/tools/bancos_movimientos.mjs';
 import pagoTarjetas from '../.mcp/bancos/tools/bancos_pago_tarjetas.mjs';
 import pendientes from '../.mcp/bancos/tools/bancos_pendientes.mjs';
 import resumen from '../.mcp/bancos/tools/bancos_resumen.mjs';
-import { CUENTAS, HOGAR, getDatosDir, leerTipos } from '../.mcp/bancos/src/datos.mjs';
+import { CUENTAS, HOGAR, getDatosDir, leerTipos, tiposTraspaso } from '../.mcp/bancos/src/datos.mjs';
 import { consultar } from '../.mcp/bancos/src/sqlite.mjs';
 import { cicloDe, rangoCiclo } from '../.mcp/bancos/src/periodo.mjs';
 import { esc, fechaCorta, fmt } from '../.mcp/bancos/src/pago.mjs';
@@ -97,6 +97,26 @@ export async function cargar(p, { imagen = false } = {}) {
 
 const aviso = (e) => `<p class="vacio">No se pudo cargar: ${esc(e)}</p>`;
 
+const nombreTarjeta = (t) => (t === 'bncr' ? 'BN' : t.toUpperCase());
+/** Pagos a tarjeta: plata que se mueve, no suma en Gastos ni en el balance. Tocar uno lleva a sus movimientos. */
+function traspasos(d, r) {
+  if (!r.traspasos?.length) return '';
+  const tipo = [...tiposTraspaso()][0];
+  const filas = r.traspasos.map((t) => [`${esc(nombreTarjeta(t.tarjeta))} <small>${t.moneda} · ${t.cantidad} pago${t.cantidad === 1 ? '' : 's'}</small>`,
+    liga(d, { clase: 'gasto', ...(tipo ? { tipo } : {}), moneda: t.moneda }, d.money(t.total, t.moneda))]);
+  return `<h3>Traspasos a tarjeta</h3><p class="sub">No suman en Gastos ni en el balance.</p>${tabla(['Tarjeta', 'Pagado'], filas)}`;
+}
+/** Control de deuda: compras del ciclo anterior contra lo pagado en este ciclo. */
+function deuda(d, r) {
+  if (!r.deudaTarjeta?.length) return '';
+  const filas = r.deudaTarjeta.map((x) => {
+    const sin = x.diferencia === null || x.diferencia === undefined;
+    const estado = sin ? '<span class="aviso-e">sin estado de cuenta</span>' : x.estado === 'pendiente' ? `<b class="debe">${d.money(x.diferencia, x.moneda)}</b>` : x.estado === 'a favor' ? `<b class="bien-t">${d.money(-x.diferencia, x.moneda)} a favor</b>` : '<b class="bien-t">al día</b>';
+    return [`${esc(nombreTarjeta(x.tarjeta))} <small>${x.moneda} · compras ${sin ? 'sin estado' : d.money(x.comprasCicloAnterior, x.moneda)}</small>`, d.money(x.pagado, x.moneda), estado];
+  });
+  return `<h3>Deuda de tarjeta</h3><p class="sub">Compras del ciclo anterior contra lo pagado en este ciclo.</p>${tabla(['Tarjeta', 'Pagado', 'Diferencia'], filas)}`;
+}
+
 const secciones = {
   resumen(d) {
     if (d.r.error) return aviso(d.r.error);
@@ -106,7 +126,7 @@ const secciones = {
       + `<div class="chip ${b.balance < 0 ? 'alerta' : 'bien'}"><span>Balance ${b.moneda}</span><b>${liga(d, { moneda: b.moneda }, d.money(b.balance, b.moneda))}</b></div></div>`).join('');
     const rubros = r.rubros.length ? tabla(['Rubro', 'Ingresos', 'Gastos', 'Balance'],
       r.rubros.map((x) => [`${esc(rubroNombre(x.rubro))} <small>${x.moneda} · ${x.movimientos} mov.</small>`, liga(d, { rubro: x.rubro, moneda: x.moneda, clase: 'ingreso' }, d.money(x.ingresos, x.moneda)), liga(d, { rubro: x.rubro, moneda: x.moneda, clase: 'gasto' }, d.money(x.gastos, x.moneda)), `<b>${liga(d, { rubro: x.rubro, moneda: x.moneda }, d.money(x.balance, x.moneda))}</b>`])) : '';
-    return `${bal || '<p class="vacio">Sin movimientos en este periodo.</p>'}${rubros}`;
+    return `${bal || '<p class="vacio">Sin movimientos en este periodo.</p>'}${traspasos(d, r)}${deuda(d, r)}${rubros}`;
   },
   tipos(d) {
     if (d.r.error) return aviso(d.r.error);
@@ -179,6 +199,7 @@ form.rg input,form.rg select{font:14px inherit;font-family:inherit;padding:7px;b
 .chips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}
 .chip{background:var(--ch);border-radius:12px;padding:8px 10px;min-width:0}.chip span{display:block;font-size:12px;color:var(--mu)}.chip b{font-size:15px}
 .chip.alerta b{color:var(--mal)}.chip.bien b{color:var(--ok)}
+.debe{color:var(--mal)}.bien-t{color:var(--ok)}.aviso-e{display:inline-block;background:#fff4d6;color:#8a5a00;border-radius:8px;padding:2px 8px;font-size:12px}
 .tw{width:100%}table{width:100%;border-collapse:collapse;table-layout:auto}
 th{font-size:12px;color:var(--mu);text-align:left;padding:6px 4px;border-bottom:2px solid var(--li)}
 td{padding:8px 4px;border-bottom:1px solid var(--li);vertical-align:top}
