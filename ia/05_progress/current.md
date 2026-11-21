@@ -1,6 +1,6 @@
 # 05 — Progreso Actual
 
-> Última actualización: 2026-11-21 13:35 CR
+> Última actualización: 2026-11-21 14:27 CR
 > Fase activa: ninguna
 
 <!-- Con el MCP iaWorkflow, las dos líneas de arriba, «Completado en sesiones recientes» y la tabla de
@@ -13,6 +13,7 @@ Proyecto reiniciado como registro sencillo de movimientos en jsonl (`datos/`, fu
 
 ## Completado en sesiones recientes
 
+* **2026-11-21** — TASK-EBC-FE-07: Resumen del periodo unificado en colones por defecto con el dólar de la tarjeta BAC, botón «Ver por moneda» y recálculo junto con la deuda.
 * **2026-11-21** — TASK-EBC-FE-06: Botón «Recalcular con el dólar BAC/BN de hoy» solo en tarjetas con deuda pendiente que usan el cambio del día; reemplaza el bloque sin recargar y mantiene la vista en colones.
 * **2026-11-21** — TASK-EBC-FE-05: «Deuda de tarjeta» muestra corte, pago de contado (₡ y $), pagado y diferencia, con botón «Ver en colones» que muestra el tipo de cambio y su fuente. Revisión visual por el túnel corrigió un desborde de 3 px a 375 y el «Pagado» por moneda (ahora solo la parte aplicada en colones).
 * **2026-11-21** — TASK-EBC-MCP-13: deudaTarjeta de bancos_resumen usa el pago de contado del estado que abre el ciclo (CRC y USD) y da la vista en colones con el tipo de cambio del pago o la venta del banco del día.

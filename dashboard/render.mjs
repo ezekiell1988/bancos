@@ -139,13 +139,37 @@ export function deuda(d, r) {
   return `<div class="dv${d.imagen ? ' col' : ''}"><h3>Deuda de tarjeta</h3><p class="sub">Pago de contado del estado de cuenta contra lo pagado en este ciclo.</p>${boton}${tabla(['Tarjeta', 'Pago de contado', 'Pagado', 'Diferencia'], filas)}</div>`;
 }
 
+/** Dólar de la tarjeta BAC del periodo (el del pago o la venta BAC del día); si el periodo no es un ciclo, la venta BAC del día. */
+function cambioBac(d, r) {
+  const f = r.deudaTarjeta?.filter((x) => x.tipoCambio);
+  const x = f?.find((y) => y.tarjeta === 'bac') ?? f?.[0];
+  if (x) return { valor: x.tipoCambio.valor, fuente: x.tipoCambio.fuente, tarjeta: x.tarjeta };
+  const v = d.pago?.ok?.tipoCambio?.venta;
+  return v ? { valor: v, fuente: 'bac del dia', tarjeta: 'bac' } : null;
+}
+/** Ingresos, Gastos y Balance: por defecto en colones (USD al dólar de la tarjeta BAC); el botón muestra el detalle por moneda. */
+export function balance(d, r) {
+  const chips = (b, mo, f) => `<div class="chips"><div class="chip"><span>Ingresos${mo ? ` ${mo}` : ''}</span><b>${liga(d, { ...(mo ? { moneda: mo } : {}), clase: 'ingreso' }, d.money(b.ingresos, f))}</b></div>`
+    + `<div class="chip"><span>Gastos${mo ? ` ${mo}` : ''}</span><b>${liga(d, { ...(mo ? { moneda: mo } : {}), clase: 'gasto' }, d.money(b.gastos, f))}</b></div>`
+    + `<div class="chip ${b.balance < 0 ? 'alerta' : 'bien'}"><span>Balance${mo ? ` ${mo}` : ''}</span><b>${liga(d, { ...(mo ? { moneda: mo } : {}) }, d.money(b.balance, f))}</b></div></div>`;
+  const porMoneda = r.balance.map((b) => chips(b, b.moneda, b.moneda)).join('');
+  if (!r.balance.length) return '';
+  const tc = r.balance.some((b) => b.moneda !== 'CRC') ? cambioBac(d, r) : { valor: 1, fuente: '' };
+  if (!tc) return `${porMoneda}<p class="sub"><span class="aviso-e">Sin tipo de cambio BAC: se muestra por moneda.</span></p>`;
+  const fuente = { pago: 'del pago', 'bac del dia': 'BAC del día', 'bn del dia': 'BN del día' };
+  const suma = (k) => r.balance.reduce((t, b) => t + (b.moneda === 'CRC' ? b[k] : b.moneda === 'USD' ? b[k] * tc.valor : 0), 0);
+  const unido = { ingresos: suma('ingresos'), gastos: suma('gastos'), balance: suma('balance') };
+  const nota = tc.fuente ? `<p class="sub tc">cambio ${fmt(tc.valor, 2)}, ${fuente[tc.fuente] ?? esc(tc.fuente)}</p>` : '';
+  const boton = d.imagen || !tc.fuente ? '' : '<button type="button" class="btn sec vb" onclick="var w=this.closest(\'.rs\');var c=w.classList.toggle(\'col\');this.textContent=c?\'Ver por moneda\':\'Ver en colones\'">Ver por moneda</button>';
+  if (!tc.fuente) return porMoneda;
+  return `<div class="rs col">${boton}<div class="vm">${porMoneda}</div><div class="vc">${chips(unido, '', 'CRC')}${nota}</div></div>`;
+}
+
 const secciones = {
   resumen(d) {
     if (d.r.error) return aviso(d.r.error);
     const r = d.r.ok;
-    const bal = r.balance.map((b) => `<div class="chips"><div class="chip"><span>Ingresos ${b.moneda}</span><b>${liga(d, { moneda: b.moneda, clase: 'ingreso' }, d.money(b.ingresos, b.moneda))}</b></div>`
-      + `<div class="chip"><span>Gastos ${b.moneda}</span><b>${liga(d, { moneda: b.moneda, clase: 'gasto' }, d.money(b.gastos, b.moneda))}</b></div>`
-      + `<div class="chip ${b.balance < 0 ? 'alerta' : 'bien'}"><span>Balance ${b.moneda}</span><b>${liga(d, { moneda: b.moneda }, d.money(b.balance, b.moneda))}</b></div></div>`).join('');
+    const bal = balance(d, r);
     const rubros = r.rubros.length ? tabla(['Rubro', 'Ingresos', 'Gastos', 'Balance'],
       r.rubros.map((x) => [`${esc(rubroNombre(x.rubro))} <small>${x.moneda} · ${x.movimientos} mov.</small>`, liga(d, { rubro: x.rubro, moneda: x.moneda, clase: 'ingreso' }, d.money(x.ingresos, x.moneda)), liga(d, { rubro: x.rubro, moneda: x.moneda, clase: 'gasto' }, d.money(x.gastos, x.moneda)), `<b>${liga(d, { rubro: x.rubro, moneda: x.moneda }, d.money(x.balance, x.moneda))}</b>`])) : '';
     return `${bal || '<p class="vacio">Sin movimientos en este periodo.</p>'}${traspasos(d, r)}${deuda(d, r)}${rubros}`;
@@ -221,7 +245,7 @@ form.rg input,form.rg select{font:14px inherit;font-family:inherit;padding:7px;b
 .chips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}
 .chip{background:var(--ch);border-radius:12px;padding:8px 10px;min-width:0}.chip span{display:block;font-size:12px;color:var(--mu)}.chip b{font-size:15px}
 .chip.alerta b{color:var(--mal)}.chip.bien b{color:var(--ok)}
-.dv .vc{display:none}.dv.col .vm{display:none}.dv.col .vc{display:inline}.dv .vb{margin:0 0 8px}.dv .rc{display:block;margin-top:6px;white-space:normal;text-align:left;font-size:13px}.dv td b{white-space:normal}.dv small.tc{display:inline;font-weight:400;color:var(--mu);font-size:11px;white-space:normal}
+.rs .vc{display:none}.rs.col .vm{display:none}.rs.col .vc{display:block}.rs .vb{margin:0 0 8px}.dv .vc{display:none}.dv.col .vm{display:none}.dv.col .vc{display:inline}.dv .vb{margin:0 0 8px}.dv .rc{display:block;margin-top:6px;white-space:normal;text-align:left;font-size:13px}.dv td b{white-space:normal}.dv small.tc{display:inline;font-weight:400;color:var(--mu);font-size:11px;white-space:normal}
 .debe{color:var(--mal)}.bien-t{color:var(--ok)}.aviso-e{display:inline-block;background:#fff4d6;color:#8a5a00;border-radius:8px;padding:2px 8px;font-size:12px}
 .tw{width:100%}table{width:100%;border-collapse:collapse;table-layout:auto}
 th{font-size:12px;color:var(--mu);text-align:left;padding:6px 4px;border-bottom:2px solid var(--li)}
@@ -313,7 +337,10 @@ document.addEventListener('click',async e=>{const b=e.target.closest('button[dat
 try{const r=await fetch('enviar?reporte='+b.dataset.r+'&'+q);const j=await r.json();msg(j.mensaje||j.error||'Listo')}catch{msg('No se pudo enviar')}
 b.disabled=false;b.textContent=t});
 document.addEventListener('click',async e=>{const b=e.target.closest('button[data-rc]');if(!b)return;const w=b.closest('.dv');b.disabled=true;b.textContent='Pidiendo el dólar…';
-try{const r=await fetch('deuda.html?'+q);if(!r.ok)throw 0;const h=await r.text();const col=w.classList.contains('col');w.outerHTML=h;if(col){const n=document.querySelector('.dv');n?.classList.add('col');const v=n?.querySelector('.vb');if(v)v.textContent='Ver por moneda'}}catch{b.disabled=false;b.textContent='Reintentar recalcular';msg('No se pudo pedir el dólar de hoy')}});
+try{const r=await fetch('deuda.html?'+q);if(!r.ok)throw 0;const h=await r.text();const col=w.classList.contains('col');const rs=document.querySelector('.rs');const rcol=rs?rs.classList.contains('col'):true;
+const t=document.createElement('template');t.innerHTML=h;const nd=t.content.querySelector('.dv'),nr=t.content.querySelector('.rs');
+w.replaceWith(nd);if(col){nd.classList.add('col');const v=nd.querySelector('.vb');if(v)v.textContent='Ver por moneda'}
+if(rs&&nr){rs.replaceWith(nr);if(!rcol){nr.classList.remove('col');const v=nr.querySelector('.vb');if(v)v.textContent='Ver en colones'}}}catch{b.disabled=false;b.textContent='Reintentar recalcular';msg('No se pudo pedir el dólar de hoy')}});
 function tab(t){document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));document.querySelectorAll('.panel').forEach(p=>p.hidden=p.dataset.p!==t);try{localStorage.setItem('tab',t)}catch{}}
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>tab(b.dataset.t));
 let t0='general';try{t0=location.hash==='#conciliar'?'conciliar':localStorage.getItem('tab')||'general'}catch{}tab(t0==='conciliar'?'conciliar':'general');
@@ -504,5 +531,5 @@ export function archivoDeFactura(id) {
 /** Solo el bloque de deuda con el cambio recién pedido (el botón «Recalcular» lo reemplaza sin recargar la página). */
 export async function htmlDeuda(p) {
   const r = await resumen.handler(p.args).catch(() => null);
-  return r && (deuda({ money: moneyCorto }, r) || '<div class="dv"></div>');
+  return r && ((deuda({ money: moneyCorto }, r) || '<div class="dv"></div>') + balance({ money: moneyCorto, p }, r));
 }
