@@ -10,7 +10,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { initDatos } from '../.mcp/bancos/src/datos.mjs';
-import { archivoDeFactura, filtroDe, htmlCategoria, htmlDetalle, htmlMovimiento, htmlIndex, htmlReporte, periodoDe, queryDe, REPORTES, tituloDetalle } from './render.mjs';
+import { archivoDeFactura, filtroDe, htmlCategoria, htmlDetalle, htmlDeuda, htmlMovimiento, htmlIndex, htmlReporte, periodoDe, queryDe, REPORTES, tituloDetalle } from './render.mjs';
 
 const aqui = path.dirname(fileURLToPath(import.meta.url));
 const cfg = JSON.parse(readFileSync(path.join(aqui, 'config.json'), 'utf8'));
@@ -89,6 +89,7 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/detalle.html') return send(200, 'text/html', await htmlDetalle(periodoDe(url.searchParams), filtroDe(url.searchParams), { imagen: url.searchParams.get('img') === '1' }));
     if (url.pathname === '/categoria.html') return send(200, 'text/html', await htmlCategoria(periodoDe(url.searchParams), url.searchParams, { imagen: url.searchParams.get('img') === '1' }));
     if (url.pathname === '/movimiento.html') return send(200, 'text/html', await htmlMovimiento(periodoDe(url.searchParams), url.searchParams, { imagen: url.searchParams.get('img') === '1' }));
+    if (url.pathname === '/deuda.html') { const h = await htmlDeuda(periodoDe(url.searchParams)); return h ? send(200, 'text/html', h) : send(502, 'text/plain', 'Sin resumen'); }
     if (url.pathname === '/archivo') {
       const a = archivoDeFactura(url.searchParams.get('f'));
       if (!a) return send(404, 'text/plain', 'No existe');

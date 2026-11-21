@@ -107,7 +107,7 @@ function traspasos(d, r) {
   return `<h3>Traspasos a tarjeta</h3><p class="sub">No suman en Gastos ni en el balance.</p>${tabla(['Tarjeta', 'Pagado'], filas)}`;
 }
 /** Control de deuda: pago de contado del estado que abre el ciclo contra lo pagado; vista por moneda o en colones (botón, sin recargar). */
-function deuda(d, r) {
+export function deuda(d, r) {
   if (!r.deudaTarjeta?.length) return '';
   const cs = (x) => d.money(x, 'CRC');
   const us = (x) => d.money(x, 'USD');
@@ -117,15 +117,20 @@ function deuda(d, r) {
     const nombre = esc(nombreTarjeta(x.tarjeta));
     if (x.contadoCRC === undefined) return [`${nombre} <small>sin estado de cuenta</small>`, '', cs(x.pagado), '<span class="aviso-e">sin estado de cuenta</span>'];
     const cab = `${nombre} <small>corte ${esc(String(x.corte))}</small>`;
+
     if (x.diferenciaColones === null || x.diferenciaColones === undefined) {
       return [cab, `${cs(x.contadoCRC)}<br>${us(x.contadoUSD)}`, cs(x.pagado), '<span class="aviso-e">sin tipo de cambio</span>'];
     }
-    const tc = x.tipoCambio ? `<small class="tc">cambio ${fmt(x.tipoCambio.valor, 2)} (${fuente[x.tipoCambio.fuente] ?? esc(x.tipoCambio.fuente)})</small>` : '';
+    const delDia = x.tipoCambio && x.tipoCambio.fuente !== 'pago';
+    const hora = delDia ? `, ${new Date().toLocaleTimeString('es-CR', { timeZone: 'America/Costa_Rica', hour: '2-digit', minute: '2-digit' })}` : '';
+    const tc = x.tipoCambio ? `<small class="tc">cambio ${fmt(x.tipoCambio.valor, 2)} (${fuente[x.tipoCambio.fuente] ?? esc(x.tipoCambio.fuente)}${hora})</small>` : '';
+    const recalcular = delDia && !d.imagen && x.diferenciaColones >= 0.01
+      ? `<button type="button" class="btn sec rc" data-rc>Recalcular con el dólar ${x.tarjeta === 'bac' ? 'BAC' : 'BN'} de hoy</button>` : '';
     const pendCRC = x.contadoCRC - x.aplicadoCRC;
     const pendUSD = x.contadoUSD - x.aplicadoUSD;
     const porMoneda = Math.abs(pendCRC) < 0.01 && Math.abs(pendUSD) < 0.01 ? '<b class="bien-t">al día</b>'
       : `${dif(x, pendCRC, cs)}<br>${dif(x, pendUSD, us)}`;
-    return [cab,
+    return [`${cab}${recalcular}`,
       `<span class="vm">${cs(x.contadoCRC)}<br>${us(x.contadoUSD)}</span><span class="vc">${cs(x.contadoEnColones)}${tc ? `<br>${tc}` : ''}</span>`,
       `<span class="vm">${cs(x.aplicadoCRC)}<br>${us(x.aplicadoUSD)}</span><span class="vc">${cs(x.pagado)}</span>`,
       `<span class="vm">${porMoneda}</span><span class="vc">${dif(x, x.diferenciaColones, cs)}</span>`];
@@ -216,7 +221,7 @@ form.rg input,form.rg select{font:14px inherit;font-family:inherit;padding:7px;b
 .chips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}
 .chip{background:var(--ch);border-radius:12px;padding:8px 10px;min-width:0}.chip span{display:block;font-size:12px;color:var(--mu)}.chip b{font-size:15px}
 .chip.alerta b{color:var(--mal)}.chip.bien b{color:var(--ok)}
-.dv .vc{display:none}.dv.col .vm{display:none}.dv.col .vc{display:inline}.dv .vb{margin:0 0 8px}.dv td b{white-space:normal}.dv small.tc{display:inline;font-weight:400;color:var(--mu);font-size:11px;white-space:normal}
+.dv .vc{display:none}.dv.col .vm{display:none}.dv.col .vc{display:inline}.dv .vb{margin:0 0 8px}.dv .rc{display:block;margin-top:6px;white-space:normal;text-align:left;font-size:13px}.dv td b{white-space:normal}.dv small.tc{display:inline;font-weight:400;color:var(--mu);font-size:11px;white-space:normal}
 .debe{color:var(--mal)}.bien-t{color:var(--ok)}.aviso-e{display:inline-block;background:#fff4d6;color:#8a5a00;border-radius:8px;padding:2px 8px;font-size:12px}
 .tw{width:100%}table{width:100%;border-collapse:collapse;table-layout:auto}
 th{font-size:12px;color:var(--mu);text-align:left;padding:6px 4px;border-bottom:2px solid var(--li)}
@@ -307,6 +312,8 @@ function msg(t){av.textContent=t;av.style.display='block';clearTimeout(msg.t);ms
 document.addEventListener('click',async e=>{const b=e.target.closest('button[data-r]');if(!b)return;b.disabled=true;const t=b.textContent;b.textContent='Enviando…';
 try{const r=await fetch('enviar?reporte='+b.dataset.r+'&'+q);const j=await r.json();msg(j.mensaje||j.error||'Listo')}catch{msg('No se pudo enviar')}
 b.disabled=false;b.textContent=t});
+document.addEventListener('click',async e=>{const b=e.target.closest('button[data-rc]');if(!b)return;const w=b.closest('.dv');b.disabled=true;b.textContent='Pidiendo el dólar…';
+try{const r=await fetch('deuda.html?'+q);if(!r.ok)throw 0;const h=await r.text();const col=w.classList.contains('col');w.outerHTML=h;if(col){const n=document.querySelector('.dv');n?.classList.add('col');const v=n?.querySelector('.vb');if(v)v.textContent='Ver por moneda'}}catch{b.disabled=false;b.textContent='Reintentar recalcular';msg('No se pudo pedir el dólar de hoy')}});
 function tab(t){document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));document.querySelectorAll('.panel').forEach(p=>p.hidden=p.dataset.p!==t);try{localStorage.setItem('tab',t)}catch{}}
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>tab(b.dataset.t));
 let t0='general';try{t0=location.hash==='#conciliar'?'conciliar':localStorage.getItem('tab')||'general'}catch{}tab(t0==='conciliar'?'conciliar':'general');
@@ -492,4 +499,10 @@ export function archivoDeFactura(id) {
   const tipo = TIPOS_ARCHIVO[path.extname(ruta).toLowerCase()];
   if (!ruta.startsWith(`${base}${path.sep}`) || !tipo || !existsSync(ruta)) return null;
   return { ruta, tipo };
+}
+
+/** Solo el bloque de deuda con el cambio recién pedido (el botón «Recalcular» lo reemplaza sin recargar la página). */
+export async function htmlDeuda(p) {
+  const r = await resumen.handler(p.args).catch(() => null);
+  return r && (deuda({ money: moneyCorto }, r) || '<div class="dv"></div>');
 }
