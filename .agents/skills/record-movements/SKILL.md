@@ -82,7 +82,7 @@ El comprobante es el **pago** de una factura, y no es 1 a 1: una factura se pued
 * **Ciclo completo:** `bancos_resumen { ciclo }` → balance, rubros (hogar, papa…) y tipos por rubro. Incluye al papá.
 * **Solo el hogar:** `excluirDe: ["papa"]` (y `"primo"` si hace falta). **Solo el papá, para mostrárselo:** `de: "papa"`.
 * **Detalle:** `bancos_movimientos` (con `c` y `f` = cuántos comprobantes y facturas tiene cada uno); `bancos_detalles { movimiento: "m-..." }` o `{ ciclo, conLineas: true }`.
-* **Qué falta conciliar:** `bancos_pendientes { ciclo }` → movimientos sin comprobante ni factura, comprobantes o facturas sin movimiento y facturas con saldo (pagadas en parte).
+* **Qué falta conciliar:** `bancos_pendientes { ciclo }` → solo lo que tiene documento: comprobantes o facturas sin movimiento y facturas con saldo (pagadas en parte), más `sinCategoria` (movimientos con tipo «otros» o sin tipo, para ponerles uno). Un movimiento sin papel no es pendiente: solo necesita su tipo. Las facturas se vinculan a un pago hasta 35 días después y con ±₡1; los comprobantes, con ventana y monto exactos.
 * **Preguntas cruzadas** (productos comprados, gasto por línea de factura, etc.): `bancos_sql` con un SELECT (tablas en su descripción). Los totales oficiales siguen saliendo de `movimientos`.
 
 ## Corregir
