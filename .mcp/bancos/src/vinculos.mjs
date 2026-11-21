@@ -1,7 +1,7 @@
 // Vínculo entre los niveles: comprobantes y facturas (detalles) con su movimiento bancario (ADR-03),
 // y facturas con los comprobantes que las pagan (ADR-06).
 import {
-  NIVELES, ToolError, VENTANA, appendJsonl, buscarMovimiento, checkFecha, checkTipo, completarMovimiento, copiarRespaldo, detalleFile,
+  NIVELES, ToolError, VENTANA, VENTANA_FACTURA, appendJsonl, buscarMovimiento, checkFecha, checkTipo, completarMovimiento, copiarRespaldo, detalleFile,
   emparejar, guardarMovimiento, leerDetalles, leerTodosLosDetalles, leerTodosLosMovimientos, nuevoId, ocupadosPor, planRespaldo, r2,
   sinUbicacion, detalleSinUbicacion, slug, sumarDias,
 } from './datos.mjs';
@@ -80,7 +80,7 @@ export function vincularNuevos(nuevos) {
   const pendientes = nuevos.filter((d) => !d.movimiento);
   if (pendientes.length) {
     const fechas = pendientes.map((d) => d.fecha).sort();
-    const movs = leerTodosLosMovimientos(sumarDias(fechas[0], -VENTANA.antes), sumarDias(fechas.at(-1), VENTANA.despues));
+    const movs = leerTodosLosMovimientos(sumarDias(fechas[0], -VENTANA.antes), sumarDias(fechas.at(-1), pendientes.some((d) => d.nivel === 'facturas') ? VENTANA_FACTURA.despues : VENTANA.despues));
     pares.push(...planVinculos(pendientes, movs, [...todos, ...nuevos]));
   }
   // Facturas nuevas cuyos pagos ya tienen movimiento: le completan ese movimiento.

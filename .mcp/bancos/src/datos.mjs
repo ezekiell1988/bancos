@@ -281,6 +281,8 @@ function rangoReferencia(a, b) {
 
 /** Ventana de fechas en que el banco procesa lo de un comprobante o factura. */
 export const VENTANA = { antes: 3, despues: 10 };
+/** Las facturas (servicios) se pagan semanas después y a veces con diferencia de céntimos. */
+export const VENTANA_FACTURA = { antes: 3, despues: 35, tolerancia: 1 };
 
 /**
  * Empareja detalles pendientes con movimientos: misma moneda y total, misma clase (las facturas son gastos),
@@ -292,10 +294,11 @@ export function emparejar(detalles, movimientos, ocupados = new Set()) {
   const pares = [];
   for (const d of [...detalles].sort((a, b) => a.fecha.localeCompare(b.fecha) || (a.hora ?? '').localeCompare(b.hora ?? ''))) {
     const clase = d.nivel === 'facturas' ? 'gasto' : d.clase;
+    const v = d.nivel === 'facturas' ? VENTANA_FACTURA : { ...VENTANA, tolerancia: 0.01 };
     const candidatos = movimientos
-      .filter((m) => !ocupados.has(`${d.nivel}|${m.id}`) && m.moneda === d.moneda && Math.abs(m.total - d.total) < 0.01
+      .filter((m) => !ocupados.has(`${d.nivel}|${m.id}`) && m.moneda === d.moneda && Math.abs(m.total - d.total) <= v.tolerancia + 1e-9
         && m.clase === clase && (!d.cuenta || m.cuenta === d.cuenta)
-        && difDias(m.fecha, d.fecha) >= -VENTANA.antes && difDias(m.fecha, d.fecha) <= VENTANA.despues)
+        && difDias(m.fecha, d.fecha) >= -v.antes && difDias(m.fecha, d.fecha) <= v.despues)
       .map((m) => ({ m, rango: [rangoReferencia(d.referencia, m.referencia), (m.fechaReal ?? m.fecha) === d.fecha ? 0 : 1, Math.abs(difDias(m.fecha, d.fecha))] }))
       .sort((a, b) => a.rango[0] - b.rango[0] || a.rango[1] - b.rango[1] || a.rango[2] - b.rango[2]);
     if (!candidatos.length) continue;

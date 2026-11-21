@@ -13,7 +13,7 @@ El código anterior (MCP .NET + SQL) quedó en la rama `legacy`, solo para consu
 | 2. Comprobante | Pago: SINPE, voucher, con su número de movimiento | `datos/comprobantes/AAAA-MM/AAAA-MM-DD.jsonl` | No |
 | 3. Factura | Documento cobrado: detalle de productos o cargos | `datos/facturas/AAAA-MM/AAAA-MM-DD.jsonl` | No |
 
-Los niveles 2 y 3 apuntan a su movimiento con `movimiento` (id). Sin él están pendientes de banco.
+Los niveles 2 y 3 apuntan a su movimiento con `movimiento` (id). Sin él están pendientes de banco. «Pendientes» concilia solo lo que tiene documento (comprobantes o facturas sin movimiento, facturas con saldo) y lista aparte los movimientos sin categoría (tipo «otros» o vacío); un movimiento sin papel no es pendiente. Las facturas se vinculan a pagos hasta 35 días después y con ±1 de diferencia.
 
 El comprobante es el **pago** de una factura y no es 1 a 1 (ADR-06): una factura se paga con uno o varios
 comprobantes (`comprobantes`, abonos o cuotas) y un comprobante puede pagar varias facturas. Una factura con

@@ -12,7 +12,7 @@ export const REPORTES = {
   resumen: 'Resumen del periodo',
   tipos: 'Gastos por tipo',
   pago: 'Pago de contado de las tarjetas',
-  pendientes: 'Pendientes de conciliar',
+  pendientes: 'Conciliación',
   movimientos: 'Movimientos',
 };
 const MAX_FILAS = { pantalla: 300, imagen: 120 };
@@ -131,14 +131,14 @@ const secciones = {
   pendientes(d) {
     if (d.pe.error) return aviso(d.pe.error);
     const pe = d.pe.ok;
-    const sinDetalle = pe.movimientosSinDetalle?.lista ?? [];
+    const sinCat = pe.sinCategoria?.lista ?? [];
     const sinMov = pe.detallesSinMovimiento?.lista ?? [];
     const saldo = pe.facturasConSaldo ?? [];
     const lista = (titulo, filas) => (filas.length ? `<h3>${titulo} (${filas.length})</h3><div class="lista">${filas.slice(0, d.max).map((f) => f).join('')}${filas.length > d.max ? `<p class="vacio">y ${filas.length - d.max} más</p>` : ''}</div>` : '');
     const fila = (fecha, texto, sub, monto) => `<div class="f"><div class="d"><span class="fe">${fechaCorta(fecha)}</span> ${esc(texto)}${sub ? `<small>${esc(sub)}</small>` : ''}</div><div class="m">${monto}</div></div>`;
-    const html = lista('Movimientos sin comprobante ni factura', sinDetalle.map((x) => fila(x.fecha, x.comercio || x.tipo, `${x.cuenta.toUpperCase()} · ${x.clase}`, d.money(x.total, x.moneda))))
-      + lista('Comprobantes y facturas sin movimiento', sinMov.map((x) => fila(x.fecha, x.comercio, `${x.nivel === 2 ? 'Comprobante' : 'Factura'}${x.referencia ? ` ${x.referencia}` : ''}`, d.money(x.total, x.moneda))))
-      + lista('Facturas con saldo', saldo.map((x) => fila(x.fecha, x.comercio, `Pagado ${d.money(x.pagado ?? 0, x.moneda)}`, `saldo ${d.money(x.saldo, x.moneda)}`)));
+    const html = lista('Documentos sin movimiento', sinMov.map((x) => fila(x.fecha, x.comercio, `${x.nivel === 2 ? 'Comprobante' : 'Factura'}${x.referencia ? ` ${x.referencia}` : ''}`, d.money(x.total, x.moneda))))
+      + lista('Facturas con saldo', saldo.map((x) => fila(x.fecha, x.comercio, `Pagado ${d.money(x.pagado ?? 0, x.moneda)}`, `saldo ${d.money(x.saldo, x.moneda)}`)))
+      + lista('Sin categoría', sinCat.map((x) => fila(x.fecha, x.comercio || x.tipo || '—', `${x.cuenta.toUpperCase()} · ${x.clase}`, d.money(x.total, x.moneda))));
     return html || '<p class="vacio">Todo conciliado en este periodo ✅</p>';
   },
   movimientos(d) {
