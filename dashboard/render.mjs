@@ -134,11 +134,11 @@ const secciones = {
     const sinCat = pe.sinCategoria?.lista ?? [];
     const sinMov = pe.detallesSinMovimiento?.lista ?? [];
     const saldo = pe.facturasConSaldo ?? [];
-    const lista = (titulo, filas) => (filas.length ? `<h3>${titulo} (${filas.length})</h3><div class="lista">${filas.slice(0, d.max).map((f) => f).join('')}${filas.length > d.max ? `<p class="vacio">y ${filas.length - d.max} más</p>` : ''}</div>` : '');
+    const lista = (titulo, filas, ayuda) => (filas.length ? `<h3>${titulo} (${filas.length})</h3><p class="sub">${ayuda}</p><div class="lista">${filas.slice(0, d.max).map((f) => f).join('')}${filas.length > d.max ? `<p class="vacio">y ${filas.length - d.max} más</p>` : ''}</div>` : '');
     const fila = (fecha, texto, sub, monto) => `<div class="f"><div class="d"><span class="fe">${fechaCorta(fecha)}</span> ${esc(texto)}${sub ? `<small>${esc(sub)}</small>` : ''}</div><div class="m">${monto}</div></div>`;
-    const html = lista('Documentos sin movimiento', sinMov.map((x) => fila(x.fecha, x.comercio, `${x.nivel === 2 ? 'Comprobante' : 'Factura'}${x.referencia ? ` ${x.referencia}` : ''}`, d.money(x.total, x.moneda))))
-      + lista('Facturas con saldo', saldo.map((x) => fila(x.fecha, x.comercio, `Pagado ${d.money(x.pagado ?? 0, x.moneda)}`, `saldo ${d.money(x.saldo, x.moneda)}`)))
-      + lista('Sin categoría', sinCat.map((x) => fila(x.fecha, x.comercio || x.tipo || '—', `${x.cuenta.toUpperCase()} · ${x.clase}`, d.money(x.total, x.moneda))));
+    const html = lista('Documentos sin movimiento', sinMov.map((x) => fila(x.fecha, x.comercio || '—', `${x.nivel === 2 ? 'Comprobante' : 'Factura'}${x.referencia ? ` ${x.referencia}` : ''}`, d.money(x.total, x.moneda))), 'Esperan el estado de cuenta, o su línea no se encontró: se vinculan al movimiento.')
+      + lista('Facturas con saldo', saldo.map((x) => fila(x.fecha, x.comercio, `Pagado ${d.money(x.pagado ?? 0, x.moneda)}`, `saldo ${d.money(x.saldo, x.moneda)}`)), 'Pagadas en parte: falta el comprobante del resto.')
+      + lista('Sin categoría', sinCat.map((x) => fila(x.fecha, x.comercio || x.tipo || '—', `${x.cuenta.toUpperCase()} · ${x.clase}`, d.money(x.total, x.moneda))), 'Quedaron en «otros»: falta ponerles un tipo.');
     return html || '<p class="vacio">Todo conciliado en este periodo ✅</p>';
   },
   movimientos(d) {
@@ -190,6 +190,12 @@ tr.t td{border-top:2px solid var(--fg);border-bottom:0;font-weight:700}
 .btn.sec{background:var(--ch);color:var(--fg);border:1px solid var(--li)}
 .acc{display:flex;gap:8px;margin:8px 0}.acc .btn{flex:1;padding:11px 12px;font-size:15px}
 .vacio{color:var(--mu);margin:8px 0}
+.tabs{display:flex;gap:6px;margin:12px 0 0;padding:4px;background:var(--ch);border-radius:12px}
+.tabs button{flex:1;font:600 14px inherit;font-family:inherit;border:0;border-radius:9px;background:none;color:var(--mu);padding:9px 8px;cursor:pointer}
+.tabs button.on{background:var(--card);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.tabs .cnt{display:inline-block;margin-left:6px;min-width:20px;padding:1px 6px;border-radius:999px;background:var(--mal);color:#fff;font-size:12px}
+.tabs .cnt.cero{background:var(--ok)}
+.panel[hidden]{display:none}
 #aviso{position:fixed;left:16px;right:16px;bottom:16px;background:var(--fg);color:var(--bg);padding:12px 14px;border-radius:12px;display:none;text-align:center}
 @media(max-width:560px){
 html:not(.img) .chips{grid-template-columns:1fr;gap:4px}
@@ -244,14 +250,23 @@ export async function htmlIndex(p) {
     + (p.modo === 'rango' ? `<form class="rg"><input type="date" name="desde" value="${p.desde ?? ''}"><input type="date" name="hasta" value="${p.hasta ?? ''}">${p.cuenta ? `<input type="hidden" name="cuenta" value="${p.cuenta}">` : ''}<button class="btn">Ver</button></form>` : '')
     + `<div class="bar"><a href="?${queryDe({ ...p, cuenta: undefined })}"${p.cuenta ? '' : ' class="on"'}>Todas</a>${CUENTAS.map((c) => `<a href="?${queryDe({ ...p, cuenta: c })}"${p.cuenta === c ? ' class="on"' : ''}>${c.toUpperCase()}</a>`).join('')}</div>`;
   const tarjeta = (id) => `<section class="card"><div class="cab"><h2>${esc(REPORTES[id])}</h2><button class="btn" data-r="${id}">Enviar al chat</button></div>${secciones[id](d)}</section>`;
-  const cuerpo = `<div class="w"><h1>💰 Finanzas</h1><div class="sub">${r ? rango(r) : ''}${p.cuenta ? ` · ${p.cuenta.toUpperCase()}` : ''}</div>${selector}`
-    + Object.keys(REPORTES).map(tarjeta).join('') + '<div id="aviso"></div></div>';
+  // Conciliación va en su propia pestaña, con el número de pendientes para llevarlo a 0.
+  const pe = d.pe.ok;
+  const faltan = pe ? (pe.detallesSinMovimiento?.total ?? 0) + (pe.facturasConSaldo?.length ?? 0) + (pe.sinCategoria?.total ?? 0) : null;
+  const general = Object.keys(REPORTES).filter((id) => id !== 'pendientes');
+  const tabs = `<div class="tabs"><button data-t="general">📊 Resumen</button><button data-t="conciliar">🧾 Conciliar${faltan === null ? '' : `<span class="cnt${faltan ? '' : ' cero'}">${faltan || '✓'}</span>`}</button></div>`;
+  const cuerpo = `<div class="w"><h1>💰 Finanzas</h1><div class="sub">${r ? rango(r) : ''}${p.cuenta ? ` · ${p.cuenta.toUpperCase()}` : ''}</div>${selector}${tabs}`
+    + `<div class="panel" data-p="general">${general.map(tarjeta).join('')}</div><div class="panel" data-p="conciliar" hidden>${tarjeta('pendientes')}</div>`
+    + '<div id="aviso"></div></div>';
   const js = `<script>
 const q=${JSON.stringify(queryDe(p))};const av=document.getElementById('aviso');
 function msg(t){av.textContent=t;av.style.display='block';clearTimeout(msg.t);msg.t=setTimeout(()=>av.style.display='none',3500)}
 document.addEventListener('click',async e=>{const b=e.target.closest('button[data-r]');if(!b)return;b.disabled=true;const t=b.textContent;b.textContent='Enviando…';
 try{const r=await fetch('enviar?reporte='+b.dataset.r+'&'+q);const j=await r.json();msg(j.mensaje||j.error||'Listo')}catch{msg('No se pudo enviar')}
 b.disabled=false;b.textContent=t});
+function tab(t){document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));document.querySelectorAll('.panel').forEach(p=>p.hidden=p.dataset.p!==t);try{localStorage.setItem('tab',t)}catch{}}
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>tab(b.dataset.t));
+let t0='general';try{t0=location.hash==='#conciliar'?'conciliar':localStorage.getItem('tab')||'general'}catch{}tab(t0==='conciliar'?'conciliar':'general');
 </script>`;
   void q;
   return pagina('Finanzas', cuerpo, { extra: js });
