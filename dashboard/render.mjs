@@ -370,7 +370,10 @@ function seccionCategorias(p) {
   try {
     const nombres = nombresTipo();
     const { where, args } = condicionPeriodo(p, 'c');
-    const filas = filasDe(`SELECT c.clase, c.moneda, c.tipo, round(sum(c.monto), 2) AS total, count(DISTINCT c.movimiento_id) AS n FROM movimiento_categorias c WHERE ${where} GROUP BY 1, 2, 3 ORDER BY 1 DESC, 2, 4 DESC`, args);
+    // Los traspasos (pago de tarjeta) salen aparte en el resumen: aquí no suman en Gastos.
+    const traspasos = tiposTraspaso();
+    const filas = filasDe(`SELECT c.clase, c.moneda, c.tipo, round(sum(c.monto), 2) AS total, count(DISTINCT c.movimiento_id) AS n FROM movimiento_categorias c WHERE ${where} GROUP BY 1, 2, 3 ORDER BY 1 DESC, 2, 4 DESC`, args)
+      .filter((x) => !(x.clase === 'gasto' && traspasos.has(x.tipo)));
     if (!filas.length) return '<p class="vacio">Sin movimientos en este periodo.</p>';
     const grupos = Object.groupBy(filas, (x) => `${x.clase}|${x.moneda}`);
     return Object.entries(grupos).map(([k, lista]) => {
